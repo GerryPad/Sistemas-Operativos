@@ -29,8 +29,8 @@ bool validarToken(char *arr[], char *tok){
     return false;
 }
 
-bool esNumero(char *s) {
-    if (s == NULL || *s == '\0') return false;
+bool esInt(char *s) {
+    if (s == NULL || *s == '\0') return false; //Por si ya no hay tokens en el renglon
     for (int i = 0; s[i] != '\0'; i++) {
         if (s[i] < '0' || s[i] > '9') return false;
     }
@@ -64,9 +64,9 @@ void instMOV(){
             printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
             reg1->valor = reg2->valor;
             printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
-        } else if (esNumero(operando2)) {
+        } else if (esInt(operando2)) {
             printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
-            reg1->valor = atoi(operando2); //atoi pasa de texto a int
+            reg1->valor = atoi(operando2); //atoi pasa de texto a int, atof para floats?
             printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
