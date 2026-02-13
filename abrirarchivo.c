@@ -57,6 +57,7 @@ void instMOV(){
     }
 
     Registro *reg1 = buscaRegistro(operando1);
+    /*Revisar cuando hay mas de dos registros validos.*/
 
     if (reg1 != NULL){
         Registro *reg2 = buscaRegistro(operando2);
