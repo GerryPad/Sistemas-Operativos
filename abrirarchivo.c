@@ -5,10 +5,11 @@
 #include <stdlib.h>
 
 char *delimitadores = " ,\n";
+char *delim2 = ",\n"; //Para no permitir la sintaxis "inst reg , reg" (Es buena idea?)
 char *instruccion[] = {"MOV", "ADD", "SUB", "MUL", "DIV", "INC", "DEC", "END", NULL};
 typedef struct {
     char *nombre;
-    float valor; //Quien sabe si luego tendran que ser flotantes?
+    int valor; //Quedate con registros ENTEROS, pero si pueden tener signo
 } Registro;
 
 Registro registros[] = {
@@ -29,9 +30,13 @@ bool validarToken(char *arr[], char *tok){
     return false;
 }
 
+//Necesito modificar esto para leer signos negativos
 bool esInt(char *s) {
     if (s == NULL || *s == '\0') return false; //Por si ya no hay tokens en el renglon
     for (int i = 0; s[i] != '\0'; i++) {
+        if(s[i] == '-' && i == 0) {
+            continue;
+        }
         if (s[i] < '0' || s[i] > '9') return false;
     }
     return true;
@@ -48,8 +53,8 @@ Registro* buscaRegistro(char *nombre){
 
 bool instMOV(){
     char *operando1, *operando2, *extra;
-    operando1 = strtok(NULL, delimitadores);
-    operando2 = strtok(NULL, delimitadores);
+    operando1 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, delim2);
 
     if (operando1 == NULL || operando2 == NULL) {
         printf("Error: Instrucción incompleta.\n");
@@ -67,14 +72,15 @@ bool instMOV(){
 
     if (reg1 != NULL){
         Registro *reg2 = buscaRegistro(operando2);
+        //printf("Operando dos: %s", operando2);
         if (reg2 != NULL){
-            printf("MOV: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            printf("MOV: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg2->valor;
-            printf("MOV: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(operando2)) {
-            printf("MOV: %s valor original %.2f\n", reg1->nombre, reg1->valor);
-            reg1->valor = atof(operando2); //atof pasa de texto a int, atof para floats?
-            printf("MOV: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
+            reg1->valor = atoi(operando2); //atoi pasa de texto a int
+            printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
             return false;
@@ -88,8 +94,8 @@ bool instMOV(){
 
 bool instADD(){
     char *operando1, *operando2, *extra;
-    operando1 = strtok(NULL, delimitadores);
-    operando2 = strtok(NULL, delimitadores);
+    operando1 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, delim2);
 
     if (operando1 == NULL || operando2 == NULL) {
         printf("Error: Instrucción incompleta.\n");
@@ -108,13 +114,13 @@ bool instADD(){
     if (reg1 != NULL){
         Registro *reg2 = buscaRegistro(operando2);
         if (reg2 != NULL){
-            printf("ADD: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            printf("ADD: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg1->valor + reg2->valor;
-            printf("ADD: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("ADD: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(operando2)) {
-            printf("ADD: %s valor original %.2f\n", reg1->nombre, reg1->valor);
-            reg1->valor = reg1->valor + atof(operando2); //atof pasa de texto a int, atof para floats?
-            printf("ADD: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("ADD: %s valor original %d\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor + atoi(operando2); //atoi pasa de texto a int, atoi para floats?
+            printf("ADD: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
             return false;
@@ -128,8 +134,8 @@ bool instADD(){
 
 bool instSUB(){
     char *operando1, *operando2, *extra;
-    operando1 = strtok(NULL, delimitadores);
-    operando2 = strtok(NULL, delimitadores);
+    operando1 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, delim2);
 
     if (operando1 == NULL || operando2 == NULL) {
         printf("Error: Instrucción incompleta.\n");
@@ -148,13 +154,13 @@ bool instSUB(){
     if (reg1 != NULL){
         Registro *reg2 = buscaRegistro(operando2);
         if (reg2 != NULL){
-            printf("SUB: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            printf("SUB: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg1->valor - reg2->valor;
-            printf("SUB: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("SUB: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(operando2)) {
-            printf("SUB: %s valor original %.2f\n", reg1->nombre, reg1->valor);
-            reg1->valor = reg1->valor - atof(operando2); //atof pasa de texto a int, atof para floats?
-            printf("SUB: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("SUB: %s valor original %d\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor - atoi(operando2); //atoi pasa de texto a int, atoi para floats?
+            printf("SUB: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
             return false;
@@ -168,8 +174,8 @@ bool instSUB(){
 
 bool instMUL(){
     char *operando1, *operando2, *extra;
-    operando1 = strtok(NULL, delimitadores);
-    operando2 = strtok(NULL, delimitadores);
+    operando1 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, delim2);
 
     if (operando1 == NULL || operando2 == NULL) {
         printf("Error: Instrucción incompleta.\n");
@@ -188,13 +194,13 @@ bool instMUL(){
     if (reg1 != NULL){
         Registro *reg2 = buscaRegistro(operando2);
         if (reg2 != NULL){
-            printf("MUL: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            printf("MUL: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg1->valor * reg2->valor;
-            printf("MUL: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("MUL: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(operando2)) {
-            printf("MUL: %s valor original %.2f\n", reg1->nombre, reg1->valor);
-            reg1->valor = reg1->valor * atof(operando2); //atof pasa de texto a int, atof para floats?
-            printf("MUL: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("MUL: %s valor original %d\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor * atoi(operando2); //atoi pasa de texto a int, atoi para floats?
+            printf("MUL: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
             return false;
@@ -208,8 +214,9 @@ bool instMUL(){
 
 bool instDIV(){
     char *operando1, *operando2, *extra;
-    operando1 = strtok(NULL, delimitadores);
-    operando2 = strtok(NULL, delimitadores);
+    operando1 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, delim2);
+    double divisor;
 
     if (operando1 == NULL || operando2 == NULL) {
         printf("Error: Instrucción incompleta.\n");
@@ -232,18 +239,18 @@ bool instDIV(){
                 printf("Error: División por cero.\n");
                 return false;
             }
-            printf("DIV: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            printf("DIV: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg1->valor / reg2->valor;
-            printf("DIV: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("DIV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(operando2)) {
-            double divisor = atof(operando2);
+            divisor = atoi(operando2);
             if (divisor == 0){
                 printf("Error: División por cero.\n");
                 return false;
             }
-            printf("DIV: %s valor original %.2f\n", reg1->nombre, reg1->valor);
-            reg1->valor = reg1->valor / atof(operando2); //atof pasa de texto a int, atof para floats?
-            printf("DIV: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+            printf("DIV: %s valor original %d\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor / atoi(operando2); //atoi pasa de texto a int, atoi para floats?
+            printf("DIV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
             return false;
@@ -255,7 +262,82 @@ bool instDIV(){
     return true;
 }
 
-bool ejecOperacion(char *instruccion){
+bool instINC(){
+    char *operando1, *operando2, *extra;
+    operando1 = strtok(NULL, delimitadores);
+
+    if (operando1 == NULL) {
+        printf("Error: Instrucción incompleta.\n");
+        return false;
+    }
+     /*Revisar cuando hay mas de dos registros validos.*/
+     extra = strtok(NULL, delimitadores);
+     if (extra != NULL){
+        printf("Error: Demasiados argumentos.\n");
+        return false;
+     }
+
+    Registro *reg1 = buscaRegistro(operando1);
+   
+    if (reg1 != NULL){
+            printf("INC: %s valor original %d\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor + 1;
+            printf("INC: %s ahora vale %d\n", reg1->nombre, reg1->valor);
+    } else {
+        printf("Error: el operando uno de INC no es un registro\n");
+        return false;
+    }
+    return true;
+}
+
+bool instDEC(){
+    char *operando1, *operando2, *extra;
+    operando1 = strtok(NULL, delimitadores);
+
+    if (operando1 == NULL) {
+        printf("Error: Instrucción incompleta.\n");
+        return false;
+    }
+     /*Revisar cuando hay mas de dos registros validos.*/
+     extra = strtok(NULL, delimitadores);
+     if (extra != NULL){
+        printf("Error: Demasiados argumentos.\n");
+        return false;
+     }
+
+    Registro *reg1 = buscaRegistro(operando1);
+   
+    if (reg1 != NULL){
+            printf("DEC: %s valor original %d\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor - 1;
+            printf("DEC: %s ahora vale %d\n", reg1->nombre, reg1->valor);
+    } else {
+        printf("Error: el operando uno de INC no es un registro\n");
+        return false;
+    }
+    return true;
+}
+
+//Porque no funciona para cundo hay mas de una linea?
+bool instEND(FILE *file){
+    char *extra;
+    char *delim = " ,\n";
+    char buffer[128];
+
+    while (fgets(buffer, sizeof(buffer), file) != NULL){
+        extra = strtok(NULL, delimitadores);
+        if (extra != NULL){
+            printf("Error: Demasiados argumentos o instrucciones despues de END.\n");
+            return false;
+        }
+    }
+
+    printf("Se termino de procesar el archivo.\n");
+    return true;
+}
+
+
+bool ejecOperacion(char *instruccion, FILE *file){
     if (strcmp(instruccion, "MOV") == 0){
         return instMOV();
     } else if (strcmp(instruccion, "ADD") == 0){
@@ -267,19 +349,22 @@ bool ejecOperacion(char *instruccion){
     } else if (strcmp(instruccion, "DIV") == 0) {
         return instDIV();
     } else if (strcmp(instruccion, "INC") == 0) {
-                        
+        return instINC();          
     } else if (strcmp(instruccion, "DEC") == 0) {
-
+        return instDEC();
     } else if (strcmp(instruccion, "END") == 0) {
-
+        return instEND(file);
     } else {
-
+        return false;
     }
 }
 
 
 //Deberia leerse una vez y luego ejecutar, o ir ejecutando y abortar si hay error?
-//La sintaxis Instruccion Registro, (Registro/Valor) es correcta? (Osea ese espacio tras la coma)
+//Mejor ir ejecutando y reportar error.
+
+/*La sintaxis Instruccion Registro, (Registro/Valor) es correcta? -> NO
+Buscar la forma de no aceptar el espacio*/
 int main(){
     char archivo[64], buffer[128];
     size_t len;
@@ -310,7 +395,7 @@ int main(){
                 printf("Renglon %d: %s", num_renglon, buffer);
                 token = strtok(buffer, delimitadores);
                 if(validarToken(instruccion, token)){
-                    if (!ejecOperacion(token)) {
+                    if (!ejecOperacion(token, file)) {
                         printf("ABORTADO por error de sintaxis en renglón %d.\n", num_renglon);
                         break; 
                     }
