@@ -8,7 +8,7 @@ char *delimitadores = " ,\n";
 char *instruccion[] = {"MOV", "ADD", "SUB", "MUL", "DIV", "INC", "DEC", "END", NULL};
 typedef struct {
     char *nombre;
-    int valor; //Quien sabe si luego tendran que ser flotantes?
+    float valor; //Quien sabe si luego tendran que ser flotantes?
 } Registro;
 
 Registro registros[] = {
@@ -46,59 +46,240 @@ Registro* buscaRegistro(char *nombre){
     return NULL;
 }
 
-void instMOV(){
-    char *operando1, *operando2;
+bool instMOV(){
+    char *operando1, *operando2, *extra;
     operando1 = strtok(NULL, delimitadores);
     operando2 = strtok(NULL, delimitadores);
 
     if (operando1 == NULL || operando2 == NULL) {
         printf("Error: Instrucción incompleta.\n");
-        return;
+        return false;
     }
+     /*Revisar cuando hay mas de dos registros validos.*/
+     extra = strtok(NULL, delimitadores);
+     if (extra != NULL){
+        printf("Error: Demasiados argumentos.\n");
+        return false;
+     }
 
     Registro *reg1 = buscaRegistro(operando1);
-    /*Revisar cuando hay mas de dos registros validos.*/
+   
 
     if (reg1 != NULL){
         Registro *reg2 = buscaRegistro(operando2);
         if (reg2 != NULL){
-            printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
+            printf("MOV: %s valor original %.2f\n", reg1->nombre, reg1->valor);
             reg1->valor = reg2->valor;
-            printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
+            printf("MOV: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
         } else if (esInt(operando2)) {
-            printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
-            reg1->valor = atoi(operando2); //atoi pasa de texto a int, atof para floats?
-            printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
+            printf("MOV: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = atof(operando2); //atof pasa de texto a int, atof para floats?
+            printf("MOV: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
+            return false;
         }
     } else {
         printf("Error: el operando uno de MOV no es un registro\n");
+        return false;
     }
+    return true;
 }
 
-void ejecOperacion(char *instruccion){
+bool instADD(){
+    char *operando1, *operando2, *extra;
+    operando1 = strtok(NULL, delimitadores);
+    operando2 = strtok(NULL, delimitadores);
+
+    if (operando1 == NULL || operando2 == NULL) {
+        printf("Error: Instrucción incompleta.\n");
+        return false;
+    }
+     /*Revisar cuando hay mas de dos registros validos.*/
+     extra = strtok(NULL, delimitadores);
+     if (extra != NULL){
+        printf("Error: Demasiados argumentos.\n");
+        return false;
+     }
+
+    Registro *reg1 = buscaRegistro(operando1);
+   
+
+    if (reg1 != NULL){
+        Registro *reg2 = buscaRegistro(operando2);
+        if (reg2 != NULL){
+            printf("ADD: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor + reg2->valor;
+            printf("ADD: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+        } else if (esInt(operando2)) {
+            printf("ADD: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor + atof(operando2); //atof pasa de texto a int, atof para floats?
+            printf("ADD: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+        } else {
+            printf("Error: El segundo operando no es valido.\n");
+            return false;
+        }
+    } else {
+        printf("Error: el operando uno de ADD no es un registro\n");
+        return false;
+    }
+    return true;
+}
+
+bool instSUB(){
+    char *operando1, *operando2, *extra;
+    operando1 = strtok(NULL, delimitadores);
+    operando2 = strtok(NULL, delimitadores);
+
+    if (operando1 == NULL || operando2 == NULL) {
+        printf("Error: Instrucción incompleta.\n");
+        return false;
+    }
+     /*Revisar cuando hay mas de dos registros validos.*/
+     extra = strtok(NULL, delimitadores);
+     if (extra != NULL){
+        printf("Error: Demasiados argumentos.\n");
+        return false;
+     }
+
+    Registro *reg1 = buscaRegistro(operando1);
+   
+
+    if (reg1 != NULL){
+        Registro *reg2 = buscaRegistro(operando2);
+        if (reg2 != NULL){
+            printf("SUB: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor - reg2->valor;
+            printf("SUB: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+        } else if (esInt(operando2)) {
+            printf("SUB: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor - atof(operando2); //atof pasa de texto a int, atof para floats?
+            printf("SUB: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+        } else {
+            printf("Error: El segundo operando no es valido.\n");
+            return false;
+        }
+    } else {
+        printf("Error: el operando uno de SUB no es un registro\n");
+        return false;
+    }
+    return true;
+}
+
+bool instMUL(){
+    char *operando1, *operando2, *extra;
+    operando1 = strtok(NULL, delimitadores);
+    operando2 = strtok(NULL, delimitadores);
+
+    if (operando1 == NULL || operando2 == NULL) {
+        printf("Error: Instrucción incompleta.\n");
+        return false;
+    }
+     /*Revisar cuando hay mas de dos registros validos.*/
+     extra = strtok(NULL, delimitadores);
+     if (extra != NULL){
+        printf("Error: Demasiados argumentos.\n");
+        return false;
+     }
+
+    Registro *reg1 = buscaRegistro(operando1);
+   
+
+    if (reg1 != NULL){
+        Registro *reg2 = buscaRegistro(operando2);
+        if (reg2 != NULL){
+            printf("MUL: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor * reg2->valor;
+            printf("MUL: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+        } else if (esInt(operando2)) {
+            printf("MUL: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor * atof(operando2); //atof pasa de texto a int, atof para floats?
+            printf("MUL: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+        } else {
+            printf("Error: El segundo operando no es valido.\n");
+            return false;
+        }
+    } else {
+        printf("Error: el operando uno de MUL no es un registro\n");
+        return false;
+    }
+    return true;
+}
+
+bool instDIV(){
+    char *operando1, *operando2, *extra;
+    operando1 = strtok(NULL, delimitadores);
+    operando2 = strtok(NULL, delimitadores);
+
+    if (operando1 == NULL || operando2 == NULL) {
+        printf("Error: Instrucción incompleta.\n");
+        return false;
+    }
+     /*Revisar cuando hay mas de dos registros validos.*/
+     extra = strtok(NULL, delimitadores);
+     if (extra != NULL){
+        printf("Error: Demasiados argumentos.\n");
+        return false;
+     }
+
+    Registro *reg1 = buscaRegistro(operando1);
+   
+
+    if (reg1 != NULL){
+        Registro *reg2 = buscaRegistro(operando2);
+        if (reg2 != NULL){
+            if(reg2->valor == 0){
+                printf("Error: División por cero.\n");
+                return false;
+            }
+            printf("DIV: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor / reg2->valor;
+            printf("DIV: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+        } else if (esInt(operando2)) {
+            double divisor = atof(operando2);
+            if (divisor == 0){
+                printf("Error: División por cero.\n");
+                return false;
+            }
+            printf("DIV: %s valor original %.2f\n", reg1->nombre, reg1->valor);
+            reg1->valor = reg1->valor / atof(operando2); //atof pasa de texto a int, atof para floats?
+            printf("DIV: %s ahora vale %.2f\n", reg1->nombre, reg1->valor);
+        } else {
+            printf("Error: El segundo operando no es valido.\n");
+            return false;
+        }
+    } else {
+        printf("Error: el operando uno de DIV no es un registro\n");
+        return false;
+    }
+    return true;
+}
+
+bool ejecOperacion(char *instruccion){
     if (strcmp(instruccion, "MOV") == 0){
-        instMOV();
-    } else if (strcmp(instruccion, "ADD")){
-
-    } else if (strcmp(instruccion, "SUB")) {
-
-    } else if (strcmp(instruccion, "MUL")) {
-
-    } else if (strcmp(instruccion, "DIV")) {
-
-    } else if (strcmp(instruccion, "INC")) {
+        return instMOV();
+    } else if (strcmp(instruccion, "ADD") == 0){
+        return instADD();
+    } else if (strcmp(instruccion, "SUB") == 0) {
+        return instSUB();
+    } else if (strcmp(instruccion, "MUL") == 0) {
+        return instMUL();
+    } else if (strcmp(instruccion, "DIV") == 0) {
+        return instDIV();
+    } else if (strcmp(instruccion, "INC") == 0) {
                         
-    } else if (strcmp(instruccion, "DEC")) {
+    } else if (strcmp(instruccion, "DEC") == 0) {
 
-    } else if (strcmp(instruccion, "END")) {
+    } else if (strcmp(instruccion, "END") == 0) {
 
     } else {
 
     }
 }
 
+
+//Deberia leerse una vez y luego ejecutar, o ir ejecutando y abortar si hay error?
+//La sintaxis Instruccion Registro, (Registro/Valor) es correcta? (Osea ese espacio tras la coma)
 int main(){
     char archivo[64], buffer[128];
     size_t len;
@@ -129,12 +310,10 @@ int main(){
                 printf("Renglon %d: %s", num_renglon, buffer);
                 token = strtok(buffer, delimitadores);
                 if(validarToken(instruccion, token)){
-                    ejecOperacion(token);
-
-                    /*while (token != NULL) {
-                        printf("[%s] ", token);
-                        token = strtok(NULL, delimitadores); //OJO: usar buffer como primer parametro causa bucle infinito
-                    }*/
+                    if (!ejecOperacion(token)) {
+                        printf("ABORTADO por error de sintaxis en renglón %d.\n", num_renglon);
+                        break; 
+                    }
                     /*strtok usa un puntero interno, el primer parametro indica que el puntero
                     debe iniciarse en la direccion de dicho parametro; en caso de no colocar para-
                     metro (NULL) el puntero utiliza la ultima posicion en la que se quedo.*/
