@@ -318,21 +318,16 @@ bool instDEC(){
     return true;
 }
 
-//Porque no funciona para cundo hay mas de una linea?
-bool instEND(FILE *file){
+//Porque no funciona para cundo hay mas lineas despues del END?
+bool instEND(){
     char *extra;
-    char *delim = " ,\n";
-    char buffer[128];
-
-    while (fgets(buffer, sizeof(buffer), file) != NULL){
-        extra = strtok(NULL, delimitadores);
-        if (extra != NULL){
-            printf("Error: Demasiados argumentos o instrucciones despues de END.\n");
-            return false;
-        }
+    
+    extra = strtok(NULL, delimitadores);
+    if (extra != NULL){
+        printf("Error: Demasiados argumentos o instrucciones despues de END.\n");
+        return false;
     }
 
-    printf("Se termino de procesar el archivo.\n");
     return true;
 }
 
@@ -352,9 +347,9 @@ bool ejecOperacion(char *instruccion, FILE *file){
         return instINC();          
     } else if (strcmp(instruccion, "DEC") == 0) {
         return instDEC();
-    } else if (strcmp(instruccion, "END") == 0) {
-        return instEND(file);
-    } else {
+    } /*else if (strcmp(instruccion, "END") == 0) {
+        return instEND();
+    }*/ else {
         return false;
     }
 }
@@ -370,9 +365,10 @@ int main(){
     size_t len;
     int num_renglon;    
     char *token;
-    bool validTok;
+    bool validTok, tokEND;
 
     do{
+        tokEND = false;
         printf("Nombre de archivo (\"salir\" para terminar): ");
         fgets(archivo, sizeof(archivo), stdin);
         len = strcspn(archivo, "\r\n"); 
@@ -394,14 +390,36 @@ int main(){
             while (fgets(buffer, sizeof(buffer), file) != NULL) {
                 printf("Renglon %d: %s", num_renglon, buffer);
                 token = strtok(buffer, delimitadores);
-                if(validarToken(instruccion, token)){
-                    if (!ejecOperacion(token, file)) {
-                        printf("ABORTADO por error de sintaxis en renglón %d.\n", num_renglon);
-                        break; 
+
+                if (tokEND){
+                    if (token != NULL) {
+                        printf("Error: Se encontró contenido después de la instrucción END en el renglón %d.\n", num_renglon);
+                        tokEND = false; 
+                        break;
                     }
-                    /*strtok usa un puntero interno, el primer parametro indica que el puntero
-                    debe iniciarse en la direccion de dicho parametro; en caso de no colocar para-
-                    metro (NULL) el puntero utiliza la ultima posicion en la que se quedo.*/
+                    num_renglon++;
+                    continue;
+                }
+
+                if (token == NULL) {
+                    num_renglon++;
+                    continue;
+                }
+
+                if (validarToken(instruccion, token)){
+                    if (strcmp(token, "END") == 0){
+                        if (instEND()) {
+                            tokEND = true;
+                        } else {
+                            tokEND = false;
+                            break;
+                        }
+                    } else {
+                        if (!ejecOperacion(token, file)) {
+                            printf("ABORTADO por error de sintaxis en renglón %d.\n", num_renglon);
+                            break; 
+                        }
+                    }
                     num_renglon++;
                     printf("\n");  
                 } else {
@@ -409,6 +427,12 @@ int main(){
                     break;
                 }               
             }
+            if (tokEND){
+                printf("Se termino de procesar el archivo.\n");
+            } else {
+                printf("Error: Se llego al final sin instrucción END\n");
+            }
+
             fclose(file);
         } else {
             printf("El archivo NO existe\n");
