@@ -52,8 +52,8 @@ Registro* buscaRegistro(char *nombre){
 //Funciones para cada una de las instrucciones
 bool instMOV(){
     char *operando1, *operando2, *extra;
-    operando1 = strtok(NULL, delim2);
-    operando2 = strtok(NULL, delim2);
+    operando1 = strtok(NULL, ",");
+    operando2 = strtok(NULL, " \n");
     Registro *reg1, *reg2;
 
     if (operando1 == NULL || operando2 == NULL) {
@@ -61,7 +61,7 @@ bool instMOV(){
         return false;
     }
     //Para revisar cuando hay mas de dos operandos, incluso aunque sean validos.
-    extra = strtok(NULL, delimitadores);
+    extra = strtok(NULL, "\n");
     if (extra != NULL){
         printf("Error: Demasiados argumentos.\n");
         return false;
@@ -93,7 +93,7 @@ bool instMOV(){
 bool instADD(){
     char *operando1, *operando2, *extra;
     operando1 = strtok(NULL, delim2);
-    operando2 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, " \n");
     Registro *reg1, *reg2;
 
     if (operando1 == NULL || operando2 == NULL) {
@@ -133,7 +133,7 @@ bool instADD(){
 bool instSUB(){
     char *operando1, *operando2, *extra;
     operando1 = strtok(NULL, delim2);
-    operando2 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, " \n");
     Registro *reg1, *reg2;
 
     if (operando1 == NULL || operando2 == NULL) {
@@ -173,7 +173,7 @@ bool instSUB(){
 bool instMUL(){
     char *operando1, *operando2, *extra;
     operando1 = strtok(NULL, delim2);
-    operando2 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, " \n");
     Registro *reg1, *reg2;
 
     if (operando1 == NULL || operando2 == NULL) {
@@ -213,7 +213,7 @@ bool instMUL(){
 bool instDIV(){
     char *operando1, *operando2, *extra;
     operando1 = strtok(NULL, delim2);
-    operando2 = strtok(NULL, delim2);
+    operando2 = strtok(NULL, " \n");
     Registro *reg1, *reg2;
     int divisor;
 
@@ -264,7 +264,7 @@ bool instDIV(){
 bool instINC(){
     char *operando1, *extra;
     Registro *reg1;
-    operando1 = strtok(NULL, delimitadores);
+    operando1 = strtok(NULL, " \n");
 
     if (operando1 == NULL) {
         printf("Error: Instrucción incompleta.\n");
@@ -293,7 +293,7 @@ bool instINC(){
 bool instDEC(){
     char *operando1, *extra;
     Registro *reg1;
-    operando1 = strtok(NULL, delimitadores);
+    operando1 = strtok(NULL, " \n");
     
     if (operando1 == NULL) {
         printf("Error: Instrucción incompleta.\n");
