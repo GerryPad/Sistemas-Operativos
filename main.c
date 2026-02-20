@@ -35,7 +35,9 @@ int main(){
             //fgets se detiene al leer un \n o EOF y agrega un \0 al final
             while (fgets(linea, sizeof(linea), file) != NULL) {
                 printf("Renglon %d: %s", num_renglon, linea);
-                token = strtok(linea, delimitadores);
+                char *ptr = linea;
+                while (*ptr == ' ' || *ptr == '\t') ptr++;
+                token = strtok(ptr, " \n");
 
                 /*Para comprobar si al hallar un END aun hay cosas, aunque sean validas,
                 despues de dicha instrucción.*/
@@ -58,7 +60,9 @@ int main(){
                 /*Comprobar que la instruccion exista, si es END verificamos que no
                 haya nada mas despues de END, si no lo es, se ejecuta la instruccion
                 correspondiente.*/
-                if (validarToken(instruccion, token)){
+                if (token!= NULL && validarToken(instruccion, token)){
+                    char *argumentos = ptr + strlen(token) + 1;
+
                     if (strcmp(token, "END") == 0){
                         if (instEND()) {
                             tokEND = true;
@@ -67,7 +71,7 @@ int main(){
                             break;
                         }
                     } else {
-                        if (!ejecOperacion(token)) {
+                        if (!ejecOperacion(token, argumentos)) {
                             printf("ABORTADO por error de sintaxis en renglón %d.\n", num_renglon);
                             break; 
                         }

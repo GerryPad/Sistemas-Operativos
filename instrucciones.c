@@ -50,34 +50,49 @@ Registro* buscaRegistro(char *nombre){
 }
 
 //Funciones para cada una de las instrucciones
-bool instMOV(){
-    char *operando1, *operando2, *extra;
-    operando1 = strtok(NULL, ",");
-    operando2 = strtok(NULL, " \n");
-    Registro *reg1, *reg2;
+bool instMOV(char *args){
+    char op1[32], op2[32], basura[32];
+    int leidos = 0;
 
-    if (operando1 == NULL || operando2 == NULL) {
-        printf("Error: Instrucción incompleta.\n");
+    char *coma = strchr(args, ','); //Busca la posicion de la coma
+    if (coma == NULL) {
+        printf("Error: Falta la coma divisoria.\n");
         return false;
     }
-    //Para revisar cuando hay mas de dos operandos, incluso aunque sean validos.
-    extra = strtok(NULL, "\n");
-    if (extra != NULL){
+
+    // 2. Verificamos que el carácter inmediatamente anterior y posterior NO sea un espacio
+    if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
+        printf("Error de sintaxis: No se permiten espacios antes o despues de la coma.\n");
+        return false;
+    }
+
+    // " %31[^,]" lee hasta hallar una coma
+    // "," obliga a que exista la coma
+    // " %31s" busca el segundo operando
+    // 3. Si pasa la prueba, procedemos con el sscanf estricto
+    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) {
+        printf("Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'\n");
+        return false;
+    }
+
+    // Ahora es seguro usar 'leidos'
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) {
         printf("Error: Demasiados argumentos.\n");
         return false;
     }
 
-    reg1 = buscaRegistro(operando1);
+    Registro *reg1 = buscaRegistro(op1);
+    Registro *reg2 = buscaRegistro(op2);
    
     if (reg1 != NULL){
-        reg2 = buscaRegistro(operando2);
+        reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
             printf("MOV: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg2->valor;
             printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
-        } else if (esInt(operando2)) {
+        } else if (esInt(op2)) {
             printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
-            reg1->valor = atoi(operando2); //atoi pasa de texto a int
+            reg1->valor = atoi(op2); //atoi pasa de texto a int
             printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
@@ -331,9 +346,9 @@ bool instEND(){
 }
 
 //Función "switch" para elegir la instruccion correspondiente. 
-bool ejecOperacion(char *instruccion){
+bool ejecOperacion(char *instruccion, char *args){
     if (strcmp(instruccion, "MOV") == 0){
-        return instMOV();
+        return instMOV(args);
     } else if (strcmp(instruccion, "ADD") == 0){
         return instADD();
     } else if (strcmp(instruccion, "SUB") == 0) {

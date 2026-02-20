@@ -10,7 +10,7 @@ typedef struct {
 //Prototipos de funciones que llama directamente el main.
 Registro* buscaRegistro(char *nombre);
 bool validarToken(char *arr[], char *tok);
-bool ejecOperacion(char *instruccion);
+bool ejecOperacion(char *instruccion, char *argumentos);
 bool instEND();
 
 //Variables que usa el main

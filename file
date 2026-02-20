@@ -1,4 +1,2 @@
-MOV EAX 10
-SUB EAX,-10
-MUL EBX,-5 ,
+   MOV EAX,1 EAX    
 END 
