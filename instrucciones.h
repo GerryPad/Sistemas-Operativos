@@ -16,5 +16,6 @@ bool instEND();
 //Variables que usa el main
 extern char *delimitadores;
 extern char *instruccion[];
+extern Registro registros[];
 
 #endif
