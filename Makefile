@@ -9,6 +9,10 @@ CC = gcc
 # -g: añade información de depuración
 CFLAGS = -Wall -g
 
+# Banderas de enlace (Librerías externas)
+# -lncurses: enlaza la librería de ncurses
+LDFLAGS = -lncurses
+
 # Archivos fuente (.c) y objetos (.o)
 SRCS = main.c instrucciones.c
 OBJS = $(SRCS:.c=.o)
@@ -18,7 +22,7 @@ all: $(TARGET)
 
 # Cómo crear el ejecutable a partir de los archivos objeto
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 # Cómo compilar cada archivo .c a un .o
 # El main.c y instrucciones.c dependen de instrucciones.h
