@@ -87,13 +87,13 @@ bool instMOV(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            printf("MOV: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
+            //printf("MOV: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg2->valor;
-            printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
+            //printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(op2)) {
-            printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
+            //printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
             reg1->valor = atoi(op2); //atoi pasa de texto a int
-            printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
+            //printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             printf("Error: El segundo operando no es valido.\n");
             return false;
