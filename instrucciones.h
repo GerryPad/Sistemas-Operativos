@@ -5,7 +5,7 @@
 typedef struct {
     char *nombre;
     int valor;
-} Registro;
+} Registro; 
 
 //Prototipos de funciones que llama directamente el main.
 Registro* buscaRegistro(char *nombre);
