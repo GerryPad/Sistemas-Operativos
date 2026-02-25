@@ -9,7 +9,7 @@
 
 int kbhit(void);
 
-//char *comando[]={"ejecuta", "salir", NULL};
+char *comandos[]={"ejecuta", "salir", NULL};
 
 void imprimir_registros(int renglon, char *instruccion){
     mvprintw(3,2, "PC      IR    EAX    EBX    ECX    EDX");
@@ -27,9 +27,9 @@ void imprimir_registros(int renglon, char *instruccion){
 }
 
 int main(){
-    char archivo[64], linea[128]; //Buffers para leer nombre de archivo y linea del archivo.
+    char archivo[64], linea[128], comando[256]; //Buffers para leer nombre de archivo y linea del archivo.
     int num_renglon;    
-    char *token;
+    char *token, *tokcom;
     bool tokEND;
     bool pedir_archivo = true;
     bool interrumpido;
@@ -73,8 +73,23 @@ int main(){
                     move(15, 2); clrtoeol();//nueva linea para escribir
                     mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo: ");
                     echo();
-                    mvscanw(15,42,"%s",archivo); //Ahora se supone que tendra un nuevo nombre
+                    mvscanw(15,42,"%s",comando); //Ahora se supone que tendra un nuevo nombre
                     noecho();
+                    tokcom = strtok(comando," ");
+
+                    for (int i = 0; comandos[i]!= NULL; i++){
+                        if (strcmp(comandos[i], tokcom ) == 0){
+                            //Funcion especifica de cada uno
+                            if (strcmp(tokcom,"salir") == 0){
+                                fclose(file);
+                                endwin();
+                                return 0;
+                            } else if(strcmp(tokcom,"ejecuta") == 0){
+                                
+                            }
+
+                        }
+                    }
                     
                     if (strcmp(archivo, "salir") == 0) {
                         fclose(file);
