@@ -9,6 +9,8 @@
 
 int kbhit(void);
 
+//char *comando[]={"ejecuta", "salir", NULL};
+
 void imprimir_registros(int renglon, char *instruccion){
     mvprintw(3,2, "PC      IR    EAX    EBX    ECX    EDX");
     move(5,2);
@@ -71,7 +73,7 @@ int main(){
                     move(15, 2); clrtoeol();//nueva linea para escribir
                     mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo: ");
                     echo();
-                    getstr(archivo); //Ahora se supone que tendra un nuevo nombre
+                    mvscanw(15,42,"%s",archivo); //Ahora se supone que tendra un nuevo nombre
                     noecho();
                     
                     if (strcmp(archivo, "salir") == 0) {
@@ -146,12 +148,14 @@ int main(){
                     move(12,0);
                     clrtoeol();
                     mvprintw(10, 2, "Estado: Procesado con éxito.");
+                    //Cambiar a presiona cualquier tecla para continuar o eliminar la espera de un teclazo
                 } else {
                     mvprintw(10, 2, "Estado: Error - Falto END o abortado.");
                 }
                 fclose(file);//Borre el otro de tokend porque cerraba el archivo 2 veces entonces solo debe ser en la variable de no interrumpido
                 refresh();
-                getch();
+                //getch();
+                //getstr(archivo);
                 move(15, 2); clrtoeol(); //por si acaso limpiamos la linea y que no se encime
             } else {
                 //Si fue interrumpido entonces se cierra
