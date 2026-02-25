@@ -33,8 +33,7 @@ int main(){
     initscr();
     do{
         tokEND = false;
-        
-        move(20, 2); clrtoeol(); // Limpia la línea de petición
+        move(20, 2); clrtoeol(); //Limpiar la línea de petición
         mvprintw(20, 2, "Nombre de archivo ('salir' para terminar): ");
         echo();           //Ver el nombre del archivo mientras lo escribimos
 
@@ -43,6 +42,11 @@ int main(){
         if (strcmp(archivo, "salir") == 0) break;
 
         if (access(archivo, F_OK) == 0) {
+            move(8, 0); clrtoeol();  //Limpiar si ABORTADO
+            move(10, 0); clrtoeol(); //Limpiar estado
+            move(11, 0); clrtoeol(); //Limpiar error
+            move(12, 0); clrtoeol(); //Limpiar motivo
+            refresh();
             FILE *file = fopen(archivo, "rb");
             if (!file) {
                 perror("fopen");
@@ -53,6 +57,9 @@ int main(){
 
             //fgets se detiene al leer un \n o EOF y agrega un \0 al final
             while (fgets(linea, sizeof(linea), file) != NULL) {
+                move(8, 0); clrtoeol();
+                move(12, 0); clrtoeol();
+
                 //Necesitamos el token sin destruir la linea para despues
                 char linea_copia[128];
                 strcpy(linea_copia, linea);

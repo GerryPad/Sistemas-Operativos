@@ -214,7 +214,9 @@ bool instSUB(char *args){
             return false;
         }
     } else {
-        printf("Error: el operando uno de SUB no es un registro");
+        move(12,10);
+        clrtoeol();
+        mvprintw(12, 10,"Error: el operando uno de SUB no es un registro");
         return false;
     }
     return true;
