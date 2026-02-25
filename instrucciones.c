@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <curses.h>
 #include "instrucciones.h"
 
 char *delimitadores = " ,\n";
@@ -65,7 +66,6 @@ bool instMOV(char *args){
 
     // 2. Verificamos que el carácter inmediatamente anterior y posterior NO sea un espacio
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
-        //printf("Error: No se permiten espacios antes o despues de la coma.\n");
         move(12,10);
         clrtoeol();
         mvprintw(12, 10, "No se permiten espacios antes o despues de la coma");
@@ -96,13 +96,9 @@ bool instMOV(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            //printf("MOV: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg2->valor;
-            //printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(op2)) {
-            //printf("MOV: %s valor original %d\n", reg1->nombre, reg1->valor);
             reg1->valor = atoi(op2); //atoi pasa de texto a int
-            //printf("MOV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             mvprintw(12, 10,"Error: El segundo operando no es valido.");
             return false;
@@ -118,15 +114,14 @@ bool instADD(char *args){
     char op1[32], op2[32], basura[32];
     int leidos = 0;
     Registro *reg1, *reg2;
-    char *coma = strchr(args, ','); //Busca la posicion de la coma
+    char *coma = strchr(args, ','); 
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); //DESDE EL INICIO?
+        mvprintw(12, 10,"Error: Falta la coma divisoria."); 
         return false;
     }
 
-    // 2. Verificamos que el carácter inmediatamente anterior y posterior NO sea un espacio
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
         move(12,10);
         clrtoeol();
@@ -134,15 +129,14 @@ bool instADD(char *args){
         return false;
     }
 
-    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { //SERA QUE DA 1?
+    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) {
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
-    // Ahora es seguro usar 'leidos'
-    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { //HAY MAS BASURA
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Demasiados argumentos.");
@@ -154,13 +148,9 @@ bool instADD(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            //printf("ADD: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg1->valor + reg2->valor;
-            //printf("ADD: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(op2)) {
-            //printf("ADD: %s valor original %d\n", reg1->nombre, reg1->valor);
             reg1->valor = reg1->valor + atoi(op2); 
-            //printf("ADD: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             move(12,10);
             clrtoeol();
@@ -180,15 +170,14 @@ bool instSUB(char *args){
     char op1[32], op2[32], basura[32];
     int leidos = 0;
     Registro *reg1, *reg2;
-    char *coma = strchr(args, ','); //Busca la posicion de la coma
+    char *coma = strchr(args, ','); 
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); //DESDE EL INICIO?
+        mvprintw(12, 10,"Error: Falta la coma divisoria."); 
         return false;
     }
 
-    // 2. Verificamos que el carácter inmediatamente anterior y posterior NO sea un espacio
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
         move(12,10);
         clrtoeol();
@@ -196,15 +185,14 @@ bool instSUB(char *args){
         return false;
     }
 
-    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { //SERA QUE DA 1?
+    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
-    // Ahora es seguro usar 'leidos'
-    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { //HAY MAS BASURA
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Demasiados argumentos.");
@@ -216,13 +204,9 @@ bool instSUB(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            //printf("SUB: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg1->valor - reg2->valor;
-            //printf("SUB: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(op2)) {
-            //printf("SUB: %s valor original %d\n", reg1->nombre, reg1->valor);
             reg1->valor = reg1->valor - atoi(op2); 
-            //printf("SUB: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             move(12,10);
             clrtoeol();
@@ -240,15 +224,14 @@ bool instMUL(char *args){
     char op1[32], op2[32], basura[32];
     int leidos = 0;
     Registro *reg1, *reg2;
-    char *coma = strchr(args, ','); //Busca la posicion de la coma
+    char *coma = strchr(args, ','); 
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); //DESDE EL INICIO?
+        mvprintw(12, 10,"Error: Falta la coma divisoria."); 
         return false;
     }
 
-    // 2. Verificamos que el carácter inmediatamente anterior y posterior NO sea un espacio
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
         move(12,10);
         clrtoeol();
@@ -256,15 +239,14 @@ bool instMUL(char *args){
         return false;
     }
 
-    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { //SERA QUE DA 1?
+    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
-    // Ahora es seguro usar 'leidos'
-    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { //HAY MAS BASURA
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Demasiados argumentos.");
@@ -276,13 +258,9 @@ bool instMUL(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            //printf("MUL: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg1->valor * reg2->valor;
-            //printf("MUL: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(op2)) {
-            //printf("MUL: %s valor original %d\n", reg1->nombre, reg1->valor);
             reg1->valor = reg1->valor * atoi(op2);
-            //printf("MUL: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             move(12,10);
             clrtoeol();
@@ -302,15 +280,14 @@ bool instDIV(char *args){
     char op1[32], op2[32], basura[32];
     int leidos = 0;
     Registro *reg1, *reg2;
-    char *coma = strchr(args, ','); //Busca la posicion de la coma
+    char *coma = strchr(args, ','); 
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); //DESDE EL INICIO?
+        mvprintw(12, 10,"Error: Falta la coma divisoria."); 
         return false;
     }
 
-    // 2. Verificamos que el carácter inmediatamente anterior y posterior NO sea un espacio
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
         move(12,10);
         clrtoeol();
@@ -318,15 +295,14 @@ bool instDIV(char *args){
         return false;
     }
 
-    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { //SERA QUE DA 1?
+    if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
-    // Ahora es seguro usar 'leidos'
-    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { //HAY MAS BASURA
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Demasiados argumentos.");
@@ -339,16 +315,13 @@ bool instDIV(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            //Para comprobar que el divisor no sea cero
             if(reg2->valor == 0){
                 move(12,10);
                 clrtoeol();
                 mvprintw(12, 10,"Error: División por cero.");
                 return false;
             }
-            //printf("DIV: %s valor original %d, %s valor original %d\n", reg1->nombre, reg1->valor, reg2->nombre, reg2->valor);
             reg1->valor = reg1->valor / reg2->valor;
-            //printf("DIV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else if (esInt(op2)) {
             divisor = atoi(op2);
             if (divisor == 0){
@@ -357,9 +330,7 @@ bool instDIV(char *args){
                 mvprintw(12, 10,"Error: División por cero.");
                 return false;
             }
-            //printf("DIV: %s valor original %d\n", reg1->nombre, reg1->valor);
             reg1->valor = reg1->valor / divisor;
-            //printf("DIV: %s ahora vale %d\n", reg1->nombre, reg1->valor);
         } else {
             move(12,10);
             clrtoeol();
@@ -380,15 +351,14 @@ bool instINC(char *args){
     int leidos = 0;
     Registro *reg1;
     
-    if (sscanf(args, "%31s %n", op1, &leidos) !=1) { //SERA QUE DA 1? //solo debe ser un operando por eso !=1
+    if (sscanf(args, "%31s %n", op1, &leidos) !=1) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
-    // Ahora es seguro usar 'leidos'
-    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { //HAY MAS BASURA
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Demasiados argumentos.");
@@ -398,9 +368,7 @@ bool instINC(char *args){
     reg1 = buscaRegistro(op1);
    
     if (reg1 != NULL){
-        //printf("INC: %s valor original %d\n", reg1->nombre, reg1->valor);
         reg1->valor = reg1->valor + 1;
-        //printf("INC: %s ahora vale %d\n", reg1->nombre, reg1->valor);
     } else {
         move(12,10);
         clrtoeol();
@@ -415,15 +383,14 @@ bool instDEC(char *args){
     int leidos = 0;
     Registro *reg1;
     
-    if (sscanf(args, "%31s %n", op1, &leidos) !=1) { //SERA QUE DA 1? //solo debe ser un operando por eso !=1
+    if (sscanf(args, "%31s %n", op1, &leidos) !=1) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
-    // Ahora es seguro usar 'leidos'
-    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { //HAY MAS BASURA
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
         mvprintw(12, 10,"Error: Demasiados argumentos.");
@@ -433,9 +400,7 @@ bool instDEC(char *args){
     reg1 = buscaRegistro(op1);
    
     if (reg1 != NULL){
-        //printf("DEC: %s valor original %d\n", reg1->nombre, reg1->valor);
         reg1->valor = reg1->valor - 1;
-        //printf("DEC: %s ahora vale %d\n", reg1->nombre, reg1->valor);
     } else {
         move(12,10);
         clrtoeol();
@@ -448,7 +413,6 @@ bool instDEC(char *args){
 bool instEND(){
     char *extra;    
     extra = strtok(NULL, " \n\t");
-    //Para comprobar que no haya mas tokens despues END en la linea final.
     if (extra != NULL){
         move(12,10);
         clrtoeol();
