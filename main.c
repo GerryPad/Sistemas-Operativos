@@ -29,24 +29,24 @@ int main(){
     int num_renglon;    
     char *token;
     bool tokEND;
-
+    bool pedir_archivo = true;
+    bool interrumpido;
+    
     initscr();
     do{
         tokEND = false;
-        move(20, 2); clrtoeol(); //Limpiar la línea de petición
-        mvprintw(20, 2, "Nombre de archivo ('salir' para terminar): ");
-        echo();           //Ver el nombre del archivo mientras lo escribimos
+        if(pedir_archivo){
+            move(20, 2); clrtoeol(); // Limpia la línea de petición
+            mvprintw(20, 2, "Nombre de archivo ('salir' para terminar): ");
+            echo();           //Ver el nombre del archivo mientras lo escribimos
 
-        getstr(archivo);  //Versión ncurses de fgets
-        noecho();         //Apagamos el eco para el resto del proceso
+            getstr(archivo);  //Versión ncurses de fgets
+            noecho();         //Apagamos el eco para el resto del proceso
+        }
+        pedir_archivo=true; 
         if (strcmp(archivo, "salir") == 0) break;
 
         if (access(archivo, F_OK) == 0) {
-            move(8, 0); clrtoeol();  //Limpiar si ABORTADO
-            move(10, 0); clrtoeol(); //Limpiar estado
-            move(11, 0); clrtoeol(); //Limpiar error
-            move(12, 0); clrtoeol(); //Limpiar motivo
-            refresh();
             FILE *file = fopen(archivo, "rb");
             if (!file) {
                 perror("fopen");
@@ -54,20 +54,37 @@ int main(){
             }
             
             num_renglon = 1;
-
+            interrumpido=false; //Bandera para cada archivo
             //fgets se detiene al leer un \n o EOF y agrega un \0 al final
             while (fgets(linea, sizeof(linea), file) != NULL) {
-                move(8, 0); clrtoeol();
-                move(12, 0); clrtoeol();
-
                 //Necesitamos el token sin destruir la linea para despues
+
                 char linea_copia[128];
                 strcpy(linea_copia, linea);
                 char *temp_token = strtok(linea_copia, " \n\r");
-
                 //Se usa operador ternario para que mvprintw no muera
                 imprimir_registros(num_renglon, temp_token ? temp_token : "---");
                 refresh();
+                if(kbhit()){
+                    interrumpido=true;
+                    
+                    move(15, 2); clrtoeol();//nueva linea para escribir
+                    mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo: ");
+                    echo();
+                    getstr(archivo); //Ahora se supone que tendra un nuevo nombre
+                    noecho();
+                    
+                    if (strcmp(archivo, "salir") == 0) {
+                        fclose(file);
+                        endwin();
+                        return 0; //es por si escribe salir termine hasta el ncurses
+                    } else {
+                        //nuevo archivo. 
+                        pedir_archivo = false; //amonos ya no es verdadero entonces lo reinicia
+                        break; //Regresamos al fgets para el nuevo archivo
+                    }
+                }
+                
                 char *ptr = linea;
                 while (*ptr == ' ' || *ptr == '\t') ptr++;
                 token = strtok(ptr, " \n");
@@ -122,18 +139,28 @@ int main(){
                     break;
                 }               
             }
-            move(10, 2); clrtoeol();
-            if (tokEND){
-                move(12,0);
-                clrtoeol();
-                mvprintw(10, 2, "Estado: Procesado con éxito.");
+            //AQUI VA LO NUEVO
+            if(!interrumpido){
+                move(10, 2); clrtoeol();
+                if (tokEND){
+                    move(12,0);
+                    clrtoeol();
+                    mvprintw(10, 2, "Estado: Procesado con éxito.");
+                } else {
+                    mvprintw(10, 2, "Estado: Error - Falto END o abortado.");
+                }
+                fclose(file);//Borre el otro de tokend porque cerraba el archivo 2 veces entonces solo debe ser en la variable de no interrumpido
+                refresh();
+                getch();
+                move(15, 2); clrtoeol(); //por si acaso limpiamos la linea y que no se encime
             } else {
-                mvprintw(10, 2, "Estado: Error - Falto END o abortado.");
+                //Si fue interrumpido entonces se cierra
+                fclose(file);
+                move(15, 2); clrtoeol();
             }
-            fclose(file);
-            refresh();
-            getch(); //Pausa para ver el resultado final antes de pedir otro archivo
+
         } else {
+            // Este es el else de if (access(archivo, F_OK) == 0)
             mvprintw(11, 2, "El archivo NO existe.");
             getch();
             move(11, 2); clrtoeol();
