@@ -31,14 +31,19 @@ int procesar_comando(char *strin, char *archivo){
     if(com == NULL)
         return -1;
 
-    if(arg == NULL){
-        return 2;
-    }
-
     for(int i=0;comando[i]!=NULL;i++){
         if(strcmp(comando[i],com)==0){
-            strcpy(archivo,arg);
-            return i;
+            if(strcmp(comando[i],"salir")==0){
+                return 1;
+            }
+            if(arg == NULL){
+            return 2;
+            }
+            if(strcmp(comando[i],"ejecuta")==0){
+                strcpy(archivo,arg);
+                return 3;
+            }
+            return -1;
         }    
     }
     return -1;
@@ -46,7 +51,7 @@ int procesar_comando(char *strin, char *archivo){
 
 
 int main(){
-    char archivo[64], linea[128]; //Buffers para leer nombre de archivo y linea del archivo.
+    char archivo[64], linea[128], comando[256]; //Buffers para leer nombre de archivo y linea del archivo.
     int num_renglon;    
     char *token;
     bool tokEND;
@@ -54,20 +59,43 @@ int main(){
     bool interrumpido;
 
     int indice; //que comando es el que esta ejecutando
-    //char *archtok; //para guardar en caso de que el comando sea correcto
+    bool comandval; //para guardar en caso de que el comando sea correcto
     initscr();
     do{
         tokEND = false;
         if(pedir_archivo){
-            move(20, 2); clrtoeol(); // Limpia la línea de petición
-            mvprintw(20, 2, "Nombre de archivo ('salir' para terminar): ");
-            echo();           //Ver el nombre del archivo mientras lo escribimos
+            comandval=false;    
+            while(!comandval){
+                move(20, 2); clrtoeol(); // Limpia la línea de petición              
+                mvprintw(20, 2,"> ");
+                echo();           //Ver el nombre del archivo mientras lo escribimos
+                getstr(comando);  //Versión ncurses de fgets
+                noecho();         //Apagamos el eco para el resto del proceso
 
-            getstr(archivo);  //Versión ncurses de fgets
-            noecho();         //Apagamos el eco para el resto del proceso
+                indice=procesar_comando(comando,archivo);
+                    if(indice==2){
+                        move(16,2);
+                        clrtoeol();
+                        mvprintw(16,2,"Falta nombre de archivo");
+                        clrtoeol();
+                        
+                        continue;
+                    }
+                    else if(indice==3){
+                        comandval=true;
+                    }
+                    else if(indice==1){
+                        endwin();
+                        return 0;
+                    }else if(access(archivo, F_OK) != 0){
+                        move(16,2);
+                        clrtoeol();
+                        mvprintw(16,2,"El archivo no existe");
+                        continue;
+                    }
+                }
         }
         pedir_archivo=true; 
-        if (strcmp(archivo, "salir") == 0) break;
 
         if (access(archivo, F_OK) == 0) {
             FILE *file = fopen(archivo, "rb");
@@ -94,23 +122,21 @@ int main(){
                     move(15, 2); clrtoeol();//nueva linea para escribir
                     mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo: ");
                     echo();
-                    mvscanw(15,42,"%63[^\n]",archivo); //Ahora se supone que tendra un nuevo nombre
+                    mvscanw(15,42,"%255[^\n]",comando); //Ahora se supone que tendra un nuevo nombre
                     noecho();
-                    indice =procesar_comando(archivo, archivo);
+
+                    indice=procesar_comando(comando, archivo);
 
 
                     if(indice==-1){
                         mvprintw(16,2,"Comando invalido");
-                    }else if(indice==2){
-                        mvprintw(16,2,"Falta nombre de archivo");
                     }
-
-                    if(strcmp(comando[indice],"salir")==0){
+                    if(indice == 1){
                         fclose(file);
                         endwin();
                         return 0; //es por si escribe salir termine hasta el ncurses
                     }
-                    else if(strcmp(comando[indice],"ejecuta")==0) {
+                    else if(indice == 3) {
                         //nuevo archivo. 
                         pedir_archivo = false; //amonos ya no es verdadero entonces lo reinicia
                         break; //Regresamos al fgets para el nuevo archivo
