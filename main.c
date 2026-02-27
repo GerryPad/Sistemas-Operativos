@@ -9,6 +9,8 @@
 
 int kbhit(void);
 
+char *comando[]={"ejecuta", "salir", NULL};
+
 void imprimir_registros(int renglon, char *instruccion){
     mvprintw(3,2, "PC      IR    EAX    EBX    ECX    EDX");
     move(5,2);
@@ -23,6 +25,25 @@ void imprimir_registros(int renglon, char *instruccion){
     );
     refresh();
 }
+int procesar_comando(char *strin, char *archivo){
+    char *com = strtok(strin," \n\r");
+    char *arg = strtok(NULL,"\n");
+    if(com == NULL)
+        return -1;
+
+    if(arg == NULL){
+        return 2;
+    }
+
+    for(int i=0;comando[i]!=NULL;i++){
+        if(strcmp(comando[i],com)==0){
+            strcpy(archivo,arg);
+            return i;
+        }    
+    }
+    return -1;
+}
+
 
 int main(){
     char archivo[64], linea[128]; //Buffers para leer nombre de archivo y linea del archivo.
@@ -31,19 +52,21 @@ int main(){
     bool tokEND;
     bool pedir_archivo = true;
     bool interrumpido;
-    
+
+    int indice; //que comando es el que esta ejecutando
+    //char *archtok; //para guardar en caso de que el comando sea correcto
     initscr();
     do{
         tokEND = false;
         if(pedir_archivo){
-        move(20, 2); clrtoeol(); // Limpia la línea de petición
-        mvprintw(20, 2, "Nombre de archivo ('salir' para terminar): ");
-        echo();           //Ver el nombre del archivo mientras lo escribimos
+            move(20, 2); clrtoeol(); // Limpia la línea de petición
+            mvprintw(20, 2, "Nombre de archivo ('salir' para terminar): ");
+            echo();           //Ver el nombre del archivo mientras lo escribimos
 
-        getstr(archivo);  //Versión ncurses de fgets
-        noecho();         //Apagamos el eco para el resto del proceso
+            getstr(archivo);  //Versión ncurses de fgets
+            noecho();         //Apagamos el eco para el resto del proceso
         }
-        pedir_archivo=true;
+        pedir_archivo=true; 
         if (strcmp(archivo, "salir") == 0) break;
 
         if (access(archivo, F_OK) == 0) {
@@ -62,7 +85,6 @@ int main(){
                 char linea_copia[128];
                 strcpy(linea_copia, linea);
                 char *temp_token = strtok(linea_copia, " \n\r");
-                //mvscanw(10,5,"%s",archivo);
                 //Se usa operador ternario para que mvprintw no muera
                 imprimir_registros(num_renglon, temp_token ? temp_token : "---");
                 refresh();
@@ -72,14 +94,23 @@ int main(){
                     move(15, 2); clrtoeol();//nueva linea para escribir
                     mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo: ");
                     echo();
-                    getstr(archivo); //Ahora se supone que tendra un nuevo nombre
+                    mvscanw(15,42,"%63[^\n]",archivo); //Ahora se supone que tendra un nuevo nombre
                     noecho();
-                    
-                    if (strcmp(archivo, "salir") == 0) {
+                    indice =procesar_comando(archivo, archivo);
+
+
+                    if(indice==-1){
+                        mvprintw(16,2,"Comando invalido");
+                    }else if(indice==2){
+                        mvprintw(16,2,"Falta nombre de archivo");
+                    }
+
+                    if(strcmp(comando[indice],"salir")==0){
                         fclose(file);
                         endwin();
                         return 0; //es por si escribe salir termine hasta el ncurses
-                    } else {
+                    }
+                    else if(strcmp(comando[indice],"ejecuta")==0) {
                         //nuevo archivo. 
                         pedir_archivo = false; //amonos ya no es verdadero entonces lo reinicia
                         break; //Regresamos al fgets para el nuevo archivo
@@ -141,18 +172,20 @@ int main(){
                 }               
             }
             //AQUI VA LO NUEVO
-                if(!interrumpido){
+            if(!interrumpido){
                 move(10, 2); clrtoeol();
                 if (tokEND){
                     move(12,0);
                     clrtoeol();
                     mvprintw(10, 2, "Estado: Procesado con éxito.");
+                    //Cambiar a presiona cualquier tecla para continuar o eliminar la espera de un teclazo
                 } else {
                     mvprintw(10, 2, "Estado: Error - Falto END o abortado.");
                 }
-                fclose(file);//BOrre el otro de tokend porque cerraba el archivo 2 veces entonces solo debe ser en la variable de no interrumpido
+                fclose(file);//Borre el otro de tokend porque cerraba el archivo 2 veces entonces solo debe ser en la variable de no interrumpido
                 refresh();
-                getch();
+                //getch();
+                //getstr(archivo);
                 move(15, 2); clrtoeol(); //por si acaso limpiamos la linea y que no se encime
             } else {
                 //Si fue interrumpido entonces se cierra
