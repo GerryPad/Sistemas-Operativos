@@ -26,27 +26,74 @@ void imprimir_registros(int renglon, char *instruccion){
     refresh();
 }
 
+int interpretar_comando(char *comando, char *archivo) {
+    char *arg, *cmd = strtok(comando, " \n");
+
+    if (cmd == NULL) return 0; //Para un enter sin comando
+
+    if (strcmp(cmd, "salir") == 0) {
+        return 1; 
+    }
+
+    if (strcmp(cmd, "ejecuta") == 0) {
+        arg = strtok(NULL, " \n\r");
+        if (arg != NULL) {
+            strcpy(archivo, arg); 
+            return 2;
+        } else {
+            return -1; //Cuando no hay nombre de archivo
+        }
+    }
+
+    return 0; //Por default suponemos que el comando es invalido
+}
+
 int main(){
     char archivo[64], linea[128], comando[256]; //Buffers para leer nombre de archivo y linea del archivo.
-    int num_renglon;    
-    char *token, *tokcom;
+    int num_renglon, com; //com es para hacer un "switch"
+    char *token;
     bool tokEND;
-    bool pedir_archivo = true;
+    bool pedir_archivo = true, com_valido; //com_valido es para comprobar la existencia del comando
     bool interrumpido;
     
     initscr();
     do{
         tokEND = false;
         if(pedir_archivo){
-            move(20, 2); clrtoeol(); // Limpia la línea de petición
-            mvprintw(20, 2, "Nombre de archivo ('salir' para terminar): ");
-            echo();           //Ver el nombre del archivo mientras lo escribimos
+            com_valido = false; //Suponemos de entrada que el comando no es valido
 
-            getstr(archivo);  //Versión ncurses de fgets
-            noecho();         //Apagamos el eco para el resto del proceso
+            while (!com_valido){ //Solicitamos comando hasta que haya uno valido
+                move(20,2);
+                mvprintw(20,2, ">");
+                echo();
+                getstr(comando);
+                noecho();
+                move(20, 2); 
+                clrtoeol(); 
+                refresh();
+
+                com = interpretar_comando(comando, archivo);
+
+                if (com == 1){
+                    endwin();
+                    return 0;
+                } else if (com == 2){
+                   com_valido = true;
+                } else {
+                    move(16,2);
+                    clrtoeol();
+                    if (com == -1) {
+                        mvprintw(16,2, "Error: Falta nombre de archivo.");
+                    } else {
+                        mvprintw(16,2,"Error: Comando invalido");
+                    }
+                    refresh();
+                    usleep(1000000);
+                }
+            }
         }
+
         pedir_archivo=true; 
-        if (strcmp(archivo, "salir") == 0) break;
 
         if (access(archivo, F_OK) == 0) {
             FILE *file = fopen(archivo, "rb");
@@ -59,8 +106,6 @@ int main(){
             interrumpido=false; //Bandera para cada archivo
             //fgets se detiene al leer un \n o EOF y agrega un \0 al final
             while (fgets(linea, sizeof(linea), file) != NULL) {
-                //Necesitamos el token sin destruir la linea para despues
-
                 char linea_copia[128];
                 strcpy(linea_copia, linea);
                 char *temp_token = strtok(linea_copia, " \n\r");
@@ -69,37 +114,37 @@ int main(){
                 refresh();
                 if(kbhit()){
                     interrumpido=true;
-                    
+                    flushinp();
                     move(15, 2); clrtoeol();//nueva linea para escribir
                     mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo: ");
                     echo();
-                    mvscanw(15,42,"%s",comando); //Ahora se supone que tendra un nuevo nombre
+                    //getstr(comando);
+                    mvscanw(15,42,"%255[^\n]",comando); //Si usaba esto el espacio entre ejecuta y el nombre causa violacion de segmento
                     noecho();
-                    tokcom = strtok(comando," ");
 
-                    for (int i = 0; comandos[i]!= NULL; i++){
-                        if (strcmp(comandos[i], tokcom ) == 0){
-                            //Funcion especifica de cada uno
-                            if (strcmp(tokcom,"salir") == 0){
-                                fclose(file);
-                                endwin();
-                                return 0;
-                            } else if(strcmp(tokcom,"ejecuta") == 0){
-                                
-                            }
+                    com = interpretar_comando(comando, archivo);
 
-                        }
-                    }
-                    
-                    if (strcmp(archivo, "salir") == 0) {
+                    if (com == 1){
                         fclose(file);
                         endwin();
-                        return 0; //es por si escribe salir termine hasta el ncurses
+                        return 0;
+                    } else if (com == 2){
+                        pedir_archivo = false;
+                        break;
                     } else {
-                        //nuevo archivo. 
-                        pedir_archivo = false; //amonos ya no es verdadero entonces lo reinicia
-                        break; //Regresamos al fgets para el nuevo archivo
+                        move(16,2);
+                        clrtoeol();
+                        if (com == -1) {
+                            mvprintw(16,2, "Error: Falta nombre de archivo.");
+                        } else {
+                            mvprintw(16,2,"Error: Comando invalido");
+                        }
+                        refresh();
+                        usleep(1000000);
+                        fclose(file);
+                        break;
                     }
+
                 }
                 
                 char *ptr = linea;
