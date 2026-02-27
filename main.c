@@ -130,14 +130,25 @@ int main(){
                         return 0;
                     } else if (com == 2){
                         pedir_archivo = false;
-                        break;
+                        if (access(archivo, F_OK) == 0){
+                            break;
+                        } else {
+                            move(16,2);
+                            clrtoeol();
+                            mvprintw(16,2,"Archivo no existente");
+                            pedir_archivo = true;
+                            //continue;
+                        }      
+                       
                     } else {
                         move(16,2);
                         clrtoeol();
                         if (com == -1) {
                             mvprintw(16,2, "Error: Falta nombre de archivo.");
+                            continue;
                         } else {
                             mvprintw(16,2,"Error: Comando invalido");
+                            continue;
                         }
                         refresh();
                         usleep(1000000);
