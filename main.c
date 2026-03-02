@@ -6,16 +6,20 @@
 #include <curses.h>
 #include "instrucciones.h"
 #include <sys/select.h>
+//Que para las lineas interrumpidas se muestre toda la linea
+//Que en IR también se muestre toda la lineas
 
-int kbhit(void);
+
+int kbhit(void);        
 
 char *comandos[]={"ejecuta", "salir", NULL};
 
 void imprimir_registros(int renglon, char *instruccion){
-    mvprintw(3,2, "PC      IR    EAX    EBX    ECX    EDX");
+    mvprintw(3, 2, "%-6s %-22s %-6s %-6s %-6s %-6s", 
+        "PC", "IR", "EAX", "EBX", "ECX", "EDX");
     move(5,2);
     clrtoeol();
-    mvprintw(5, 2, "%-4d  %-6s  %-6d  %-6d  %-6d  %-6d", 
+    mvprintw(5, 2, "%-6d  %-20s  %-6d  %-6d  %-6d  %-6d", 
         renglon, 
         instruccion, 
         registros[0].valor, 
@@ -23,6 +27,15 @@ void imprimir_registros(int renglon, char *instruccion){
         registros[2].valor, 
         registros[3].valor  
     );
+    refresh();
+}
+
+void limpia_lineas() {
+    move(16,2); clrtoeol();
+    move(8,2); clrtoeol();
+    move(12,2); clrtoeol();
+    move(10,2); clrtoeol();
+    move(11,2); clrtoeol();
     refresh();
 }
 
@@ -53,16 +66,26 @@ int main(){
     int num_renglon, com; //com es para hacer un "switch"
     char *token;
     bool tokEND;
-    bool pedir_archivo = true, com_valido; //com_valido es para comprobar la existencia del comando
+    bool pedir_archivo = true, com_valido, limpieza = false; //com_valido es para comprobar la existencia del comando
     bool interrumpido;
     
     initscr();
     do{
         tokEND = false;
+        //Limpieza de lineas
+        /*move(16,2); clrtoeol();
+        move(15,2); clrtoeol();
+        move(12,2); clrtoeol();
+        move(10,2); clrtoeol();
+        move(8,2); clrtoeol();
+        move(12,10); clrtoeol();*/
+
+
         if(pedir_archivo){
             com_valido = false; //Suponemos de entrada que el comando no es valido
 
             while (!com_valido){ //Solicitamos comando hasta que haya uno valido
+               
                 move(20,2);
                 mvprintw(20,2, ">");
                 echo();
@@ -80,6 +103,7 @@ int main(){
                 } else if (com == 2){
                    com_valido = true;
                 } else {
+                    //comentario();
                     move(16,2);
                     clrtoeol();
                     if (com == -1) {
@@ -91,6 +115,11 @@ int main(){
                     usleep(1000000);
                 }
             }
+        }
+
+        if(limpieza){
+            limpia_lineas();
+            limpieza = false;
         }
 
         pedir_archivo=true; 
@@ -106,17 +135,28 @@ int main(){
             interrumpido=false; //Bandera para cada archivo
             //fgets se detiene al leer un \n o EOF y agrega un \0 al final
             while (fgets(linea, sizeof(linea), file) != NULL) {
-                char linea_copia[128];
+               /* move(16,2); clrtoeol();
+                move(15,2); clrtoeol();
+                move(12,2); clrtoeol();
+                move(10,2); clrtoeol();
+                move(8,2); clrtoeol();
+                move(12,10); clrtoeol();*/
+
+                /*char linea_copia[128];
                 strcpy(linea_copia, linea);
-                char *temp_token = strtok(linea_copia, " \n\r");
-                //Se usa operador ternario para que mvprintw no muera
-                imprimir_registros(num_renglon, temp_token ? temp_token : "---");
+                char *temp_token = strtok(linea_copia, " \n\r");*/
+                linea[strcspn(linea, "\n\r")] = '\0'; //Le quitamos el salto de linea al final
+                imprimir_registros(num_renglon, linea);
                 refresh();
                 if(kbhit()){
+                    if(limpieza){
+                        limpia_lineas();
+                    }
                     interrumpido=true;
                     flushinp();
+
                     move(15, 2); clrtoeol();//nueva linea para escribir
-                    mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo: ");
+                    mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo:");
                     echo();
                     //getstr(comando);
                     mvscanw(15,42,"%255[^\n]",comando); //Si usaba esto el espacio entre ejecuta y el nombre causa violacion de segmento
@@ -133,21 +173,26 @@ int main(){
                         if (access(archivo, F_OK) == 0){
                             break;
                         } else {
+                            //comentario();
                             move(16,2);
                             clrtoeol();
                             mvprintw(16,2,"Archivo no existente");
                             pedir_archivo = true;
+                            limpieza = true;
                             //continue;
                         }      
                        
                     } else {
+                        // ();
                         move(16,2);
                         clrtoeol();
                         if (com == -1) {
                             mvprintw(16,2, "Error: Falta nombre de archivo.");
+                            limpieza = true;
                             continue;
                         } else {
                             mvprintw(16,2,"Error: Comando invalido");
+                            limpieza = true;
                             continue;
                         }
                         refresh();
@@ -166,10 +211,12 @@ int main(){
                 despues de dicha instrucción.*/
                 if (tokEND){
                     if (token != NULL) {
+                        //comentario();
                         move(12,10);
                         clrtoeol();
                         mvprintw(12, 10, "Error: Contenido tras END en Renglon %d", num_renglon);
                         tokEND = false; 
+                        limpieza = true;
                         break;
                     }
                     num_renglon++;
@@ -197,8 +244,9 @@ int main(){
                         }
                     } else {
                         if (!ejecOperacion(token, argumentos)) {
-                            mvprintw(8, 2, "ABORTADO: Error sintaxis en renglon %d", num_renglon);
+                            mvprintw(8, 2, "ABORTADO: Error en renglon %d", num_renglon);
                             mvprintw(12,2, "Motivo:");
+                            limpieza = true;
                             break; 
                         }
                     }
@@ -206,9 +254,11 @@ int main(){
                     usleep(1000000);
                     num_renglon++;
                 } else {
-                    move(12,10);
+                    //comentario();
+                    move(12,2);
                     clrtoeol();
-                    mvprintw(12, 10, "Token no valido: [%s]", token);
+                    mvprintw(12, 2, "Token no valido: [%s]", token);
+                    limpieza = true;
                     break;
                 }               
             }
@@ -216,12 +266,13 @@ int main(){
             if(!interrumpido){
                 move(10, 2); clrtoeol();
                 if (tokEND){
-                    move(12,0);
+                    move(10,2);
                     clrtoeol();
                     mvprintw(10, 2, "Estado: Procesado con éxito.");
                     //Cambiar a presiona cualquier tecla para continuar o eliminar la espera de un teclazo
                 } else {
                     mvprintw(10, 2, "Estado: Error - Falto END o abortado.");
+                    limpieza = true;
                 }
                 fclose(file);//Borre el otro de tokend porque cerraba el archivo 2 veces entonces solo debe ser en la variable de no interrumpido
                 refresh();
@@ -237,8 +288,8 @@ int main(){
         } else {
             // Este es el else de if (access(archivo, F_OK) == 0)
             mvprintw(11, 2, "El archivo NO existe.");
-            getch();
-            move(11, 2); clrtoeol();
+            limpieza = true;
+            
         }
     } while(1);
     endwin();

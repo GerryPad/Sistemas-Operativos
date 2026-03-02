@@ -60,7 +60,7 @@ bool instMOV(char *args){
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); //DESDE EL INICIO?
+        mvprintw(12, 10,"Falta la coma divisoria."); //DESDE EL INICIO?
         return false;
     }
 
@@ -79,7 +79,7 @@ bool instMOV(char *args){
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { //SERA QUE DA 1?
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(12, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
@@ -87,7 +87,7 @@ bool instMOV(char *args){
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { //HAY MAS BASURA
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Demasiados argumentos.");
+        mvprintw(12, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -100,11 +100,11 @@ bool instMOV(char *args){
         } else if (esInt(op2)) {
             reg1->valor = atoi(op2); //atoi pasa de texto a int
         } else {
-            mvprintw(12, 10,"Error: El segundo operando no es valido.");
+            mvprintw(12, 10,"El segundo operando no es valido.");
             return false;
         }
     } else {
-        mvprintw(12, 10,"Error: el operando uno de MOV no es un registro");
+        mvprintw(12, 10,"El operando uno de MOV no es un registro");
         return false;
     }
     return true;
@@ -118,7 +118,7 @@ bool instADD(char *args){
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); 
+        mvprintw(12, 10,"Falta la coma divisoria."); 
         return false;
     }
 
@@ -132,14 +132,14 @@ bool instADD(char *args){
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(12, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Demasiados argumentos.");
+        mvprintw(12, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -154,13 +154,13 @@ bool instADD(char *args){
         } else {
             move(12,10);
             clrtoeol();
-            mvprintw(12, 10,"Error: El segundo operando no es valido.");
+            mvprintw(12, 10,"El segundo operando no es valido.");
             return false;
         }
     } else {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: el operando uno de ADD no es un registro");
+        mvprintw(12, 10,"El operando uno de ADD no es un registro");
         return false;
     }
     return true;
@@ -174,7 +174,7 @@ bool instSUB(char *args){
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); 
+        mvprintw(12, 10,"Falta la coma divisoria."); 
         return false;
     }
 
@@ -188,14 +188,14 @@ bool instSUB(char *args){
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(12, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Demasiados argumentos.");
+        mvprintw(12, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -210,11 +210,11 @@ bool instSUB(char *args){
         } else {
             move(12,10);
             clrtoeol();
-            mvprintw(12, 10,"Error: El segundo operando no es valido.");
+            mvprintw(12, 10,"El segundo operando no es valido.");
             return false;
         }
     } else {
-        printf("Error: el operando uno de SUB no es un registro");
+        printf("El operando uno de SUB no es un registro");
         return false;
     }
     return true;
@@ -228,7 +228,7 @@ bool instMUL(char *args){
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); 
+        mvprintw(12, 10,"Falta la coma divisoria."); 
         return false;
     }
 
@@ -242,14 +242,14 @@ bool instMUL(char *args){
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(12, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Demasiados argumentos.");
+        mvprintw(12, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -264,13 +264,13 @@ bool instMUL(char *args){
         } else {
             move(12,10);
             clrtoeol();
-            mvprintw(12, 10,"Error: El segundo operando no es valido.");
+            mvprintw(12, 10,"El segundo operando no es valido.");
             return false;
         }
     } else {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: el operando uno de MUL no es un registro");
+        mvprintw(12, 10,"El operando uno de MUL no es un registro");
         return false;
     }
     return true;
@@ -284,7 +284,7 @@ bool instDIV(char *args){
     if (coma == NULL) {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Falta la coma divisoria."); 
+        mvprintw(12, 10,"Falta la coma divisoria."); 
         return false;
     }
 
@@ -298,14 +298,14 @@ bool instDIV(char *args){
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(12, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Demasiados argumentos.");
+        mvprintw(12, 10,"Demasiados argumentos.");
         return false;
     }
     int divisor;
@@ -318,7 +318,7 @@ bool instDIV(char *args){
             if(reg2->valor == 0){
                 move(12,10);
                 clrtoeol();
-                mvprintw(12, 10,"Error: División por cero.");
+                mvprintw(12, 10,"División por cero.");
                 return false;
             }
             reg1->valor = reg1->valor / reg2->valor;
@@ -327,20 +327,20 @@ bool instDIV(char *args){
             if (divisor == 0){
                 move(12,10);
                 clrtoeol();
-                mvprintw(12, 10,"Error: División por cero.");
+                mvprintw(12, 10,"División por cero.");
                 return false;
             }
             reg1->valor = reg1->valor / divisor;
         } else {
             move(12,10);
             clrtoeol();
-            mvprintw(12, 10,"Error: El segundo operando no es valido.");
+            mvprintw(12, 10,"El segundo operando no es valido.");
             return false;
         }
     } else {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: el operando uno de DIV no es un registro");
+        mvprintw(12, 10,"El operando uno de DIV no es un registro");
         return false;
     }
     return true;
@@ -354,14 +354,14 @@ bool instINC(char *args){
     if (sscanf(args, "%31s %n", op1, &leidos) !=1) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(12, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Demasiados argumentos.");
+        mvprintw(12, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -372,7 +372,7 @@ bool instINC(char *args){
     } else {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: el operando de INC no es un registro");
+        mvprintw(12, 10,"El operando de INC no es un registro");
         return false;
     }
     return true;
@@ -386,14 +386,14 @@ bool instDEC(char *args){
     if (sscanf(args, "%31s %n", op1, &leidos) !=1) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(12, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Demasiados argumentos.");
+        mvprintw(12, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -404,7 +404,7 @@ bool instDEC(char *args){
     } else {
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: el operando uno de INC no es un registro.");
+        mvprintw(12, 10,"El operando uno de INC no es un registro.");
         return false;
     }
     return true;
@@ -416,7 +416,7 @@ bool instEND(){
     if (extra != NULL){
         move(12,10);
         clrtoeol();
-        mvprintw(12, 10,"Error: Demasiados argumentos o instrucciones despues de END.");
+        mvprintw(12, 10,"Demasiados argumentos o instrucciones despues de END.");
         return false;
     }
     return true;
