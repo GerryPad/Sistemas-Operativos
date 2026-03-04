@@ -5,61 +5,48 @@
 #include <stdlib.h>
 #include <curses.h>
 #include "instrucciones.h"
-#include <sys/select.h>
-//Que para las lineas interrumpidas se muestre toda la linea
-//Que en IR también se muestre toda la lineas
+#include "ncurses.h"
 
+#include <sys/select.h>
 
 int kbhit(void);        
 
-char *comandos[]={"ejecuta", "salir", NULL};
+/*int interpretar_comando(char *comando, char *archivo) {
+    char *arg, *basura, *cmd = strtok(comando, " \n");
 
-void imprimir_registros(int renglon, char *instruccion){
-    mvprintw(3, 2, "%-6s %-22s %-6s %-6s %-6s %-6s", 
-        "PC", "IR", "EAX", "EBX", "ECX", "EDX");
-    move(5,2);
-    clrtoeol();
-    mvprintw(5, 2, "%-6d  %-20s  %-6d  %-6d  %-6d  %-6d", 
-        renglon, 
-        instruccion, 
-        registros[0].valor, 
-        registros[1].valor, 
-        registros[2].valor, 
-        registros[3].valor  
-    );
-    refresh();
-}
-
-void limpia_lineas() {
-    move(16,2); clrtoeol();
-    move(8,2); clrtoeol();
-    move(12,2); clrtoeol();
-    move(10,2); clrtoeol();
-    move(11,2); clrtoeol();
-    refresh();
-}
-
-int interpretar_comando(char *comando, char *archivo) {
-    char *arg, *cmd = strtok(comando, " \n");
+    arg = strtok(NULL, " \n\r");
 
     if (cmd == NULL) return 0; //Para un enter sin comando
 
     if (strcmp(cmd, "salir") == 0) {
+            if(arg != NULL){
+                move(17,2);
+                clrtoeol();
+                mvprintw(17, 2,"Demasiados argumentos.");
+                return 0;
+            }
         return 1; 
     }
 
     if (strcmp(cmd, "ejecuta") == 0) {
-        arg = strtok(NULL, " \n\r");
-        if (arg != NULL) {
+        basura = strtok(NULL, " \n");
+        if (arg == NULL){
+            return -1;
+        }
+
+        if(basura != NULL){
+            move(17,2);
+            clrtoeol();
+            mvprintw(17, 2,"Demasiados argumentos.");
+            return 0;
+        } else {
             strcpy(archivo, arg); 
             return 2;
-        } else {
-            return -1; //Cuando no hay nombre de archivo
         }
     }
 
     return 0; //Por default suponemos que el comando es invalido
-}
+}*/
 
 int main(){
     char archivo[64], linea[128], comando[256]; //Buffers para leer nombre de archivo y linea del archivo.
@@ -72,14 +59,6 @@ int main(){
     initscr();
     do{
         tokEND = false;
-        //Limpieza de lineas
-        /*move(16,2); clrtoeol();
-        move(15,2); clrtoeol();
-        move(12,2); clrtoeol();
-        move(10,2); clrtoeol();
-        move(8,2); clrtoeol();
-        move(12,10); clrtoeol();*/
-
 
         if(pedir_archivo){
             com_valido = false; //Suponemos de entrada que el comando no es valido
@@ -96,6 +75,7 @@ int main(){
                 refresh();
 
                 com = interpretar_comando(comando, archivo);
+                limpieza = true;
 
                 if (com == 1){
                     endwin();
@@ -103,7 +83,6 @@ int main(){
                 } else if (com == 2){
                    com_valido = true;
                 } else {
-                    //comentario();
                     move(16,2);
                     clrtoeol();
                     if (com == -1) {
@@ -135,16 +114,7 @@ int main(){
             interrumpido=false; //Bandera para cada archivo
             //fgets se detiene al leer un \n o EOF y agrega un \0 al final
             while (fgets(linea, sizeof(linea), file) != NULL) {
-               /* move(16,2); clrtoeol();
-                move(15,2); clrtoeol();
-                move(12,2); clrtoeol();
-                move(10,2); clrtoeol();
-                move(8,2); clrtoeol();
-                move(12,10); clrtoeol();*/
 
-                /*char linea_copia[128];
-                strcpy(linea_copia, linea);
-                char *temp_token = strtok(linea_copia, " \n\r");*/
                 linea[strcspn(linea, "\n\r")] = '\0'; //Le quitamos el salto de linea al final
                 imprimir_registros(num_renglon, linea);
                 refresh();
@@ -153,9 +123,11 @@ int main(){
                         limpia_lineas();
                     }
                     interrumpido=true;
-                    flushinp();
+                    //flushinp();
+                    getch();
 
-                    move(15, 2); clrtoeol();//nueva linea para escribir
+                    move(15, 0); clrtoeol();//nueva linea para escribir
+                    refresh();
                     mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo:");
                     echo();
                     //getstr(comando);
@@ -170,6 +142,7 @@ int main(){
                         return 0;
                     } else if (com == 2){
                         pedir_archivo = false;
+                        //limpieza = true;
                         if (access(archivo, F_OK) == 0){
                             break;
                         } else {
@@ -179,6 +152,9 @@ int main(){
                             mvprintw(16,2,"Archivo no existente");
                             pedir_archivo = true;
                             limpieza = true;
+                            move(15,40);
+                            clrtoeol();
+                            refresh();
                             //continue;
                         }      
                        

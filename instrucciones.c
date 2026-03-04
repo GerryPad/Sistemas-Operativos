@@ -442,3 +442,40 @@ bool ejecOperacion(char *instruccion, char *args){
         return false;
     }
 }
+
+int interpretar_comando(char *comando, char *archivo) {
+    char *arg, *basura, *cmd = strtok(comando, " \n");
+
+    arg = strtok(NULL, " \n\r");
+
+    if (cmd == NULL) return 0; //Para un enter sin comando
+
+    if (strcmp(cmd, "salir") == 0) {
+            if(arg != NULL){
+                move(17,2);
+                clrtoeol();
+                mvprintw(17, 2,"Demasiados argumentos.");
+                return 0;
+            }
+        return 1; 
+    }
+
+    if (strcmp(cmd, "ejecuta") == 0) {
+        basura = strtok(NULL, " \n");
+        if (arg == NULL){
+            return -1;
+        }
+
+        if(basura != NULL){
+            move(17,2);
+            clrtoeol();
+            mvprintw(17, 2,"Demasiados argumentos.");
+            return 0;
+        } else {
+            strcpy(archivo, arg); 
+            return 2;
+        }
+    }
+
+    return 0; //Por default suponemos que el comando es invalido
+}

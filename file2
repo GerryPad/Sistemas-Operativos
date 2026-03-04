@@ -1,0 +1,3 @@
+INC EDX
+DEC ECX  
+END 
