@@ -14,7 +14,7 @@ CFLAGS = -Wall -g
 LDFLAGS = -lncurses
 
 # Archivos fuente (.c) y objetos (.o)
-SRCS = main.c instrucciones.c
+SRCS = main.c instrucciones.c ncurses.c
 OBJS = $(SRCS:.c=.o)
 
 # Regla principal: Compilar el proyecto completo
@@ -26,7 +26,7 @@ $(TARGET): $(OBJS)
 
 # Cómo compilar cada archivo .c a un .o
 # El main.c y instrucciones.c dependen de instrucciones.h
-%.o: %.c instrucciones.h
+%.o: %.c instrucciones.h ncurses.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Regla para limpiar los archivos basura generados
