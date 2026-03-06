@@ -6,83 +6,42 @@
 #include <curses.h>
 #include "instrucciones.h"
 #include "ncurses.h"
-
 #include <sys/select.h>
 
 int kbhit(void);        
 
-/*int interpretar_comando(char *comando, char *archivo) {
-    char *arg, *basura, *cmd = strtok(comando, " \n");
-
-    arg = strtok(NULL, " \n\r");
-
-    if (cmd == NULL) return 0; //Para un enter sin comando
-
-    if (strcmp(cmd, "salir") == 0) {
-            if(arg != NULL){
-                move(17,2);
-                clrtoeol();
-                mvprintw(17, 2,"Demasiados argumentos.");
-                return 0;
-            }
-        return 1; 
-    }
-
-    if (strcmp(cmd, "ejecuta") == 0) {
-        basura = strtok(NULL, " \n");
-        if (arg == NULL){
-            return -1;
-        }
-
-        if(basura != NULL){
-            move(17,2);
-            clrtoeol();
-            mvprintw(17, 2,"Demasiados argumentos.");
-            return 0;
-        } else {
-            strcpy(archivo, arg); 
-            return 2;
-        }
-    }
-
-    return 0; //Por default suponemos que el comando es invalido
-}*/
-
 int main(){
-    char archivo[64], linea[128], comando[256]; //Buffers para leer nombre de archivo y linea del archivo.
+    char archivo[64], linea[128], comando[256]; //Buffers para leer nombre y linea del archivo.
     int num_renglon, com; //com es para hacer un "switch"
-    char *token;
-    bool tokEND;
-    bool pedir_archivo = true, com_valido, limpieza = false; //com_valido es para comprobar la existencia del comando
-    bool interrumpido;
+    char *token, *ptr, *argumentos;
+    bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
+    bool pedir_archivo = true, limpieza = false; 
     
     initscr();
     do{
         tokEND = false;
-
         if(pedir_archivo){
             com_valido = false; //Suponemos de entrada que el comando no es valido
 
             while (!com_valido){ //Solicitamos comando hasta que haya uno valido
-               
                 move(20,2);
                 mvprintw(20,2, ">");
                 echo();
-                getstr(comando);
+                getstr(comando); //Leemos la cadena de ejecuta + archivo
                 noecho();
                 move(20, 2); 
                 clrtoeol(); 
                 refresh();
 
-                com = interpretar_comando(comando, archivo);
+                com = interpretar_comando(comando, archivo); //Verificamos si existe el comando y si es ejecuta que haya un archivo
                 limpieza = true;
 
-                if (com == 1){
+                if (com == 1){ //era salir
                     endwin();
                     return 0;
-                } else if (com == 2){
+                } else if (com == 2){ //comando correcto se copio el archivo
                    com_valido = true;
-                } else {
+                } else { //por ejemplo el -1
                     move(16,2);
                     clrtoeol();
                     if (com == -1) {
@@ -110,43 +69,35 @@ int main(){
                 continue;
             }
             
-            num_renglon = 1;
+            num_renglon = 0;
             interrumpido=false; //Bandera para cada archivo
-            //fgets se detiene al leer un \n o EOF y agrega un \0 al final
             while (fgets(linea, sizeof(linea), file) != NULL) {
-
-                linea[strcspn(linea, "\n\r")] = '\0'; //Le quitamos el salto de linea al final
+                linea[strcspn(linea, "\n\r")] = '\0'; //leemos cada linea hasta el final de linea
                 imprimir_registros(num_renglon, linea);
                 refresh();
-                if(kbhit()){
+                if(kbhit()){ //Cuando haya un teclaso
                     if(limpieza){
                         limpia_lineas();
                     }
-                    interrumpido=true;
-                    //flushinp();
+                    interrumpido=true; //
                     getch();
-
-                    move(15, 0); clrtoeol();//nueva linea para escribir
+                    move(15, 0); clrtoeol();
                     refresh();
                     mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo:");
                     echo();
-                    //getstr(comando);
-                    mvscanw(15,42,"%255[^\n]",comando); //Si usaba esto el espacio entre ejecuta y el nombre causa violacion de segmento
+                    mvscanw(15,42,"%255[^\n]",comando);
                     noecho();
 
                     com = interpretar_comando(comando, archivo);
-
                     if (com == 1){
                         fclose(file);
                         endwin();
                         return 0;
                     } else if (com == 2){
                         pedir_archivo = false;
-                        //limpieza = true;
                         if (access(archivo, F_OK) == 0){
                             break;
                         } else {
-                            //comentario();
                             move(16,2);
                             clrtoeol();
                             mvprintw(16,2,"Archivo no existente");
@@ -155,11 +106,9 @@ int main(){
                             move(15,40);
                             clrtoeol();
                             refresh();
-                            //continue;
                         }      
                        
                     } else {
-                        // ();
                         move(16,2);
                         clrtoeol();
                         if (com == -1) {
@@ -179,15 +128,12 @@ int main(){
 
                 }
                 
-                char *ptr = linea;
-                while (*ptr == ' ' || *ptr == '\t') ptr++;
+                ptr = linea;
+                while (*ptr == ' ' || *ptr == '\t') ptr++; //ignoramos las tabulaciones y espacios antes y despues
                 token = strtok(ptr, " \n");
 
-                /*Para comprobar si al hallar un END aun hay cosas, aunque sean validas,
-                despues de dicha instrucción.*/
-                if (tokEND){
-                    if (token != NULL) {
-                        //comentario();
+                if (tokEND){ //si encuentra un end
+                    if (token != NULL) { //pero es nulo entonces hay un error despues de ese END
                         move(12,10);
                         clrtoeol();
                         mvprintw(12, 10, "Error: Contenido tras END en Renglon %d", num_renglon);
@@ -205,11 +151,8 @@ int main(){
                     continue;
                 }
 
-                /*Comprobar que la instruccion exista, si es END verificamos que no
-                haya nada mas despues de END, si no lo es, se ejecuta la instruccion
-                correspondiente.*/
                 if (token!= NULL && validarToken(instruccion, token)){
-                    char *argumentos = ptr + strlen(token) + 1;
+                    argumentos = ptr + strlen(token) + 1; //Empezamos a reconocer todo lo que sigue despues del mnemonico
 
                     if (strcmp(token, "END") == 0){
                         if (instEND()) {
@@ -219,7 +162,7 @@ int main(){
                             break;
                         }
                     } else {
-                        if (!ejecOperacion(token, argumentos)) {
+                        if (!ejecOperacion(token, argumentos)) { //Si no es END entonces enviamos los argumentos a revisar pero si regresa un false
                             mvprintw(8, 2, "ABORTADO: Error en renglon %d", num_renglon);
                             mvprintw(12,2, "Motivo:");
                             limpieza = true;
@@ -228,9 +171,8 @@ int main(){
                     }
 
                     usleep(1000000);
-                    num_renglon++;
+                    num_renglon++; //Avanzamos en el documento
                 } else {
-                    //comentario();
                     move(12,2);
                     clrtoeol();
                     mvprintw(12, 2, "Token no valido: [%s]", token);
@@ -238,36 +180,31 @@ int main(){
                     break;
                 }               
             }
-            //AQUI VA LO NUEVO
-            if(!interrumpido){
+
+            if(!interrumpido){//si interrumpido es falso entonces se cierra el archivo verificando que haya un END
                 move(10, 2); clrtoeol();
-                if (tokEND){
+                if (tokEND){ //si encuentra un end
                     move(10,2);
                     clrtoeol();
                     mvprintw(10, 2, "Estado: Procesado con éxito.");
-                    //Cambiar a presiona cualquier tecla para continuar o eliminar la espera de un teclazo
                 } else {
                     mvprintw(10, 2, "Estado: Error - Falto END o abortado.");
                     limpieza = true;
                 }
-                fclose(file);//Borre el otro de tokend porque cerraba el archivo 2 veces entonces solo debe ser en la variable de no interrumpido
+                fclose(file);
                 refresh();
-                //getch();
-                //getstr(archivo);
-                move(15, 2); clrtoeol(); //por si acaso limpiamos la linea y que no se encime
+                move(15, 2); clrtoeol(); 
             } else {
-                //Si fue interrumpido entonces se cierra
                 fclose(file);
                 move(15, 2); clrtoeol();
             }
 
         } else {
-            // Este es el else de if (access(archivo, F_OK) == 0)
             mvprintw(11, 2, "El archivo NO existe.");
             limpieza = true;
             
         }
-    } while(1);
+    } while(1); //Regresamos al inicio para pedir otro archivo
     endwin();
     return 0;
 }

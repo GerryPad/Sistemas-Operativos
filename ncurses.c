@@ -7,7 +7,7 @@ void imprimir_registros(int renglon, char *instruccion){
         "PC", "IR", "EAX", "EBX", "ECX", "EDX");
     move(5,2);
     clrtoeol();
-    mvprintw(5, 2, "%-6d  %-20s  %-6d  %-6d  %-6d  %-6d", 
+    mvprintw(5, 2, "%-6d  %-19s  %-6d  %-6d  %-6d  %-6d", 
         renglon, 
         instruccion, 
         registros[0].valor, 

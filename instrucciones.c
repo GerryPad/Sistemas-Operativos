@@ -136,15 +136,6 @@ bool instADD(char *args){
         return false;
     }
 
-    
-/*if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(12,10);
-        clrtoeol();
-        mvprintw(12, 10,"Demasiados argumentos.");
-        return false;
-    }
-    */
-
     reg1 = buscaRegistro(op1);
    
     if (reg1 != NULL){
@@ -445,12 +436,12 @@ bool ejecOperacion(char *instruccion, char *args){
 int interpretar_comando(char *comando, char *archivo) {
     char *arg, *basura, *cmd = strtok(comando, " \n");
 
-    arg = strtok(NULL, " \n\r");
+    arg = strtok(NULL, " \n\r"); //lo que sigue despues de salir o ejecuta
 
     if (cmd == NULL) return 0; //Para un enter sin comando
 
-    if (strcmp(cmd, "salir") == 0) {
-            if(arg != NULL){
+    if (strcmp(cmd, "salir") == 0) { 
+            if(arg != NULL){ //Si es salir el comando pero hay mas cosas ademas del comando entonces hay cosas de mas
                 move(17,2);
                 clrtoeol();
                 mvprintw(17, 2,"Demasiados argumentos.");
@@ -459,8 +450,8 @@ int interpretar_comando(char *comando, char *archivo) {
         return 1; 
     }
 
-    if (strcmp(cmd, "ejecuta") == 0) {
-        basura = strtok(NULL, " \n");
+    if (strcmp(cmd, "ejecuta") == 0) { 
+        basura = strtok(NULL, " \n"); //Se supone que despues de arg ya no deberia haber nada pero por si acaso
         if (arg == NULL){
             return -1;
         }
@@ -471,7 +462,7 @@ int interpretar_comando(char *comando, char *archivo) {
             mvprintw(17, 2,"Demasiados argumentos.");
             return 0;
         } else {
-            strcpy(archivo, arg); 
+            strcpy(archivo, arg); //Si hay un archivo entonces lo copiamos para poder ejecutarlo
             return 2;
         }
     }
