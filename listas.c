@@ -42,30 +42,50 @@ void imprimirLista(struct Nodo *cabecera){
     printf("\n");
 }
 
+struct Nodo * desencolar(struct Nodo *lista){
+    struct Nodo *aux=lista->siguiente;
+    if(aux==NULL){
+        printf("La lista esta vacia\n");
+        return NULL;
+    }
+
+    lista->siguiente=lista->siguiente->siguiente;
+    aux->siguiente=NULL;
+    return(aux);
+}
+
 int main(){
 
     struct Nodo *lista = crearCabecera();
+    struct Nodo *ejecutando = crearCabecera();
+    struct Nodo *terminados = crearCabecera();
+
 
     int n, opcion;
 
     while(1){
-
-        printf("Ingrese numero (-1 para salir): ");
-        scanf("%d",&n);
-
-        if(n == -1){
-            break;
-        }
-
-        printf("Inicio=1 Final=0: ");
+        
+        printf("Inicio=1 Final=0 Desencolar=2: ");
         scanf("%d",&opcion);
 
-        struct Nodo *nuevo = crearNodo(n);
-
         if(opcion == 1){
+            printf("Ingrese numero (-1 para salir): ");
+            scanf("%d",&n);
+            if(n == -1){
+            break;
+            }
+            struct Nodo *nuevo = crearNodo(n);
             insertarInicio(lista, nuevo);
-        }else{
+        }else if(opcion==0){
+            printf("Ingrese numero (-1 para salir): ");
+            scanf("%d",&n);
+             if(n == -1){
+            break;
+            }
+            struct Nodo *nuevo = crearNodo(n);
             insertarFinal(lista, nuevo);
+        }else if(opcion==2){
+            desencolar(lista);
         }
 
         printf("Lista actual: ");
