@@ -47,12 +47,13 @@ struct Nodo *mataPID(struct Nodo *lista, int PID){
     struct Nodo * aux = lista->siguiente;
     struct Nodo * aux2 = lista;
 
-    while(aux->PID != PID){
+    while(aux != NULL && aux->PID != PID){
         aux = aux->siguiente;
         aux2 = aux2->siguiente;
     }
 
     if(aux==NULL){
+        printf("Aqui no esta\n");
         return NULL;
     }
 
@@ -118,14 +119,19 @@ int main(){
             scanf("%d", &n);
             nuevo = mataPID(lista, n);
             if(nuevo == NULL) {
-                nuevo=desencolar(ejecutando);
+                nuevo=mataPID(ejecutando, n);
                 if(nuevo == NULL) {
                     printf("El proceso asociado al PID no existe\n");
+                } else {
+                    insertarFinal(terminados,nuevo);
                 }
-                insertarFinal(terminados,nuevo); 
+            } else {
+                insertarFinal(terminados,nuevo);
             }
-
+            
         }
+
+
         printf("listos:\n");
         imprimirLista(lista);
         printf("Ejecutando:\n");
