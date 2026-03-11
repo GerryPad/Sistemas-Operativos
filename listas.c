@@ -59,13 +59,13 @@ int main(){
     struct Nodo *lista = crearCabecera();
     struct Nodo *ejecutando = crearCabecera();
     struct Nodo *terminados = crearCabecera();
-
+    struct Nodo *nuevo;
 
     int n, opcion;
 
     while(1){
         
-        printf("Inicio=1 Final=0 Desencolar=2: ");
+        printf("Inicio=1 Final=0 Desencolar listos a ejecutando=2: Desencolar ejecutando a listos=3");
         scanf("%d",&opcion);
 
         if(opcion == 1){
@@ -85,11 +85,20 @@ int main(){
             struct Nodo *nuevo = crearNodo(n);
             insertarFinal(lista, nuevo);
         }else if(opcion==2){
-            desencolar(lista);
+            nuevo=desencolar(lista);
+            insertarFinal(ejecutando,nuevo);
+        }else if(opcion==3){
+            nuevo=desencolar(ejecutando);
+            insertarFinal(terminados,nuevo);
         }
 
-        printf("Lista actual: ");
+
+        printf("listos:\n");
         imprimirLista(lista);
+        printf("Ejecutando:\n");
+        imprimirLista(ejecutando);
+        printf("Terminados:\n");
+        imprimirLista(terminados);
     }
 
     return 0;
