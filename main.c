@@ -119,6 +119,7 @@ int main(){
 
     //Creando nodo de prueba para impresion
     struct Nodo *listos = crearCabecera();
+    struct Nodo *terminados = crearCabecera();
     struct Nodo *nuevo;
 
 
@@ -193,6 +194,7 @@ int main(){
                 guardaPCB(nuevo,num_renglon,linea);
                 imprimir_registros(num_renglon, linea);
                 imprimir_listas(listos);
+                imprimir_listas(terminados);
                 refresh();
                 if(kbhit()){ //Cuando haya un teclazo
                     if(limpieza){
@@ -260,6 +262,11 @@ int main(){
                         move(24,10);
                         clrtoeol();
                         mvprintw(24, 10, "Error: Contenido tras END en Renglon %d", num_renglon);
+                        nuevo=desencolar(listos);
+                        strcpy(nuevo->estado,"terminado");
+                        insertarFinal(terminados,nuevo);
+                        imprimir_listas(listos);
+                        imprimir_listas(terminados);
                         tokEND = false; 
                         limpieza = true;
                         break;
@@ -317,8 +324,18 @@ int main(){
                     move(23,2);
                     clrtoeol();
                     mvprintw(23, 2, "Estado: Procesado con éxito.");
+                    nuevo=desencolar(listos);
+                    strcpy(nuevo->estado,"terminado");
+                    insertarFinal(terminados,nuevo);
+                    imprimir_listas(listos);
+                    imprimir_listas(terminados);
                 } else {
                     mvprintw(23, 2, "Estado: Error - Falto END o abortado.");
+                    /*nuevo=desencolar(listos);
+                    strcpy(nuevo->estado,"terminado");
+                    insertarFinal(terminados,nuevo);
+                    imprimir_listas(listos);
+                    imprimir_listas(terminados);*/
                     limpieza = true;
                 }
                 fclose(file);
