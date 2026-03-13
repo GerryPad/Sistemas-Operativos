@@ -1,8 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct Nodo{
     int PID;
+    int estado;
+    int PC;
+    char archivo[64]; //O usar FILE * (?)
+    char IR[50];
+    int registros[4];
     struct Nodo *siguiente;
 };
 
@@ -12,10 +18,15 @@ struct Nodo* crearCabecera(){
     return cabecera;
 }
 
-struct Nodo* crearNodo(int n){
+struct Nodo* crearNodo(int n, char *archivo){
     struct Nodo *nuevo = malloc(sizeof(struct Nodo));
     nuevo->PID = n;
+    for (int i=0; i<4; i++){
+        nuevo->registros[i] = 0;
+    }
+    strcpy(nuevo->archivo, archivo);
     nuevo->siguiente = NULL;
+    nuevo->estado = 0;
     return nuevo;
 }
 
@@ -36,8 +47,17 @@ void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo){
 
 void imprimirLista(struct Nodo *cabecera){
     struct Nodo *aux = cabecera->siguiente;
-    while(aux != NULL){
-        printf("%d ", aux->PID);
+   while (aux != NULL) {
+        printf("PID=%d | E=%d | PC=%d | A=%s |IR=%s | Reg=[%d,%d,%d,%d]\n",
+            aux->PID,
+            aux->estado,
+            aux->PC,
+            aux->archivo,
+            aux->IR,
+            aux->registros[0],
+            aux->registros[1],
+            aux->registros[2],
+            aux->registros[3]);
         aux = aux->siguiente;
     }
     printf("\n");
@@ -53,7 +73,6 @@ struct Nodo *mataPID(struct Nodo *lista, int PID){
     }
 
     if(aux==NULL){
-        printf("Aqui no esta\n");
         return NULL;
     }
 
@@ -77,12 +96,13 @@ struct Nodo * desencolar(struct Nodo *lista){
 
 int main(){
 
+    char archivo[64];
     struct Nodo *lista = crearCabecera();
     struct Nodo *ejecutando = crearCabecera();
     struct Nodo *terminados = crearCabecera();
     struct Nodo *nuevo;
 
-    int n, opcion;
+    int n =1, opcion;
 
     while(1){
         
@@ -92,20 +112,23 @@ int main(){
         scanf("%d",&opcion);
 
         if(opcion == 1){
-            printf("Ingrese PID: ");
+            /*printf("Ingrese PID: ");
             scanf("%d",&n);
             if(n == -1){
             break;
             }
             struct Nodo *nuevo = crearNodo(n);
-            insertarInicio(lista, nuevo);
+            insertarInicio(lista, nuevo);*/
         }else if(opcion==0){
-            printf("Ingrese PID (-1 para salir): ");
-            scanf("%d",&n);
+            getchar();
+            printf("Nombre de archivo: ");
+            fgets(archivo, 64, stdin);
+            archivo[strcspn(archivo, "\n")] =0;
              if(n == -1){
             break;
             }
-            struct Nodo *nuevo = crearNodo(n);
+            struct Nodo *nuevo = crearNodo(n, archivo);
+            n++;
             insertarFinal(lista, nuevo);
         }else if(opcion==2){
             nuevo=desencolar(lista);

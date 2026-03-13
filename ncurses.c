@@ -3,11 +3,11 @@
 #include "ncurses.h"
 
 void imprimir_registros(int renglon, char *instruccion){
-    mvprintw(3, 2, "%-6s %-22s %-6s %-6s %-6s %-6s", 
+    mvprintw(3, 2, "%-8s %-15s %-6s %-6s %-6s %-6s", 
         "PC", "IR", "EAX", "EBX", "ECX", "EDX");
     move(5,2);
     clrtoeol();
-    mvprintw(5, 2, "%-6d  %-20s  %-6d  %-6d  %-6d  %-6d", 
+    mvprintw(5, 2, "%-8d %-15s %-6d %-6d %-6d %-6d", 
         renglon, 
         instruccion, 
         registros[0].valor, 
@@ -19,11 +19,10 @@ void imprimir_registros(int renglon, char *instruccion){
 }
 
 void limpia_lineas() {
-    move(16,2); clrtoeol();
-    move(8,2); clrtoeol();
-    move(12,2); clrtoeol();
-    move(10,2); clrtoeol();
-    move(11,2); clrtoeol();
-    move(17,2); clrtoeol();
+    move(22,2); clrtoeol();
+    move(23,2); clrtoeol();
+    move(24,2); clrtoeol();
+    move(25,2); clrtoeol();
+    move(20,2); clrtoeol();
     refresh();
 }
