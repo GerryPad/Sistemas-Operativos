@@ -1,3 +1,6 @@
 INC EBX
 DEC ECX
+MOV EAX,5
+MUL EBX,2
 END
+hola

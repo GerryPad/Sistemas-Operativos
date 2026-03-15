@@ -8,11 +8,123 @@
 #include "ncurses.h"
 #include <sys/select.h>
 
+struct Nodo{
+    int PID;
+    char estado[16];
+    int PC;
+    char archivo[64]; //O usar FILE * (?)
+    char IR[64];
+    int registros[4];
+    struct Nodo *siguiente;
+};
+
+struct Nodo* crearCabecera(){
+    struct Nodo *cabecera = malloc(sizeof(struct Nodo));
+    cabecera->siguiente = NULL;
+    return cabecera;
+}
+
+struct Nodo* crearNodo(int n, char *archivo){
+    struct Nodo *nuevo = malloc(sizeof(struct Nodo));
+    nuevo->PID = n;
+    nuevo->PC = 0; 
+    for (int i=0; i<4; i++){
+        nuevo->registros[i] = 0;
+    }
+    strcpy(nuevo->archivo, archivo);
+    strcpy(nuevo->IR, "---");
+    nuevo->siguiente = NULL;
+    strcpy(nuevo->estado, "listos");
+    return nuevo;
+}
+
+void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo){
+    struct Nodo *aux = cabecera;
+
+    while(aux->siguiente != NULL){
+        aux = aux->siguiente;
+    }
+
+    aux->siguiente = nuevo;
+}
+
+
+void imprimir_listas(struct Nodo *cabecera){
+    struct Nodo *aux = cabecera->siguiente;
+    mvprintw(7, 2, "%-6s %-8s %-12s %-8s %-15s %-6s %-6s %-6s %-6s", 
+        "PID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX");
+    while(aux!=NULL && 7+aux->PID < 20){
+        move(7+aux->PID,2);
+        clrtoeol();
+        mvprintw(7+aux->PID, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
+        aux->PID,
+        aux->archivo,
+        aux->estado,
+        aux->PC,
+        aux->IR,
+        aux->registros[0],
+        aux->registros[1],
+        aux->registros[2],
+        aux->registros[3] 
+        );
+        refresh();
+
+        aux = aux->siguiente;
+    }
+}
+
+struct Nodo *mataPID(struct Nodo *lista, int PID){
+    struct Nodo * aux = lista->siguiente;
+    struct Nodo * aux2 = lista;
+
+    while(aux != NULL && aux->PID != PID){
+        aux = aux->siguiente;
+        aux2 = aux2->siguiente;
+    }
+
+    if(aux==NULL){
+        return NULL;
+    }
+
+    aux2->siguiente=aux->siguiente;
+    aux->siguiente = NULL;
+
+    return aux;
+}
+
+struct Nodo * desencolar(struct Nodo *lista){
+    struct Nodo *aux=lista->siguiente;
+    if(aux==NULL){
+        printf("La lista esta vacia\n");
+        return NULL;
+    }
+
+    lista->siguiente=lista->siguiente->siguiente;
+    aux->siguiente=NULL;
+    return(aux);
+}
+
+void guardaPCB(struct Nodo *PCB, int num_renglon, char *linea){
+    PCB->PC = num_renglon; //Sera que tenemos que guardar la siguiente instruccion o donde se quedo?
+    strcpy(PCB->IR,linea);
+    PCB->registros[0]=registros[0].valor;
+    PCB->registros[1]=registros[1].valor;
+    PCB->registros[2]=registros[2].valor;
+    PCB->registros[3]=registros[3].valor;
+}
+
 int kbhit(void);        
 
 int main(){
+
+    //Creando nodo de prueba para impresion
+    struct Nodo *listos = crearCabecera();
+    struct Nodo *terminados = crearCabecera();
+    struct Nodo *nuevo;
+
+
     char archivo[64], linea[128], comando[256]; //Buffers para leer nombre y linea del archivo.
-    int num_renglon, com; //com es para hacer un "switch"
+    int num_renglon, com, pid=1; //com es para hacer un "switch"
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool pedir_archivo = true, limpieza = false; 
@@ -20,34 +132,40 @@ int main(){
     initscr();
     do{
         tokEND = false;
+
         if(pedir_archivo){
             com_valido = false; //Suponemos de entrada que el comando no es valido
 
             while (!com_valido){ //Solicitamos comando hasta que haya uno valido
+               
                 move(20,2);
+                clrtoeol();
                 mvprintw(20,2, ">");
                 echo();
-                getstr(comando); //Leemos la cadena de ejecuta + archivo
+                getstr(comando);
                 noecho();
                 move(20, 2); 
                 clrtoeol(); 
                 refresh();
-
-                com = interpretar_comando(comando, archivo); //Verificamos si existe el comando y si es ejecuta que haya un archivo
+               
+                com = interpretar_comando(comando, archivo); 
                 limpieza = true;
 
-                if (com == 1){ //era salir
+                if (com == 1){ //comando salir
                     endwin();
                     return 0;
-                } else if (com == 2){ //comando correcto se copio el archivo
+                } else if (com == 2){ //comando ejecuta
                    com_valido = true;
-                } else { //por ejemplo el -1
-                    move(16,2);
+                   nuevo=crearNodo(pid, archivo);
+                   pid++;
+                   insertarFinal(listos,nuevo);
+                } else { //error al ingresar comando
+                    move(25,2);
                     clrtoeol();
                     if (com == -1) {
-                        mvprintw(16,2, "Error: Falta nombre de archivo.");
+                        mvprintw(25,2, "Error: Falta nombre de archivo.");
                     } else {
-                        mvprintw(16,2,"Error: Comando invalido");
+                        mvprintw(25,2,"Error: Comando invalido");
                     }
                     refresh();
                     usleep(1000000);
@@ -68,27 +186,36 @@ int main(){
                 perror("fopen");
                 continue;
             }
-            
+            for(int i = 0; i < 4; i++){ //EN LO QUE AGREGAMOS RESTAURAR CONTEXTO
+                registros[i].valor = 0; //PORQUE SINO SE SOBREPONIAN LOS VALORES
+            }
             num_renglon = 0;
             interrumpido=false; //Bandera para cada archivo
             while (fgets(linea, sizeof(linea), file) != NULL) {
-                linea[strcspn(linea, "\n\r")] = '\0'; //leemos cada linea hasta el final de linea
+                linea[strcspn(linea, "\n\r")] = '\0'; 
+                guardaPCB(nuevo,num_renglon,linea);
                 imprimir_registros(num_renglon, linea);
+                imprimir_listas(listos);
+                imprimir_listas(terminados);
                 refresh();
-                if(kbhit()){ //Cuando haya un teclaso
-                    if(limpieza){
+                if(kbhit()){ //Cuando haya un teclazo
+                    num_renglon++; //El contador no avanzaba cuando habia una interrupcion por lo que hay que aumentarlo porque el fgets ya va con el otro renglon entonces hay que aumentarlo para que vaya a corde a su renglon
+                    if(limpieza){ //tambien puede que no sea correco guardarlo asi
                         limpia_lineas();
                     }
-                    interrumpido=true; //
+                    interrumpido=true;
                     getch();
-                    move(15, 0); clrtoeol();
+                    //move(15, 0); clrtoeol();
                     refresh();
-                    mvprintw(15, 2, "Interrupción: 'salir' o nuevo archivo:");
+                    move(20,2);
+                    clrtoeol();
+                    mvprintw(20, 2, ">");
                     echo();
-                    mvscanw(15,42,"%255[^\n]",comando);
+                    mvscanw(20,3,"%255[^\n]",comando);
                     noecho();
-
+                    limpieza = true;
                     com = interpretar_comando(comando, archivo);
+
                     if (com == 1){
                         fclose(file);
                         endwin();
@@ -96,27 +223,30 @@ int main(){
                     } else if (com == 2){
                         pedir_archivo = false;
                         if (access(archivo, F_OK) == 0){
+                            nuevo=crearNodo(pid, archivo);
+                            pid++;
+                            insertarFinal(listos,nuevo);
                             break;
                         } else {
-                            move(16,2);
+                            move(25,2);
                             clrtoeol();
-                            mvprintw(16,2,"Archivo no existente");
+                            mvprintw(25,2,"Archivo no existente");
                             pedir_archivo = true;
                             limpieza = true;
-                            move(15,40);
+                            move(20,2);
                             clrtoeol();
                             refresh();
                         }      
                        
                     } else {
-                        move(16,2);
+                        move(25,2);
                         clrtoeol();
                         if (com == -1) {
-                            mvprintw(16,2, "Error: Falta nombre de archivo.");
+                            mvprintw(25,2, "Error: Falta nombre de archivo.");
                             limpieza = true;
                             continue;
                         } else {
-                            mvprintw(16,2,"Error: Comando invalido");
+                            mvprintw(25,2,"Error: Comando invalido");
                             limpieza = true;
                             continue;
                         }
@@ -124,19 +254,27 @@ int main(){
                         usleep(1000000);
                         fclose(file);
                         break;
-                    }
-
+                    }   
                 }
                 
                 ptr = linea;
-                while (*ptr == ' ' || *ptr == '\t') ptr++; //ignoramos las tabulaciones y espacios antes y despues
+                while (*ptr == ' ' || *ptr == '\t') ptr++; //Ignorar esapcios y tabulaciones al inicio o final
                 token = strtok(ptr, " \n");
 
-                if (tokEND){ //si encuentra un end
-                    if (token != NULL) { //pero es nulo entonces hay un error despues de ese END
-                        move(12,10);
+                if (tokEND){ //Si hayamos un END...
+                    if (token != NULL) { //Pero hay mas cosas despues
+                        move(24,10);
                         clrtoeol();
-                        mvprintw(12, 10, "Error: Contenido tras END en Renglon %d", num_renglon);
+                        mvprintw(24, 10, "Error: Contenido tras END en Renglon %d", num_renglon);
+                        struct Nodo *proceso_a_terminar = mataPID(listos, nuevo->PID);
+
+                        if (proceso_a_terminar != NULL) {
+                            strcpy(proceso_a_terminar->estado, "terminado");
+                            insertarFinal(terminados, proceso_a_terminar);
+                        }
+                       
+                        imprimir_listas(listos);
+                        imprimir_listas(terminados);
                         tokEND = false; 
                         limpieza = true;
                         break;
@@ -152,59 +290,88 @@ int main(){
                 }
 
                 if (token!= NULL && validarToken(instruccion, token)){
-                    argumentos = ptr + strlen(token) + 1; //Empezamos a reconocer todo lo que sigue despues del mnemonico
+                    argumentos = ptr + strlen(token) + 1; //Reconocer lo que esta despues del nemonico
 
                     if (strcmp(token, "END") == 0){
                         if (instEND()) {
                             tokEND = true;
                         } else {
                             tokEND = false;
+                            struct Nodo *proceso_a_terminar = mataPID(listos, nuevo->PID);
+                                if (proceso_a_terminar != NULL) {
+                                    strcpy(proceso_a_terminar->estado, "terminado");
+                                    insertarFinal(terminados, proceso_a_terminar);
+                                }
+                            limpieza=true;
                             break;
                         }
                     } else {
-                        if (!ejecOperacion(token, argumentos)) { //Si no es END entonces enviamos los argumentos a revisar pero si regresa un false
-                            mvprintw(8, 2, "ABORTADO: Error en renglon %d", num_renglon);
-                            mvprintw(12,2, "Motivo:");
+                        if (!ejecOperacion(token, argumentos)) {
+                            mvprintw(22, 2, "ABORTADO: Error en renglon %d", num_renglon);
+                            mvprintw(24,2, "Motivo:");
                             limpieza = true;
                             break; 
+                        } else {
+                            /*nuevo->PC = num_renglon;
+                            strcpy(nuevo->IR,linea);
+                            nuevo->registros[0]=registros[0].valor;
+                            nuevo->registros[1]=registros[1].valor;
+                            nuevo->registros[2]=registros[2].valor;
+                            nuevo->registros[3]=registros[3].valor;*/
                         }
                     }
-
+                    //guardaPCB(nuevo,num_renglon,linea);
                     usleep(1000000);
-                    num_renglon++; //Avanzamos en el documento
+                    num_renglon++;
                 } else {
-                    move(12,2);
+                    move(24,2);
                     clrtoeol();
-                    mvprintw(12, 2, "Token no valido: [%s]", token);
+                    mvprintw(24, 2, "Token no valido: [%s]", token);
                     limpieza = true;
                     break;
                 }               
             }
 
-            if(!interrumpido){//si interrumpido es falso entonces se cierra el archivo verificando que haya un END
-                move(10, 2); clrtoeol();
-                if (tokEND){ //si encuentra un end
-                    move(10,2);
+            if(!interrumpido){
+                move(23, 2); clrtoeol();
+                if (tokEND){
+                    move(23,2);
                     clrtoeol();
-                    mvprintw(10, 2, "Estado: Procesado con éxito.");
+                    mvprintw(23, 2, "Estado: Procesado con éxito.");
+                    struct Nodo *proceso_a_terminar = mataPID(listos, nuevo->PID);
+//HAY QUE BUSCAR EL PID QUE ACABO NO EL PRIMERO POR ESO YA NO AGARRO DESENCOLAR
+                        if (proceso_a_terminar != NULL) {
+                            strcpy(proceso_a_terminar->estado, "terminado");
+                            insertarFinal(terminados, proceso_a_terminar);
+                        }
+                    //nuevo=desencolar(listos);
+                    //strcpy(nuevo->estado,"terminado");
+                    //insertarFinal(terminados,nuevo);
+                    imprimir_listas(listos);
+                    imprimir_listas(terminados);
                 } else {
-                    mvprintw(10, 2, "Estado: Error - Falto END o abortado.");
+                    mvprintw(23, 2, "Estado: Error - Falto END o abortado.");
+                    /*nuevo=desencolar(listos);
+                    strcpy(nuevo->estado,"terminado");
+                    insertarFinal(terminados,nuevo);
+                    imprimir_listas(listos);
+                    imprimir_listas(terminados);*/
                     limpieza = true;
                 }
                 fclose(file);
                 refresh();
-                move(15, 2); clrtoeol(); 
+                //move(15, 2); clrtoeol(); 
             } else {
                 fclose(file);
-                move(15, 2); clrtoeol();
+                //move(15, 2); clrtoeol();
             }
 
         } else {
-            mvprintw(11, 2, "El archivo NO existe.");
+            mvprintw(22, 2, "El archivo NO existe.");
             limpieza = true;
             
         }
-    } while(1); //Regresamos al inicio para pedir otro archivo
+    } while(1);
     endwin();
     return 0;
 }
