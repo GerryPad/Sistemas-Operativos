@@ -423,6 +423,19 @@ int interpretar_comando(char *comando, char *archivo) {
             mvprintw(24, 10,"Demasiados argumentos.");
             return 0;
         } else {
+            //tenemos que intentar abrir el archivo para que no nos salga nada raro y no se creen archivos fantasmas
+            FILE *f = fopen(arg, "r");
+            if(f == NULL){ //esque intente poner file1 y si se creo
+                move(24,10);
+                clrtoeol();
+                mvprintw(24,2,"Error: archivo no existe.");
+                move(20,2);
+                clrtoeol();
+                return 0;
+            }
+
+            fclose(f);
+
             strcpy(archivo, arg); 
             return 2;
         }
