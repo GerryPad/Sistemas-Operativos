@@ -113,6 +113,15 @@ void guardaPCB(struct Nodo *PCB, int pc, char *linea){
     PCB->registros[3]=registros[3].valor;
 }
 
+void restauraPCB(struct Nodo *proceso_actual, char *archivo, int pc){
+    pc = proceso_actual->PC;
+    registros[0].valor = proceso_actual->registros[0];
+    registros[1].valor = proceso_actual->registros[1];
+    registros[2].valor = proceso_actual->registros[2];
+    registros[3].valor = proceso_actual->registros[3];
+    strcpy(archivo, proceso_actual->archivo); 
+}
+
 void reiniciarRegistros () {
     for(int i = 0; i < 4; i++){ //EN LO QUE AGREGAMOS RESTAURAR CONTEXTO
         registros[i].valor = 0; //PORQUE SINO SE SOBREPONIAN LOS VALORES
@@ -130,6 +139,8 @@ struct Nodo* planificador(struct Nodo *listos, struct Nodo *ejecutando) {
     return proceso;
 }
 
+
+
 int kbhit(void);        
 
 int main(){
@@ -143,11 +154,11 @@ int main(){
     struct Nodo *proceso_a_terminar = NULL;
 
 
-    char archivo[64], linea[128], comando[256]; //Buffers para leer nombre y linea del archivo.
+    char archivo[64], linea[128], comando[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
     int pc, com, pid=1; //com es para hacer un "switch"
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
-    bool pedir_archivo = true, limpieza = false; 
+    bool limpieza = false; 
     
     initscr();
     do{
@@ -158,12 +169,7 @@ int main(){
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
-                pc = proceso_actual->PC;
-                registros[0].valor = proceso_actual->registros[0];
-                registros[1].valor = proceso_actual->registros[1];
-                registros[2].valor = proceso_actual->registros[2];
-                registros[3].valor = proceso_actual->registros[3];
-                strcpy(archivo, proceso_actual->archivo); 
+                restauraPCB(proceso_actual, archivo, pc); 
 
             } else {
                 com_valido = false; //Suponemos de entrada que el comando no es valido
@@ -215,8 +221,6 @@ int main(){
             limpieza = false;
         }
 
-        pedir_archivo=true; 
-
         if (access(archivo, F_OK) == 0) {
             FILE *file = fopen(archivo, "rb");
             if (!file) {
@@ -224,12 +228,11 @@ int main(){
                 continue;
             }
 
-           //reiniciarRegistros(); lo comente porque me generaba comportamiento no determinista ahorita con un solo proceso a la vez
+           reiniciarRegistros(); //lo comente porque me generaba comportamiento no determinista ahorita con un solo proceso a la vez
             pc = 1; //Sera que hace falta que inice en 1? para que traiga la siguiente instruccion
             interrumpido=false; //Bandera para cada archivo
             while (fgets(linea, sizeof(linea), file) != NULL) {
                 linea[strcspn(linea, "\n\r")] = '\0';
-                char linea_original[128];
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
                 imprimir_registros(pc, linea);
                 imprimir_listas(listos);
@@ -246,7 +249,7 @@ int main(){
                         move(24,10);
                         clrtoeol();
                         mvprintw(24, 10, "Error: Contenido tras END en Renglon %d", pc);
-                        proceso_a_terminar = mataPID(ejecutando, proceso_actual->PID); //Siguiendo la logica de Pedro
+                        proceso_a_terminar = desencolar(ejecutando); //Siguiendo la logica de Pedro
 
                         if (proceso_a_terminar != NULL) {
                             strcpy(proceso_a_terminar->estado, "terminado*");
@@ -278,7 +281,7 @@ int main(){
                             tokEND = true;
                         } else {
                             tokEND = false;
-                            proceso_a_terminar = mataPID(ejecutando, proceso_actual->PID);
+                            proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
                                 strcpy(proceso_a_terminar->estado, "terminado*");
                                 insertarFinal(terminados, proceso_a_terminar);
@@ -293,7 +296,7 @@ int main(){
                             mvprintw(24,2, "Motivo:");
 
                             //Mover los procesos fallidos a terminados
-                            proceso_a_terminar = mataPID(ejecutando, proceso_actual->PID);
+                            proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
                                 strcpy(proceso_a_terminar->estado, "terminado*");
                                 insertarFinal(terminados, proceso_a_terminar);
@@ -333,7 +336,6 @@ int main(){
                             endwin();
                             return 0;
                         } else if (com == 2){
-                            pedir_archivo = false;
                             if (access(archivo, F_OK) == 0){
                                 nuevo=crearNodo(pid, archivo);
                                 pid++;
@@ -343,7 +345,6 @@ int main(){
                                 move(25,2);
                                 clrtoeol();
                                 mvprintw(25,2,"Archivo no existente");
-                                pedir_archivo = true;
                                 limpieza = true;
                                 move(20,2);
                                 clrtoeol();
@@ -373,7 +374,7 @@ int main(){
                     move(24,2);
                     clrtoeol();
                     mvprintw(24, 2, "Token no valido: [%s]", token);
-                    proceso_a_terminar = mataPID(ejecutando, proceso_actual->PID);
+                    proceso_a_terminar = desencolar(ejecutando);
                     if (proceso_a_terminar != NULL) {
                         strcpy(proceso_a_terminar->estado, "terminado");
                         insertarFinal(terminados, proceso_a_terminar);
@@ -389,10 +390,11 @@ int main(){
                     move(23,2);
                     clrtoeol();
                     mvprintw(23, 2, "Estado: Procesado con éxito.");
-                    proceso_a_terminar = mataPID(ejecutando, proceso_actual->PID);
+                    proceso_a_terminar = desencolar(ejecutando);
 
                     if (proceso_a_terminar != NULL) {
                         strcpy(proceso_a_terminar->estado, "terminado");
+                        //guardaPCB(proceso_a_terminar,pc,linea_original);
                         insertarFinal(terminados, proceso_a_terminar);
                     }
 
@@ -407,7 +409,7 @@ int main(){
                 refresh();
             } else {
                 fclose(file);
-                proceso_a_terminar = mataPID(ejecutando, proceso_actual->PID);
+                proceso_a_terminar = desencolar(ejecutando);
                 if (proceso_a_terminar != NULL) {
                     strcpy(proceso_a_terminar->estado, "terminado");
                     insertarFinal(terminados, proceso_a_terminar);
