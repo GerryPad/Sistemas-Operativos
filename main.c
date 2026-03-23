@@ -58,10 +58,15 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
     mvprintw(7, 2, "%-6s %-8s %-12s %-8s %-15s %-6s %-6s %-6s %-6s", 
         "PID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX");
 
-    move(8,2);
-    clrtoeol();
+
+    for(int j = 8; j<20; j++){
+        move(j,2);
+        clrtoeol();
+    } 
+
     //Esta es la lista de ejecutando
-    mvprintw(8, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
+    if(aux_e != NULL){
+        mvprintw(8, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
         aux_e->PID,
         aux_e->archivo,
         aux_e->estado,
@@ -72,7 +77,8 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_e->registros[2],
         aux_e->registros[3] 
         );
-        refresh();
+    }
+
 
     int i=9;
     while(aux_l != NULL){
@@ -94,7 +100,6 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_l->registros[2],
         aux_l->registros[3] 
         );
-        refresh();
 
         aux_l = aux_l->siguiente;
         i++;
@@ -118,30 +123,11 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_te->registros[2],
         aux_te->registros[3] 
         );
-        refresh();
 
         aux_te = aux_te->siguiente;
         i++;
     }
-
-    /*while(aux!=NULL && 7+aux->PID < 20){
-        move(7+aux->PID,2);
-        clrtoeol();
-        mvprintw(7+aux->PID, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
-        aux->PID,
-        aux->archivo,
-        aux->estado,
-        aux->PC,
-        aux->IR,
-        aux->registros[0],
-        aux->registros[1],
-        aux->registros[2],
-        aux->registros[3] 
-        );
-        refresh();
-
-        aux = aux->siguiente;
-    }*/
+    refresh();
 }
 
 struct Nodo *mataPID(struct Nodo *lista, int PID){
