@@ -27,7 +27,7 @@ struct Nodo* crearCabecera(){
 struct Nodo* crearNodo(int n, char *archivo){
     struct Nodo *nuevo = malloc(sizeof(struct Nodo));
     nuevo->PID = n;
-    nuevo->PC = 0; 
+    nuevo->PC = 1; 
     for (int i=0; i<4; i++){
         nuevo->registros[i] = 0;
     }
@@ -95,7 +95,8 @@ struct Nodo *mataPID(struct Nodo *lista, int PID){
 struct Nodo * desencolar(struct Nodo *lista){
     struct Nodo *aux=lista->siguiente;
     if(aux==NULL){
-        printf("La lista esta vacia\n");
+        
+        mvprintw(25,2,"La lista esta vacia\n");
         return NULL;
     }
 
@@ -113,13 +114,15 @@ void guardaPCB(struct Nodo *PCB, int pc, char *linea){
     PCB->registros[3]=registros[3].valor;
 }
 
-void restauraPCB(struct Nodo *proceso_actual, char *archivo, int pc){
-    pc = proceso_actual->PC;
+//Esto debe devolver un entero para el pc
+int restauraPCB(struct Nodo *proceso_actual, char *archivo){
+    //pc = proceso_actual->PC
     registros[0].valor = proceso_actual->registros[0];
     registros[1].valor = proceso_actual->registros[1];
     registros[2].valor = proceso_actual->registros[2];
     registros[3].valor = proceso_actual->registros[3];
     strcpy(archivo, proceso_actual->archivo); 
+    return proceso_actual->PC; //Se ocupaba hacer esto porque si no, jamas devolvia el valor
 }
 
 void reiniciarRegistros () {
@@ -169,7 +172,7 @@ int main(){
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
-                restauraPCB(proceso_actual, archivo, pc); 
+                pc = restauraPCB(proceso_actual, archivo); 
 
             } else {
                 com_valido = false; //Suponemos de entrada que el comando no es valido
@@ -228,9 +231,17 @@ int main(){
                 continue;
             }
 
-           reiniciarRegistros(); //lo comente porque me generaba comportamiento no determinista ahorita con un solo proceso a la vez
-            pc = 1; //Sera que hace falta que inice en 1? para que traiga la siguiente instruccion
+            int quantum = 0;
+            bool fin_quantum = false; //para saber porque motivo cerramos proceso
+            int i=1;
+            while(i<pc && fgets(linea, sizeof(linea), file) != NULL){
+                i++;
+                continue;
+            }
+           
+            //reiniciarRegistros(); //lo comente porque me generaba comportamiento no determinista ahorita con un solo proceso a la vez
             interrumpido=false; //Bandera para cada archivo
+            strcpy(linea_original, "---");
             while (fgets(linea, sizeof(linea), file) != NULL) {
                 linea[strcspn(linea, "\n\r")] = '\0';
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
@@ -309,9 +320,32 @@ int main(){
                             break; 
                         }
                     }
-                    guardaPCB(proceso_actual,pc,linea_original);
                     usleep(1000000);
                     pc++;
+                    quantum++;
+
+                    if(tokEND){
+                        continue;
+                    }
+
+                    if (quantum == 3) {
+                        guardaPCB(proceso_actual, pc, linea_original);
+                        proceso_a_terminar = desencolar(ejecutando);
+                        if (proceso_a_terminar!= NULL) {
+                            strcpy(proceso_a_terminar->estado, "listos");
+                            insertarFinal(listos, proceso_a_terminar);
+                        }
+                        fclose(file);
+                        proceso_actual = NULL;
+                        fin_quantum = true;
+                        limpieza = true;
+                        
+                        imprimir_listas(listos);
+                        imprimir_listas(ejecutando);
+                        refresh();
+                        
+                        break; 
+                    }
 
                     //Movi el kbhit despues para que no haga falta aumentar pc dentro de kbhit
                     if(kbhit()){ //Cuando haya un teclazo
@@ -340,6 +374,7 @@ int main(){
                                 nuevo=crearNodo(pid, archivo);
                                 pid++;
                                 insertarFinal(listos,nuevo);
+                                interrumpido = false;
                                 continue; //Para seguir con el proceso actual y que no se cambie por el nuevo
                             } else {
                                 move(25,2);
@@ -367,7 +402,8 @@ int main(){
                             usleep(1000000);
                             fclose(file);
                             break;
-                        }   
+                        }
+                         
                     }
 
                 } else {
@@ -384,17 +420,21 @@ int main(){
                 }               
             }
 
-            if(!interrumpido){
+            if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumped
+                move(23, 2); clrtoeol();
+                mvprintw(23, 2, "Quantum = 3. Cambio de proceso");
+                refresh();
+            } else if(!interrumpido){
                 move(23, 2); clrtoeol();
                 if (tokEND){
                     move(23,2);
                     clrtoeol();
                     mvprintw(23, 2, "Estado: Procesado con éxito.");
+                    guardaPCB(proceso_actual,pc,linea_original);
                     proceso_a_terminar = desencolar(ejecutando);
 
                     if (proceso_a_terminar != NULL) {
                         strcpy(proceso_a_terminar->estado, "terminado");
-                        //guardaPCB(proceso_a_terminar,pc,linea_original);
                         insertarFinal(terminados, proceso_a_terminar);
                     }
 
@@ -404,11 +444,27 @@ int main(){
                 } else {
                     mvprintw(23, 2, "Estado: Error - Falto END o abortado.");
                     limpieza = true;
+                    guardaPCB(proceso_actual,pc,linea_original);
+                    proceso_a_terminar = desencolar(ejecutando);
+
+                    if (proceso_a_terminar != NULL) {
+                        strcpy(proceso_a_terminar->estado, "terminado*");
+                        insertarFinal(terminados, proceso_a_terminar);
+                    }
+                    proceso_actual = NULL;
                 }
                 fclose(file);
+                proceso_actual = NULL;
+                imprimir_listas(listos);
+                imprimir_listas(ejecutando);
+                imprimir_listas(terminados);
                 refresh();
             } else {
                 fclose(file);
+                if(proceso_actual!=NULL){
+                    guardaPCB(proceso_actual,pc,linea_original);
+                }
+
                 proceso_a_terminar = desencolar(ejecutando);
                 if (proceso_a_terminar != NULL) {
                     strcpy(proceso_a_terminar->estado, "terminado");
