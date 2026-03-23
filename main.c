@@ -49,11 +49,82 @@ void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo){
 }
 
 
-void imprimir_listas(struct Nodo *cabecera){
-    struct Nodo *aux = cabecera->siguiente;
+//Imprimir primero el ejecutando, despues los listos en el orden que estan en listos y finalmente los terminados en su orden
+void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_listos, struct Nodo *cabecera_terminados){
+    struct Nodo *aux_e = cabecera_ejecutando->siguiente;
+    struct Nodo *aux_l = cabecera_listos->siguiente;
+    struct Nodo *aux_te = cabecera_terminados->siguiente;
+
     mvprintw(7, 2, "%-6s %-8s %-12s %-8s %-15s %-6s %-6s %-6s %-6s", 
         "PID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX");
-    while(aux!=NULL && 7+aux->PID < 20){
+
+    move(8,2);
+    clrtoeol();
+    //Esta es la lista de ejecutando
+    mvprintw(8, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
+        aux_e->PID,
+        aux_e->archivo,
+        aux_e->estado,
+        aux_e->PC,
+        aux_e->IR,
+        aux_e->registros[0],
+        aux_e->registros[1],
+        aux_e->registros[2],
+        aux_e->registros[3] 
+        );
+        refresh();
+
+    int i=9;
+    while(aux_l != NULL){
+
+        if(i>=20 || aux_l == NULL){
+            break;
+        }
+
+        move(i,2);
+        clrtoeol();
+        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
+        aux_l->PID,
+        aux_l->archivo,
+        aux_l->estado,
+        aux_l->PC,
+        aux_l->IR,
+        aux_l->registros[0],
+        aux_l->registros[1],
+        aux_l->registros[2],
+        aux_l->registros[3] 
+        );
+        refresh();
+
+        aux_l = aux_l->siguiente;
+        i++;
+    }
+
+    //Lista de terminados
+    while(aux_te != NULL){
+        if(i>=20 || aux_te == NULL){
+            break;
+        }
+        move(i,2);
+        clrtoeol();
+        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
+        aux_te->PID,
+        aux_te->archivo,
+        aux_te->estado,
+        aux_te->PC,
+        aux_te->IR,
+        aux_te->registros[0],
+        aux_te->registros[1],
+        aux_te->registros[2],
+        aux_te->registros[3] 
+        );
+        refresh();
+
+        aux_te = aux_te->siguiente;
+        i++;
+    }
+
+    /*while(aux!=NULL && 7+aux->PID < 20){
         move(7+aux->PID,2);
         clrtoeol();
         mvprintw(7+aux->PID, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
@@ -70,7 +141,7 @@ void imprimir_listas(struct Nodo *cabecera){
         refresh();
 
         aux = aux->siguiente;
-    }
+    }*/
 }
 
 struct Nodo *mataPID(struct Nodo *lista, int PID){
@@ -123,12 +194,6 @@ int restauraPCB(struct Nodo *proceso_actual, char *archivo){
     registros[3].valor = proceso_actual->registros[3];
     strcpy(archivo, proceso_actual->archivo); 
     return proceso_actual->PC; //Se ocupaba hacer esto porque si no, jamas devolvia el valor
-}
-
-void reiniciarRegistros () {
-    for(int i = 0; i < 4; i++){ //EN LO QUE AGREGAMOS RESTAURAR CONTEXTO
-        registros[i].valor = 0; //PORQUE SINO SE SOBREPONIAN LOS VALORES
-    }
 }
 
 //El planificador primitivo, solo devuelve el primero que este en listos
@@ -239,16 +304,16 @@ int main(){
                 continue;
             }
            
-            //reiniciarRegistros(); //lo comente porque me generaba comportamiento no determinista ahorita con un solo proceso a la vez
             interrumpido=false; //Bandera para cada archivo
             strcpy(linea_original, "---");
             while (fgets(linea, sizeof(linea), file) != NULL) {
                 linea[strcspn(linea, "\n\r")] = '\0';
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
                 imprimir_registros(pc, linea);
-                imprimir_listas(listos);
+                /*imprimir_listas(listos);
                 imprimir_listas(ejecutando);
-                imprimir_listas(terminados);
+                imprimir_listas(terminados);*/
+                imprimir_listas(ejecutando, listos, terminados);
                 refresh();
                 
                 ptr = linea;
@@ -267,9 +332,10 @@ int main(){
                             insertarFinal(terminados, proceso_a_terminar);
                         }
                        
-                        imprimir_listas(listos);
+                        /*imprimir_listas(listos);
                         imprimir_listas(ejecutando);
-                        imprimir_listas(terminados);
+                        imprimir_listas(terminados);*/
+                        imprimir_listas(ejecutando, listos, terminados);
                         tokEND = false; 
                         limpieza = true;
                         break;
@@ -312,9 +378,10 @@ int main(){
                                 strcpy(proceso_a_terminar->estado, "terminado*");
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
-                            imprimir_listas(listos);
+                            /*imprimir_listas(listos);
                             imprimir_listas(ejecutando);
-                            imprimir_listas(terminados);
+                            imprimir_listas(terminados);*/
+                            imprimir_listas(ejecutando, listos, terminados);
 
                             limpieza = true;
                             break; 
@@ -340,8 +407,9 @@ int main(){
                         fin_quantum = true;
                         limpieza = true;
                         
-                        imprimir_listas(listos);
-                        imprimir_listas(ejecutando);
+                        /*imprimir_listas(listos);
+                        imprimir_listas(ejecutando);*/
+                        imprimir_listas(ejecutando, listos, terminados);
                         refresh();
                         
                         break; 
@@ -438,9 +506,10 @@ int main(){
                         insertarFinal(terminados, proceso_a_terminar);
                     }
 
-                    imprimir_listas(listos);
+                    /*imprimir_listas(listos);
                     imprimir_listas(ejecutando);
-                    imprimir_listas(terminados);
+                    imprimir_listas(terminados);*/
+                    imprimir_listas(ejecutando, listos, terminados);
                 } else {
                     mvprintw(23, 2, "Estado: Error - Falto END o abortado.");
                     limpieza = true;
@@ -455,9 +524,10 @@ int main(){
                 }
                 fclose(file);
                 proceso_actual = NULL;
-                imprimir_listas(listos);
+                /*imprimir_listas(listos);
                 imprimir_listas(ejecutando);
-                imprimir_listas(terminados);
+                imprimir_listas(terminados);*/
+                imprimir_listas(ejecutando, listos, terminados);
                 refresh();
             } else {
                 fclose(file);
