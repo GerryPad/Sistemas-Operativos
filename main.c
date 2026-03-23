@@ -206,10 +206,11 @@ int main(){
     struct Nodo *nuevo;
     struct Nodo *proceso_actual = NULL; //El que se esta ejecutando
     struct Nodo *proceso_a_terminar = NULL;
+    struct Nodo *proceso_a_matar = NULL;
 
 
     char archivo[64], linea[128], comando[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1; //com es para hacer un "switch"
+    int pc, com, pid=1, *pid_kill=0; //com es para hacer un "switch"
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool limpieza = false; 
@@ -240,7 +241,7 @@ int main(){
                     clrtoeol(); 
                     refresh();
                 
-                    com = interpretar_comando(comando, archivo); 
+                    com = interpretar_comando(comando, archivo, pid_kill); 
                     limpieza = true;
 
                     if (com == 1){ //comando salir
@@ -251,6 +252,22 @@ int main(){
                     nuevo=crearNodo(pid, archivo);
                     pid++;
                     insertarFinal(listos,nuevo);
+                    } else if(com == 3){
+                        proceso_a_matar = mataPID(ejecutando, *pid_kill);
+                        if(proceso_a_matar != NULL){
+                            insertarFinal(terminados,proceso_a_matar);
+                            imprimir_listas(ejecutando,listos,terminados); 
+                        } else{
+                            proceso_a_matar = mataPID(listos, *pid_kill);
+                            if(proceso_a_matar != NULL){
+                                insertarFinal(terminados,proceso_a_matar);
+                                imprimir_listas(ejecutando,listos,terminados);
+                            } else {
+                                move(25,2);
+                                clrtoeol();
+                                mvprintw(25,2, "El PID asociado al proceso no existe.");
+                            }
+                        } 
                     } else { //error al ingresar comando
                         move(25,2);
                         clrtoeol();
@@ -417,7 +434,7 @@ int main(){
                         mvscanw(20,3,"%255[^\n]",comando);
                         noecho();
                         limpieza = true;
-                        com = interpretar_comando(comando, archivo);
+                        com = interpretar_comando(comando, archivo, pid_kill);
 
                         if (com == 1){
                             fclose(file);
