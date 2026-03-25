@@ -280,23 +280,9 @@ int main(){
                     nuevo=crearNodo(pid, archivo);
                     pid++;
                     insertarFinal(listos,nuevo);
-                    } /*else if(com == 3){
-                        proceso_a_matar = mataPID(ejecutando, *pid_kill);
-                        if(proceso_a_matar != NULL){
-                            insertarFinal(terminados,proceso_a_matar);
-                            imprimir_listas(ejecutando,listos,terminados); 
-                        } else{
-                            proceso_a_matar = mataPID(listos, *pid_kill);
-                            if(proceso_a_matar != NULL){
-                                insertarFinal(terminados,proceso_a_matar);
-                                imprimir_listas(ejecutando,listos,terminados);
-                            } else {
-                                move(25,2);
-                                clrtoeol();
-                                mvprintw(25,2, "El PID asociado al proceso no existe.");
-                            }
-                        } 
-                    } */else { //error al ingresar comando
+                    } else if(com == 3){
+                         mvprintw(25, 2, "No hay ningun proceso para matar.");
+                    }else { //error al ingresar comando
                         move(25,2);
                         clrtoeol();
                         if (com == -1) {
@@ -464,28 +450,6 @@ int main(){
                         limpieza = true;
                         strcpy(com_mata, comando);
                         com = interpretar_comando(comando, archivo, ptr_pid);
-                        //pid_kill = comando_matar(com_mata, pid_kill);
-
-                        /*if(pid_kill != 0){
-                            proceso_a_matar = mataPID(ejecutando, pid_kill);
-                            if(proceso_a_matar != NULL){
-                                strcpy(proceso_a_matar->estado, "terminados**");
-                                insertarFinal(terminados,proceso_a_matar);
-                                imprimir_listas(ejecutando,listos,terminados); 
-                                break;
-                            } else{
-                                proceso_a_matar = mataPID(listos, pid_kill);
-                                if(proceso_a_matar != NULL){
-                                    strcpy(proceso_a_matar->estado, "terminados**");
-                                    insertarFinal(terminados,proceso_a_matar);
-                                    imprimir_listas(ejecutando,listos,terminados);
-                                } else {
-                                    move(25,2);
-                                    clrtoeol();
-                                    mvprintw(25,2, "El PID asociado al proceso no existe.");
-                                }
-                            } 
-                        }*/
 
                         if (com == 1){
                             fclose(file);
