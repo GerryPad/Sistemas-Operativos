@@ -393,7 +393,7 @@ bool ejecOperacion(char *instruccion, char *args){
     }
 }
 
-int interpretar_comando(char *comando, char *archivo, int *pid) {
+int interpretar_comando(char *comando, char *archivo) {
     char *arg, *basura, *cmd;
 
     cmd = strtok(comando, " \n");
@@ -441,7 +441,7 @@ int interpretar_comando(char *comando, char *archivo, int *pid) {
         }
     }
 
-    if(strcmp(cmd, "mata") == 0){
+    /*if(strcmp(cmd, "mata") == 0){
         basura = strtok(NULL, " \n");
         if (arg == NULL){
             return -1;
@@ -456,7 +456,7 @@ int interpretar_comando(char *comando, char *archivo, int *pid) {
             pid = atoi(arg);
             return 3;
         }
-    }
+    }*/
 
     return 0;
 }
