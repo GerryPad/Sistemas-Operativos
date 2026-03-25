@@ -12,7 +12,7 @@ Registro* buscaRegistro(char *nombre);
 bool validarToken(char *arr[], char *tok);
 bool ejecOperacion(char *instruccion, char *argumentos);
 bool instEND();
-int interpretar_comando(char *comando, char *archivo);
+int interpretar_comando(char *comando, char *archivo, int *ptr_pid);
 
 //Variables que usa el main
 extern char *delimitadores;

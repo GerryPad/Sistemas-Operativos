@@ -153,7 +153,7 @@ struct Nodo * desencolar(struct Nodo *lista){
     struct Nodo *aux=lista->siguiente;
     if(aux==NULL){
         
-        mvprintw(25,2,"La lista esta vacia\n");
+        mvprintw(25,2,"No hay mas procesos en listos.");
         return NULL;
     }
 
@@ -238,7 +238,7 @@ int main(){
 
 
     char archivo[64], linea[128], comando[256], com_mata[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, pid_kill=0; //com es para hacer un "switch"
+    int pc, com, pid=1, pid_kill=0, *ptr_pid = &pid_kill; //com es para hacer un "switch"
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool limpieza = false; 
@@ -269,7 +269,7 @@ int main(){
                     clrtoeol(); 
                     refresh();
                 
-                    com = interpretar_comando(comando, archivo); 
+                    com = interpretar_comando(comando, archivo, ptr_pid); 
                     limpieza = true;
 
                     if (com == 1){ //comando salir
@@ -463,10 +463,10 @@ int main(){
                         noecho();
                         limpieza = true;
                         strcpy(com_mata, comando);
-                        com = interpretar_comando(comando, archivo);
-                        pid_kill = comando_matar(com_mata, pid_kill);
+                        com = interpretar_comando(comando, archivo, ptr_pid);
+                        //pid_kill = comando_matar(com_mata, pid_kill);
 
-                        if(pid_kill != 0){
+                        /*if(pid_kill != 0){
                             proceso_a_matar = mataPID(ejecutando, pid_kill);
                             if(proceso_a_matar != NULL){
                                 strcpy(proceso_a_matar->estado, "terminados**");
@@ -485,7 +485,7 @@ int main(){
                                     mvprintw(25,2, "El PID asociado al proceso no existe.");
                                 }
                             } 
-                        }
+                        }*/
 
                         if (com == 1){
                             fclose(file);
@@ -508,7 +508,31 @@ int main(){
                                 refresh();
                             }      
                         
-                        } else {
+                        } else if(com == 3){
+                            proceso_a_matar = mataPID(ejecutando, pid_kill);
+                            if(proceso_a_matar != NULL){
+                                strcpy(proceso_a_matar->estado, "terminados**");
+                                insertarFinal(terminados,proceso_a_matar);
+                                imprimir_listas(ejecutando,listos,terminados);
+                                //fclose(file);
+                                break; 
+                                //proceso_actual = NULL;
+                            } else{
+                                proceso_a_matar = mataPID(listos, pid_kill);
+                                if(proceso_a_matar != NULL){
+                                    strcpy(proceso_a_matar->estado, "terminados**");
+                                    insertarFinal(terminados,proceso_a_matar);
+                                    imprimir_listas(ejecutando,listos,terminados);
+                                    //proceso_actual = NULL;
+                                } else {
+                                    move(25,2);
+                                    clrtoeol();
+                                    mvprintw(25,2, "El PID asociado al proceso no existe.");
+                                }
+                            } 
+                        }
+                        
+                        else {
                             move(25,2);
                             clrtoeol();
                             if (com == -1) {

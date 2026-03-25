@@ -393,7 +393,7 @@ bool ejecOperacion(char *instruccion, char *args){
     }
 }
 
-int interpretar_comando(char *comando, char *archivo) {
+int interpretar_comando(char *comando, char *archivo, int *ptr_pid) {
     char *arg, *basura, *cmd;
 
     cmd = strtok(comando, " \n");
@@ -441,7 +441,7 @@ int interpretar_comando(char *comando, char *archivo) {
         }
     }
 
-    /*if(strcmp(cmd, "mata") == 0){
+    if(strcmp(cmd, "mata") == 0){
         basura = strtok(NULL, " \n");
         if (arg == NULL){
             return -1;
@@ -453,10 +453,11 @@ int interpretar_comando(char *comando, char *archivo) {
             mvprintw(24, 10,"Demasiados argumentos.");
             return 0;
         } else {
-            pid = atoi(arg);
+            *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos
+            //pid = atoi(arg);
             return 3;
         }
-    }*/
+    }
 
     return 0;
 }
