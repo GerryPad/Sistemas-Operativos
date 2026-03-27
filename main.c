@@ -7,155 +7,10 @@
 #include "instrucciones.h"
 #include "ncurses.h"
 #include "nodo.h"
+#include "dispatch.h"
 #include <sys/select.h>
 
-
-//Imprimir primero el ejecutando, despues los listos en el orden que estan en listos y finalmente los terminados en su orden
-void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_listos, struct Nodo *cabecera_terminados){
-    struct Nodo *aux_e = cabecera_ejecutando->siguiente;
-    struct Nodo *aux_l = cabecera_listos->siguiente;
-    struct Nodo *aux_te = cabecera_terminados->siguiente;
-
-    mvprintw(7, 2, "%-6s %-8s %-12s %-8s %-15s %-6s %-6s %-6s %-6s", 
-        "PID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX");
-
-
-    for(int j = 8; j<20; j++){
-        move(j,2);
-        clrtoeol();
-    } 
- //Esta es la lista de ejecutando
-   
-    if(aux_e != NULL){
-        mvprintw(8, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
-        aux_e->PID,
-        aux_e->archivo,
-        aux_e->estado,
-        aux_e->PC,
-        aux_e->IR,
-        aux_e->registros[0],
-        aux_e->registros[1],
-        aux_e->registros[2],
-        aux_e->registros[3] 
-        );
-    }
-
-
-    int i=9;
-    while(aux_l != NULL){
-
-        if(i>=20 || aux_l == NULL){
-            break;
-        }
-
-        move(i,2);
-        clrtoeol();
-        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
-        aux_l->PID,
-        aux_l->archivo,
-        aux_l->estado,
-        aux_l->PC,
-        aux_l->IR,
-        aux_l->registros[0],
-        aux_l->registros[1],
-        aux_l->registros[2],
-        aux_l->registros[3] 
-        );
-
-        aux_l = aux_l->siguiente;
-        i++;
-    }
-
-    //Lista de terminados
-    while(aux_te != NULL){
-        if(i>=20 || aux_te == NULL){
-            break;
-        }
-        move(i,2);
-        clrtoeol();
-        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
-        aux_te->PID,
-        aux_te->archivo,
-        aux_te->estado,
-        aux_te->PC,
-        aux_te->IR,
-        aux_te->registros[0],
-        aux_te->registros[1],
-        aux_te->registros[2],
-        aux_te->registros[3] 
-        );
-
-        aux_te = aux_te->siguiente;
-        i++;
-    }
-    refresh();
-}
-
-
-
-void guardaPCB(struct Nodo *PCB, int pc, char *linea){
-    PCB->PC = pc; //Sera que tenemos que guardar la siguiente instruccion o donde se quedo?
-    strcpy(PCB->IR,linea);
-    PCB->registros[0]=registros[0].valor;
-    PCB->registros[1]=registros[1].valor;
-    PCB->registros[2]=registros[2].valor;
-    PCB->registros[3]=registros[3].valor;
-}
-
-//Esto debe devolver un entero para el pc
-int restauraPCB(struct Nodo *proceso_actual, char *archivo){
-    //pc = proceso_actual->PC
-    registros[0].valor = proceso_actual->registros[0];
-    registros[1].valor = proceso_actual->registros[1];
-    registros[2].valor = proceso_actual->registros[2];
-    registros[3].valor = proceso_actual->registros[3];
-    strcpy(archivo, proceso_actual->archivo); 
-    return proceso_actual->PC; //Se ocupaba hacer esto porque si no, jamas devolvia el valor
-}
-
-//El planificador primitivo, solo devuelve el primero que este en listos
-struct Nodo* planificador(struct Nodo *listos, struct Nodo *ejecutando) {
-    if (listos->siguiente == NULL){
-        return NULL; //Caundo no hay nada en listos
-    } 
-    struct Nodo *proceso = desencolar(listos);
-    strcpy(proceso->estado, "ejecutando");
-    insertarFinal(ejecutando, proceso);
-    return proceso;
-}
-
-int comando_matar(char *comando, int pid) {
-    char *arg, *basura, *cmd;
-
-    cmd = strtok(comando, " \n");
-    arg = strtok(NULL, " \n\r");
-
-    if (cmd == NULL) return 0; //Para un enter sin comando
-
-
-    if(strcmp(cmd, "mata") == 0){
-        basura = strtok(NULL, " \n");
-        if (arg == NULL){
-            return -1;
-        }
-
-        if(basura != NULL){
-            move(24,10);
-            clrtoeol();
-            mvprintw(24, 10,"Demasiados argumentos.");
-            return 0;
-        } else {
-            pid = atoi(arg);
-            return pid;
-        }
-    }
-
-    return 0;
-}
-
-
 int kbhit(void);        
-
 int main(){
 
     //Creando nodo de prueba para impresion
@@ -207,12 +62,12 @@ int main(){
                         endwin();
                         return 0;
                     } else if (com == 2){ //comando ejecuta
-                    com_valido = true;
-                    nuevo=crearNodo(pid, archivo);
-                    pid++;
-                    insertarFinal(listos,nuevo);
+                        com_valido = true;
+                        nuevo=crearNodo(pid, archivo);
+                        pid++;
+                        insertarFinal(listos,nuevo);
                     } else if(com == 3){
-                         mvprintw(25, 2, "No hay ningun proceso para matar.");
+                        mvprintw(25, 2, "No hay ningun proceso para matar.");
                     }else { //error al ingresar comando
                         move(25,2);
                         clrtoeol();
@@ -229,7 +84,6 @@ int main(){
 
             }
 
-            
         }
 
         if(limpieza){
@@ -258,9 +112,6 @@ int main(){
                 linea[strcspn(linea, "\n\r")] = '\0';
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
                 imprimir_registros(pc, linea);
-                /*imprimir_listas(listos);
-                imprimir_listas(ejecutando);
-                imprimir_listas(terminados);*/
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
                 
@@ -279,10 +130,6 @@ int main(){
                             strcpy(proceso_a_terminar->estado, "terminado*");
                             insertarFinal(terminados, proceso_a_terminar);
                         }
-                       
-                        /*imprimir_listas(listos);
-                        imprimir_listas(ejecutando);
-                        imprimir_listas(terminados);*/
                         imprimir_listas(ejecutando, listos, terminados);
                         tokEND = false; 
                         limpieza = true;
@@ -326,9 +173,6 @@ int main(){
                                 strcpy(proceso_a_terminar->estado, "terminado*");
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
-                            /*imprimir_listas(listos);
-                            imprimir_listas(ejecutando);
-                            imprimir_listas(terminados);*/
                             imprimir_listas(ejecutando, listos, terminados);
 
                             limpieza = true;
@@ -354,9 +198,6 @@ int main(){
                         proceso_actual = NULL;
                         fin_quantum = true;
                         limpieza = true;
-                        
-                        /*imprimir_listas(listos);
-                        imprimir_listas(ejecutando);*/
                         imprimir_listas(ejecutando, listos, terminados);
                         refresh();
                         
@@ -409,16 +250,13 @@ int main(){
                                 strcpy(proceso_a_matar->estado, "terminados**");
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando,listos,terminados);
-                                //fclose(file);
                                 break; 
-                                //proceso_actual = NULL;
                             } else{
                                 proceso_a_matar = mataPID(listos, pid_kill);
                                 if(proceso_a_matar != NULL){
                                     strcpy(proceso_a_matar->estado, "terminados**");
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando,listos,terminados);
-                                    //proceso_actual = NULL;
                                 } else {
                                     move(25,2);
                                     clrtoeol();
@@ -479,9 +317,6 @@ int main(){
                         insertarFinal(terminados, proceso_a_terminar);
                     }
 
-                    /*imprimir_listas(listos);
-                    imprimir_listas(ejecutando);
-                    imprimir_listas(terminados);*/
                     imprimir_listas(ejecutando, listos, terminados);
                 } else {
                     mvprintw(23, 2, "Estado: Error - Falto END o abortado.");
@@ -497,9 +332,6 @@ int main(){
                 }
                 fclose(file);
                 proceso_actual = NULL;
-                /*imprimir_listas(listos);
-                imprimir_listas(ejecutando);
-                imprimir_listas(terminados);*/
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
             } else {

@@ -1,3 +1,4 @@
+
 TARGET = interprete
 
 CC = gcc
@@ -7,7 +8,7 @@ CC = gcc
 CFLAGS = -Wall -g
 LDFLAGS = -lncurses
 
-SRCS = main.c instrucciones.c ncurses.c nodo.c
+SRCS = main.c instrucciones.c ncurses.c nodo.c dispatch.c
 OBJS = $(SRCS:.c=.o)
 
 all: $(TARGET)

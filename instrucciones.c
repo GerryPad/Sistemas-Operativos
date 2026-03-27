@@ -446,15 +446,19 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid) {
         if (arg == NULL){
             return -1;
         }
+        if(esInt(arg)== false){
+            move(24,10);
+            clrtoeol();
+            mvprintw(24,2,"El argumento no es un numero.");
+        }
 
         if(basura != NULL){
             move(24,10);
             clrtoeol();
             mvprintw(24, 10,"Demasiados argumentos.");
             return 0;
-        } else {
+        }else {
             *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos
-            //pid = atoi(arg);
             return 3;
         }
     }
