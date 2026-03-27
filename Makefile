@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS = -Wall -g
 LDFLAGS = -lncurses
 
-SRCS = main.c instrucciones.c ncurses.c
+SRCS = main.c instrucciones.c ncurses.c nodo.c
 OBJS = $(SRCS:.c=.o)
 
 all: $(TARGET)

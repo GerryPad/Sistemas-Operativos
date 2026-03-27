@@ -6,47 +6,8 @@
 #include <curses.h>
 #include "instrucciones.h"
 #include "ncurses.h"
+#include "nodo.h"
 #include <sys/select.h>
-
-struct Nodo{
-    int PID;
-    char estado[16];
-    int PC;
-    char archivo[64]; //O usar FILE * (?)
-    char IR[64];
-    int registros[4];
-    struct Nodo *siguiente;
-};
-
-struct Nodo* crearCabecera(){
-    struct Nodo *cabecera = malloc(sizeof(struct Nodo));
-    cabecera->siguiente = NULL;
-    return cabecera;
-}
-
-struct Nodo* crearNodo(int n, char *archivo){
-    struct Nodo *nuevo = malloc(sizeof(struct Nodo));
-    nuevo->PID = n;
-    nuevo->PC = 1; 
-    for (int i=0; i<4; i++){
-        nuevo->registros[i] = 0;
-    }
-    strcpy(nuevo->archivo, archivo);
-    strcpy(nuevo->IR, "---");
-    nuevo->siguiente = NULL;
-    strcpy(nuevo->estado, "listos");
-    return nuevo;
-}
-
-void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo){
-    struct Nodo *aux = cabecera;
-
-    while(aux->siguiente != NULL){
-        aux = aux->siguiente;
-    }
-
-    aux->siguiente = nuevo;
-}
 
 
 //Imprimir primero el ejecutando, despues los listos en el orden que estan en listos y finalmente los terminados en su orden
@@ -130,37 +91,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
     refresh();
 }
 
-struct Nodo *mataPID(struct Nodo *lista, int PID){
-    struct Nodo * aux = lista->siguiente;
-    struct Nodo * aux2 = lista;
 
-    while(aux != NULL && aux->PID != PID){
-        aux = aux->siguiente;
-        aux2 = aux2->siguiente;
-    }
-
-    if(aux==NULL){
-        return NULL;
-    }
-
-    aux2->siguiente=aux->siguiente;
-    aux->siguiente = NULL;
-
-    return aux;
-}
-
-struct Nodo * desencolar(struct Nodo *lista){
-    struct Nodo *aux=lista->siguiente;
-    if(aux==NULL){
-        
-        mvprintw(25,2,"No hay mas procesos en listos.");
-        return NULL;
-    }
-
-    lista->siguiente=lista->siguiente->siguiente;
-    aux->siguiente=NULL;
-    return(aux);
-}
 
 void guardaPCB(struct Nodo *PCB, int pc, char *linea){
     PCB->PC = pc; //Sera que tenemos que guardar la siguiente instruccion o donde se quedo?
