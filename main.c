@@ -68,7 +68,14 @@ int main(){
                         insertarFinal(listos,nuevo);
                     } else if(com == 3){
                         mvprintw(25, 2, "No hay ningun proceso para matar.");
-                    }else { //error al ingresar comando
+                    } else if (com == 4){
+                        com_valido = true;
+                        nuevo=crearNodo(pid, "file"); pid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, "file2"); pid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, "file3"); pid++; insertarFinal(listos,nuevo);
+                    }
+                    
+                    else { //error al ingresar comando
                         move(25,2);
                         clrtoeol();
                         if (com == -1) {
@@ -77,7 +84,7 @@ int main(){
                             mvprintw(25,2,"Error: Comando invalido");
                         }
                         refresh();
-                        usleep(1000000);
+                        //usleep(1000000);
                     }
                 }
                 continue;
@@ -179,7 +186,7 @@ int main(){
                             break; 
                         }
                     }
-                    usleep(1000000);
+                    //usleep(1000000);
                     pc++;
                     quantum++;
 
@@ -278,7 +285,7 @@ int main(){
                                 continue;
                             }
                             refresh();
-                            usleep(1000000);
+                            //usleep(1000000);
                             fclose(file);
                             break;
                         }

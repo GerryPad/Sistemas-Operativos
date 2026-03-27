@@ -463,5 +463,15 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid) {
         }
     }
 
+    if (strcmp(cmd, "prueba") == 0) {
+            if(arg != NULL){
+                move(24,10);
+                clrtoeol();
+                mvprintw(24, 10,"Demasiados argumentos.");
+                return 0;
+            }
+        return 4; 
+    }
+
     return 0;
 }
