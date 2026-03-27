@@ -393,7 +393,7 @@ bool ejecOperacion(char *instruccion, char *args){
     }
 }
 
-int interpretar_comando(char *comando, char *archivo) {
+int interpretar_comando(char *comando, char *archivo, int *ptr_pid) {
     char *arg, *basura, *cmd;
 
     cmd = strtok(comando, " \n");
@@ -441,5 +441,58 @@ int interpretar_comando(char *comando, char *archivo) {
         }
     }
 
+    if(strcmp(cmd, "mata") == 0){
+        basura = strtok(NULL, " \n");
+        if (arg == NULL){
+            return -1;
+        }
+        if(esInt(arg)== false){
+            move(24,10);
+            clrtoeol();
+            mvprintw(24,2,"El argumento no es un numero.");
+        }
+
+        if(basura != NULL){
+            move(24,10);
+            clrtoeol();
+            mvprintw(24, 10,"Demasiados argumentos.");
+            return 0;
+        }else {
+            *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos
+            //pid = atoi(arg);
+            return 3;
+        }
+    }
+
     return 0;
 }
+
+
+/*int comando_matar(char *comando, int pid) {
+    char *arg, *basura, *cmd;
+
+    cmd = strtok(comando, " \n");
+    arg = strtok(NULL, " \n\r");
+
+    if (cmd == NULL) return 0; //Para un enter sin comando
+
+
+    if(strcmp(cmd, "mata") == 0){
+        basura = strtok(NULL, " \n");
+        if (arg == NULL){
+            return -1;
+        }
+
+        if(basura != NULL){
+            move(24,10);
+            clrtoeol();
+            mvprintw(24, 10,"Demasiados argumentos.");
+            return 0;
+        } else {
+            pid = atoi(arg);
+            return pid;
+        }
+    }
+
+    return 0;
+}*/
