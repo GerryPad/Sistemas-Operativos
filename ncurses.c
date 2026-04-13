@@ -26,3 +26,82 @@ void limpia_lineas() {
     move(20,2); clrtoeol();
     refresh();
 }
+
+//Imprimir primero el ejecutando, despues los listos en el orden que estan en listos y finalmente los terminados en su orden
+void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_listos, struct Nodo *cabecera_terminados){
+    struct Nodo *aux_e = cabecera_ejecutando->siguiente;
+    struct Nodo *aux_l = cabecera_listos->siguiente;
+    struct Nodo *aux_te = cabecera_terminados->siguiente;
+
+    mvprintw(7, 2, "%-6s %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s", 
+        "PID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX");
+
+
+    for(int j = 8; j<20; j++){
+        move(j,2);
+        clrtoeol();
+    } 
+ //Esta es la lista de ejecutando
+   
+    if(aux_e != NULL){
+        mvprintw(8, 2,"%-6d %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s", 
+        aux_e->PID,
+        aux_e->archivo,
+        aux_e->estado,
+        "---",
+        "---",
+        "---",
+        "---",
+        "---",
+        "---" 
+        );
+    }
+
+    int i=9;
+    while(aux_l != NULL){
+        if(i>=20 || aux_l == NULL){
+            break;
+        }
+
+        move(i,2);
+        clrtoeol();
+        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-20d %-20d %-20d %-20d", 
+        aux_l->PID,
+        aux_l->archivo,
+        aux_l->estado,
+        aux_l->PC,
+        aux_l->IR,
+        aux_l->registros[0],
+        aux_l->registros[1],
+        aux_l->registros[2],
+        aux_l->registros[3] 
+        );
+
+        aux_l = aux_l->siguiente;
+        i++;
+    }
+
+    //Lista de terminados
+    while(aux_te != NULL){
+        if(i>=20 || aux_te == NULL){
+            break;
+        }
+        move(i,2);
+        clrtoeol();
+        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-20d %-20d %-20d %-20d", 
+        aux_te->PID,
+        aux_te->archivo,
+        aux_te->estado,
+        aux_te->PC,
+        aux_te->IR,
+        aux_te->registros[0],
+        aux_te->registros[1],
+        aux_te->registros[2],
+        aux_te->registros[3] 
+        );
+
+        aux_te = aux_te->siguiente;
+        i++;
+    }
+    refresh();
+}

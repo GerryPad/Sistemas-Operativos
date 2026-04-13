@@ -459,40 +459,21 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid) {
             return 0;
         }else {
             *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos
-            //pid = atoi(arg);
             return 3;
         }
+
+        
+    }
+
+    if (strcmp(cmd, "prueba") == 0) {
+            if(arg != NULL){
+                move(24,10);
+                clrtoeol();
+                mvprintw(24, 10,"Demasiados argumentos.");
+                return 0;
+            }
+        return 4; 
     }
 
     return 0;
 }
-
-
-/*int comando_matar(char *comando, int pid) {
-    char *arg, *basura, *cmd;
-
-    cmd = strtok(comando, " \n");
-    arg = strtok(NULL, " \n\r");
-
-    if (cmd == NULL) return 0; //Para un enter sin comando
-
-
-    if(strcmp(cmd, "mata") == 0){
-        basura = strtok(NULL, " \n");
-        if (arg == NULL){
-            return -1;
-        }
-
-        if(basura != NULL){
-            move(24,10);
-            clrtoeol();
-            mvprintw(24, 10,"Demasiados argumentos.");
-            return 0;
-        } else {
-            pid = atoi(arg);
-            return pid;
-        }
-    }
-
-    return 0;
-}*/

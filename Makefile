@@ -1,3 +1,4 @@
+
 TARGET = interprete
 
 CC = gcc
