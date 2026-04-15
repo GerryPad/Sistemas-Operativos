@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <curses.h>
+#include <unistd.h>
 #include "instrucciones.h"
 
 char *instruccion[] = {"MOV", "ADD", "SUB", "MUL", "DIV", "INC", "DEC", "END", NULL};

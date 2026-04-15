@@ -3,11 +3,11 @@
 #include "ncurses.h"
 
 void imprimir_registros(int renglon, char *instruccion){
-    mvprintw(3, 2, "%-8s %-15s %-6s %-6s %-6s %-6s", 
+    mvprintw(3, 2, "%-8s %-15s %-20s %-20s %-20s %-20s", 
         "PC", "IR", "EAX", "EBX", "ECX", "EDX");
     move(5,2);
     clrtoeol();
-    mvprintw(5, 2, "%-8d %-15s %-6d %-6d %-6d %-6d", 
+    mvprintw(5, 2, "%-8d %-15s %-20d %-20d %-20d %-20d", 
         renglon, 
         instruccion, 
         registros[0].valor, 

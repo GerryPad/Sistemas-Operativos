@@ -85,6 +85,7 @@ int main(){
                             mvprintw(25,2, "Error: Falta nombre de archivo.");
                         } else {
                             mvprintw(25,2,"Error: Comando invalido");
+                            
                         }
                         refresh();
                         //usleep(1000000);
@@ -176,7 +177,6 @@ int main(){
                             guardaPCB(proceso_actual,pc,linea_original);
                             mvprintw(22, 2, "ABORTADO: Error en renglon %d", pc);
                             mvprintw(24,2, "Motivo:");
-
                             //Mover los procesos fallidos a terminados
                             proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
@@ -271,6 +271,7 @@ int main(){
                                     move(25,2);
                                     clrtoeol();
                                     mvprintw(25,2, "El PID asociado al proceso no existe.");
+                                    mvprintw(27,2, "Ese proceso no existe o ya termino");
                                 }
                             } 
                         }
