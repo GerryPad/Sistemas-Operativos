@@ -255,14 +255,14 @@ int main(){
                             }      
                         
                         } else if(com == 3){
-                            proceso_a_matar = mataPID(ejecutando, pid_kill);
+                            proceso_a_matar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_matar != NULL){
                                 strcpy(proceso_a_matar->estado, "terminados**");
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando,listos,terminados);
                                 break; 
                             } else{
-                                proceso_a_matar = mataPID(listos, pid_kill);
+                                proceso_a_matar = buscaPID(listos, pid_kill);
                                 if(proceso_a_matar != NULL){
                                     strcpy(proceso_a_matar->estado, "terminados**");
                                     insertarFinal(terminados,proceso_a_matar);
@@ -271,7 +271,7 @@ int main(){
                                     move(25,2);
                                     clrtoeol();
                                     mvprintw(25,2, "El PID asociado al proceso no existe.");
-                                    mvprintw(27,2, "Ese proceso no existe o ya termino");
+                                    //mvprintw(27,2, "Ese proceso no existe o ya termino");
                                 }
                             } 
                         }
@@ -314,7 +314,7 @@ int main(){
                 move(23, 2); clrtoeol();
                 mvprintw(23, 2, "Quantum = 3. Cambio de proceso");
                 refresh();
-            } else if(!interrumpido){
+            }else if(!interrumpido){
                 move(23, 2); clrtoeol();
                 if (tokEND){
                     move(23,2);

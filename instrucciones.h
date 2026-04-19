@@ -15,7 +15,6 @@ bool instEND();
 int interpretar_comando(char *comando, char *archivo, int *ptr_pid);
 
 //Variables que usa el main
-extern char *delimitadores;
 extern char *instruccion[];
 extern Registro registros[];
 

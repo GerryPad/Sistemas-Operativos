@@ -18,7 +18,7 @@ struct Nodo{
 struct Nodo *crearCabecera();
 struct Nodo *crearNodo(int n, char *archivo);
 void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo);
-struct Nodo *mataPID(struct Nodo *lista, int PID);
+struct Nodo *buscaPID(struct Nodo *lista, int PID);
 struct Nodo *desencolar(struct Nodo *lista);
 
 #endif
