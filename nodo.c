@@ -7,9 +7,14 @@ struct Nodo* crearCabecera(){
     return cabecera;
 }
 
-struct Nodo* crearNodo(int n, char *archivo){
+struct Nodo* crearNodo(int n, int m, char *archivo){
     struct Nodo *nuevo = malloc(sizeof(struct Nodo));
+    if (nuevo == NULL){
+        mvprintw(30,2, "No se reservo memoria");
+        return NULL;
+    }
     nuevo->PID = n;
+    nuevo->GID = m;
     nuevo->PC = 0; 
     for (int i=0; i<4; i++){
         nuevo->registros[i] = 0;

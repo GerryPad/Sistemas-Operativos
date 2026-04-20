@@ -44,7 +44,7 @@ int main(){
 
 
     char archivo[64], linea[128], comando[256], com_mata[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch"
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch"
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool fin_quantum, limpieza = false; 
@@ -83,19 +83,19 @@ int main(){
                         return 0;
                     } else if (com == 2){ //comando ejecuta
                         com_valido = true;
-                        nuevo=crearNodo(pid, archivo);
+                        nuevo=crearNodo(pid, gid, archivo);
                         pid++;
                         insertarFinal(listos,nuevo);
                     } else if(com == 3){ //comando mata
                         mvprintw(25, 2, "No hay ningun proceso para matar.");
                     } else if (com == 4){ //comando prueba
                         com_valido = true;
-                        nuevo=crearNodo(pid, "file"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file2"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file3"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file4"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file5"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file6"); pid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file2"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file3"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file4"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);
                     } else if (com == 5){ //comando fork
                         mvprintw(30, 0, "Si entra al comando fork");
                     }
@@ -261,7 +261,7 @@ int main(){
                             return 0;
                         } else if (com == 2){
                             if (access(archivo, F_OK) == 0){
-                                nuevo=crearNodo(pid, archivo);
+                                nuevo=crearNodo(pid, gid, archivo);
                                 pid++;
                                 insertarFinal(listos,nuevo);
                                 interrumpido = false;
@@ -299,7 +299,7 @@ int main(){
                         } else if(com == 5){
                             proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
-                               nuevo=crearNodo(pid, proceso_a_copiar->archivo);
+                               nuevo=crearNodo(pid, gid, proceso_a_copiar->archivo);
                                pid++;
                                nuevo->PC = num_inst;
                                insertarFinal(listos, nuevo);
@@ -307,7 +307,7 @@ int main(){
                             } else {
                                 proceso_a_copiar = buscaPID(listos, pid_kill);
                                 if(proceso_a_copiar != NULL) {
-                                    nuevo=crearNodo(pid, proceso_a_copiar->archivo);
+                                    nuevo=crearNodo(pid, gid, proceso_a_copiar->archivo);
                                     pid++;
                                     nuevo->PC = num_inst;
                                     insertarFinal(listos, nuevo);

@@ -6,17 +6,20 @@
 
 struct Nodo{
     int PID;
+    int GID;
     char estado[16];
     int PC;
     char archivo[64]; 
     char IR[64];
     int registros[4];
+    int CPU; 
+    int GCPU;
     struct Nodo *siguiente;
 };
 
 //Prototipos de funcion en ncurses.c
 struct Nodo *crearCabecera();
-struct Nodo *crearNodo(int n, char *archivo);
+struct Nodo *crearNodo(int n, int m, char *archivo);
 void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo);
 struct Nodo *mataPID(struct Nodo *lista, int PID);
 struct Nodo *desencolar(struct Nodo *lista);
