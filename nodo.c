@@ -10,7 +10,7 @@ struct Nodo* crearCabecera(){
 struct Nodo* crearNodo(int n, char *archivo){
     struct Nodo *nuevo = malloc(sizeof(struct Nodo));
     nuevo->PID = n;
-    nuevo->PC = 1; 
+    nuevo->PC = 0; 
     for (int i=0; i<4; i++){
         nuevo->registros[i] = 0;
     }

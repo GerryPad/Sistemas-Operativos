@@ -3,11 +3,11 @@
 #include "ncurses.h"
 
 void imprimir_registros(int renglon, char *instruccion){
-    mvprintw(3, 2, "%-8s %-15s %-6s %-6s %-6s %-6s", 
+    mvprintw(3, 2, "%-8s %-15s %-20s %-20s %-20s %-20s", 
         "PC", "IR", "EAX", "EBX", "ECX", "EDX");
     move(5,2);
     clrtoeol();
-    mvprintw(5, 2, "%-8d %-15s %-6d %-6d %-6d %-6d", 
+    mvprintw(5, 2, "%-8d %-15s %-20d %-20d %-20d %-20d", 
         renglon, 
         instruccion, 
         registros[0].valor, 
@@ -33,7 +33,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
     struct Nodo *aux_l = cabecera_listos->siguiente;
     struct Nodo *aux_te = cabecera_terminados->siguiente;
 
-    mvprintw(7, 2, "%-6s %-8s %-12s %-8s %-15s %-6s %-6s %-6s %-6s", 
+    mvprintw(7, 2, "%-6s %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s", 
         "PID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX");
 
 
@@ -44,7 +44,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
  //Esta es la lista de ejecutando
    
     if(aux_e != NULL){
-        mvprintw(8, 2,"%-6d %-8s %-12s %-8s %-15s %-6s %-6s %-6s %-6s", 
+        mvprintw(8, 2,"%-6d %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s", 
         aux_e->PID,
         aux_e->archivo,
         aux_e->estado,
@@ -65,7 +65,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
 
         move(i,2);
         clrtoeol();
-        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
+        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-20d %-20d %-20d %-20d", 
         aux_l->PID,
         aux_l->archivo,
         aux_l->estado,
@@ -88,7 +88,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         }
         move(i,2);
         clrtoeol();
-        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-6d %-6d %-6d %-6d", 
+        mvprintw(i, 2, "%-6d %-8s %-12s %-8d %-15s %-20d %-20d %-20d %-20d", 
         aux_te->PID,
         aux_te->archivo,
         aux_te->estado,
