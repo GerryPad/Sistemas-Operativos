@@ -299,7 +299,7 @@ int main(){
                         } else if(com == 5){
                             proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
-                               nuevo=crearNodo(pid, gid, proceso_a_copiar->archivo);
+                               nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                pid++;
                                nuevo->PC = num_inst;
                                insertarFinal(listos, nuevo);
@@ -307,7 +307,7 @@ int main(){
                             } else {
                                 proceso_a_copiar = buscaPID(listos, pid_kill);
                                 if(proceso_a_copiar != NULL) {
-                                    nuevo=crearNodo(pid, gid, proceso_a_copiar->archivo);
+                                    nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                     pid++;
                                     nuevo->PC = num_inst;
                                     insertarFinal(listos, nuevo);
