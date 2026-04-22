@@ -131,6 +131,7 @@ int main(){
             }
 
             quantum = 0;
+            proceso_actual->CPU = 0;
             fin_quantum = false; //para saber porque motivo cerramos proceso
             
             int i=1;
@@ -214,6 +215,7 @@ int main(){
                     usleep(1000000);
                     pc++;
                     quantum++;
+                    proceso_actual->CPU = proceso_actual->CPU + 20;
 
                     if(tokEND){
                         continue;

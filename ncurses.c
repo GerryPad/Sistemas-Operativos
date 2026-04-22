@@ -33,8 +33,8 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
     struct Nodo *aux_l = cabecera_listos->siguiente;
     struct Nodo *aux_te = cabecera_terminados->siguiente;
 
-    mvprintw(7, 2, "%-6s %-6s %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s", 
-        "PID", "GID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX");
+    mvprintw(7, 2, "%-6s %-6s %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s %-8s %-8s", 
+        "PID", "GID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX", "CPU", "GCPU");
 
 
     for(int j = 8; j<20; j++){
@@ -44,7 +44,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
  //Esta es la lista de ejecutando
    
     if(aux_e != NULL){
-        mvprintw(8, 2,"%-6d %-6d %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s", 
+        mvprintw(8, 2,"%-6d %-6d %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s %-8d %-8d", 
         aux_e->PID,
         aux_e->GID,
         aux_e->archivo,
@@ -54,7 +54,9 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         "---",
         "---",
         "---",
-        "---" 
+        "---", 
+        aux_e->CPU,
+        aux_e->GCPU
         );
     }
 
@@ -66,7 +68,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
 
         move(i,2);
         clrtoeol();
-        mvprintw(i, 2, "%-6d %-6d %-8s %-12s %-8d %-15s %-20d %-20d %-20d %-20d", 
+        mvprintw(i, 2, "%-6d %-6d %-8s %-12s %-8d %-15s %-20d %-20d %-20d %-20d %-8d %-8d", 
         aux_l->PID,
         aux_l->GID,
         aux_l->archivo,
@@ -76,7 +78,9 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_l->registros[0],
         aux_l->registros[1],
         aux_l->registros[2],
-        aux_l->registros[3] 
+        aux_l->registros[3],
+        aux_l->CPU,
+        aux_l->GCPU
         );
 
         aux_l = aux_l->siguiente;
