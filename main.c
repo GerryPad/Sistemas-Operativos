@@ -12,21 +12,47 @@
 
 struct Nodo *buscaPID(struct Nodo *lista, int pid){
     struct Nodo * aux = lista->siguiente;
-    //struct Nodo * aux2 = lista;
 
     while(aux != NULL && aux->PID != pid){
         aux = aux->siguiente;
-        //aux2 = aux2->siguiente;
+    
     }
 
     if(aux==NULL){
         return NULL;
     }
-
-    // aux2->siguiente=aux->siguiente;
-    //aux->siguiente = NULL;
-
     return aux;
+}
+
+struct Nodo *buscaGID(struct Nodo *lista, int gid) {
+    struct Nodo *aux = lista->siguiente;
+
+    while (aux != NULL && aux->GID != gid) {
+        aux = aux->siguiente;
+    }
+
+    if(aux==NULL){
+            return NULL;
+        }
+        return aux;
+}
+
+int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
+    int contador = max_gid;  //Asumir que todos los grupos estan activos
+
+    for (int i = 1; i <= max_gid; i++) {
+        if (buscaGID(ejecutando, i) != NULL) {
+            continue; //Si esta en ejecutando ya no lo busques en listos
+        } else {
+            if (buscaGID(listos, i) == NULL) {
+                //Si tampoco esta en listos, el grupo no esta activo
+                contador--;
+            }
+        }
+    }
+
+    mvprintw(30, 0, "Grupos: %-4d", contador);
+    return contador;
 }
 
 int kbhit(void);        
@@ -44,7 +70,7 @@ int main(){
 
 
     char archivo[64], linea[128], comando[256], com_mata[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch"
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool fin_quantum, limpieza = false; 
@@ -85,6 +111,7 @@ int main(){
                         com_valido = true;
                         nuevo=crearNodo(pid, gid, archivo);
                         pid++;
+                        gid++;
                         insertarFinal(listos,nuevo);
                     } else if(com == 3){ //comando mata
                         mvprintw(25, 2, "No hay ningun proceso para matar.");
@@ -131,8 +158,8 @@ int main(){
             }
 
             quantum = 0;
-            proceso_actual->CPU = 0;
             fin_quantum = false; //para saber porque motivo cerramos proceso
+            contarGrupos(listos, ejecutando, gid);
             
             int i=1;
             while(i<pc && fgets(linea, sizeof(linea), file) != NULL){
@@ -265,6 +292,7 @@ int main(){
                             if (access(archivo, F_OK) == 0){
                                 nuevo=crearNodo(pid, gid, archivo);
                                 pid++;
+                                gid++;
                                 insertarFinal(listos,nuevo);
                                 interrumpido = false;
                                 continue; //Para seguir con el proceso actual y que no se cambie por el nuevo

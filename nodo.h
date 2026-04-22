@@ -14,6 +14,7 @@ struct Nodo{
     int registros[4];
     int CPU; 
     int GCPU;
+    int prioridad;
     struct Nodo *siguiente;
 };
 
