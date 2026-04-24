@@ -12,9 +12,10 @@ Registro* buscaRegistro(char *nombre);
 bool validarToken(char *arr[], char *tok);
 bool ejecOperacion(char *instruccion, char *argumentos);
 bool instEND();
-int interpretar_comando(char *comando, char *archivo, int *ptr_pid);
+int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_inst);
 
 //Variables que usa el main
+extern char *delimitadores;
 extern char *instruccion[];
 extern Registro registros[];
 

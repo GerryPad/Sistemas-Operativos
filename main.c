@@ -10,6 +10,77 @@
 #include "dispatch.h"
 #include <sys/select.h>
 
+struct Nodo *buscaPID(struct Nodo *lista, int pid){
+    struct Nodo * aux = lista->siguiente;
+
+    while(aux != NULL && aux->PID != pid){
+        aux = aux->siguiente;
+    
+    }
+
+    if(aux==NULL){
+        return NULL;
+    }
+    return aux;
+}
+
+struct Nodo *buscaGID(struct Nodo *lista, int gid) {
+    struct Nodo *aux = lista->siguiente;
+
+    while (aux != NULL && aux->GID != gid) {
+        aux = aux->siguiente;
+    }
+
+    if(aux==NULL){
+            return NULL;
+        }
+        //aux->GCPU= aux->GCPU+20;
+        return aux;
+}
+
+void aumentaGCPU(struct Nodo *listos, int gid){
+    struct Nodo *aux = listos->siguiente;
+
+    while (aux != NULL) {
+        if(aux->GID== gid){
+            aux->GCPU= aux->GCPU+20;
+        }
+        aux = aux->siguiente;
+    }
+    
+
+}
+
+int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
+    int contador = max_gid;  //Asumir que todos los grupos estan activos
+
+    for (int i = 1; i <= max_gid; i++) {
+        if (buscaGID(ejecutando, i) != NULL) {
+            continue; //Si esta en ejecutando ya no lo busques en listos
+        } else {
+            if (buscaGID(listos, i) == NULL) {
+                //Si tampoco esta en listos, el grupo no esta activo
+                contador--;
+            }
+        }
+    }
+
+    mvprintw(30, 0, "Grupos: %-4d", contador);
+    return contador;
+}
+
+void calculoPrioridades(struct Nodo *listos, int wk) {
+    struct Nodo *aux = listos;
+    int p_base = 20;
+
+    while(aux!= NULL){
+        aux->CPU = aux->CPU/2;
+        aux->GCPU = aux->GCPU/2;
+        aux->prioridad = p_base + (aux->CPU/2) + (aux->GCPU/4*wk);
+        aux = aux->siguiente;
+    }
+}
+
 int kbhit(void);        
 int main(){
 
@@ -21,13 +92,14 @@ int main(){
     struct Nodo *proceso_actual = NULL; //El que se esta ejecutando
     struct Nodo *proceso_a_terminar = NULL;
     struct Nodo *proceso_a_matar = NULL;
+    struct Nodo *proceso_a_copiar  = NULL;
 
 
     char archivo[64], linea[128], comando[256], com_mata[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, pid_kill=0, *ptr_pid = &pid_kill; //com es para hacer un "switch"
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, wk = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
-    bool limpieza = false; 
+    bool fin_quantum, limpieza = false; 
     
     initscr();
     do{
@@ -55,7 +127,7 @@ int main(){
                     clrtoeol(); 
                     refresh();
                 
-                    com = interpretar_comando(comando, archivo, ptr_pid); 
+                    com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst); 
                     limpieza = true;
 
                     if (com == 1){ //comando salir
@@ -63,19 +135,22 @@ int main(){
                         return 0;
                     } else if (com == 2){ //comando ejecuta
                         com_valido = true;
-                        nuevo=crearNodo(pid, archivo);
+                        nuevo=crearNodo(pid, gid, archivo);
                         pid++;
+                        gid++;
                         insertarFinal(listos,nuevo);
-                    } else if(com == 3){
+                    } else if(com == 3){ //comando mata
                         mvprintw(25, 2, "No hay ningun proceso para matar.");
-                    } else if (com == 4){
+                    } else if (com == 4){ //comando prueba
                         com_valido = true;
-                        nuevo=crearNodo(pid, "file"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file2"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file3"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file4"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file5"); pid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, "file6"); pid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file2"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file3"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file4"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);
+                    } else if (com == 5){ //comando fork
+                        mvprintw(30, 0, "Si entra al comando fork");
                     }
                     
                     else { //error al ingresar comando
@@ -88,7 +163,6 @@ int main(){
                             
                         }
                         refresh();
-                        //usleep(1000000);
                     }
                 }
                 continue;
@@ -109,8 +183,10 @@ int main(){
                 continue;
             }
 
-            int quantum = 0;
-            bool fin_quantum = false; //para saber porque motivo cerramos proceso
+            quantum = 0;
+            fin_quantum = false; //para saber porque motivo cerramos proceso
+            contarGrupos(listos, ejecutando, gid);
+            
             int i=1;
             while(i<pc && fgets(linea, sizeof(linea), file) != NULL){
                 i++;
@@ -189,10 +265,12 @@ int main(){
                             break; 
                         }
                     }
-                    //usleep(1000000);
+                    usleep(1000000);
                     pc++;
                     quantum++;
-
+                    proceso_actual->CPU = proceso_actual->CPU + 20;
+                    proceso_actual->GCPU=proceso_actual->GCPU + 20;
+                    aumentaGCPU(listos,proceso_actual->GID);
                     if(tokEND){
                         continue;
                     }
@@ -231,7 +309,7 @@ int main(){
                         noecho();
                         limpieza = true;
                         strcpy(com_mata, comando);
-                        com = interpretar_comando(comando, archivo, ptr_pid);
+                        com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst);
 
                         if (com == 1){
                             fclose(file);
@@ -239,8 +317,9 @@ int main(){
                             return 0;
                         } else if (com == 2){
                             if (access(archivo, F_OK) == 0){
-                                nuevo=crearNodo(pid, archivo);
+                                nuevo=crearNodo(pid, gid, archivo);
                                 pid++;
+                                gid++;
                                 insertarFinal(listos,nuevo);
                                 interrumpido = false;
                                 continue; //Para seguir con el proceso actual y que no se cambie por el nuevo
@@ -255,14 +334,14 @@ int main(){
                             }      
                         
                         } else if(com == 3){
-                            proceso_a_matar = buscaPID(ejecutando, pid_kill);
+                            proceso_a_matar = mataPID(ejecutando, pid_kill);
                             if(proceso_a_matar != NULL){
                                 strcpy(proceso_a_matar->estado, "terminados**");
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando,listos,terminados);
                                 break; 
                             } else{
-                                proceso_a_matar = buscaPID(listos, pid_kill);
+                                proceso_a_matar = mataPID(listos, pid_kill);
                                 if(proceso_a_matar != NULL){
                                     strcpy(proceso_a_matar->estado, "terminados**");
                                     insertarFinal(terminados,proceso_a_matar);
@@ -271,9 +350,33 @@ int main(){
                                     move(25,2);
                                     clrtoeol();
                                     mvprintw(25,2, "El PID asociado al proceso no existe.");
-                                    //mvprintw(27,2, "Ese proceso no existe o ya termino");
+                                    mvprintw(27,2, "Ese proceso no existe o ya termino");
                                 }
                             } 
+                        } else if(com == 5){
+                            proceso_a_copiar = buscaPID(ejecutando, pid_kill);
+                            if(proceso_a_copiar != NULL){
+                               nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
+                               pid++;
+                               nuevo->PC = num_inst;
+                               insertarFinal(listos, nuevo);
+                               imprimir_listas(ejecutando, listos, terminados);
+                            } else {
+                                proceso_a_copiar = buscaPID(listos, pid_kill);
+                                if(proceso_a_copiar != NULL) {
+                                    nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
+                                    pid++;
+                                    nuevo->PC = num_inst;
+                                    insertarFinal(listos, nuevo);
+                                    imprimir_listas(ejecutando, listos, terminados);
+                                } else {
+                                    move(30,2);
+                                    clrtoeol();
+                                    mvprintw(30,2,"No existe el proceso asociado al PID o el proceso ya termino.");
+                                }
+                                
+                            }
+
                         }
                         
                         else {
@@ -289,7 +392,6 @@ int main(){
                                 continue;
                             }
                             refresh();
-                            //usleep(1000000);
                             fclose(file);
                             break;
                         }
@@ -310,11 +412,12 @@ int main(){
                 }               
             }
 
-            if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumped
+            if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
                 move(23, 2); clrtoeol();
                 mvprintw(23, 2, "Quantum = 3. Cambio de proceso");
+                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 refresh();
-            }else if(!interrumpido){
+            } else if(!interrumpido){
                 move(23, 2); clrtoeol();
                 if (tokEND){
                     move(23,2);

@@ -394,8 +394,8 @@ bool ejecOperacion(char *instruccion, char *args){
     }
 }
 
-int interpretar_comando(char *comando, char *archivo, int *ptr_pid) {
-    char *arg, *basura, *cmd;
+int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_inst) {
+    char *arg, *basura, *cmd, *arg2;
 
     cmd = strtok(comando, " \n");
     arg = strtok(NULL, " \n\r");
@@ -474,6 +474,33 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid) {
                 return 0;
             }
         return 4; 
+    }
+
+    if(strcmp(cmd, "fork") == 0){
+        arg2 = strtok(NULL, " \n");
+        basura = strtok(NULL, " \n");
+
+        if (arg == NULL || arg2 == NULL){
+            return -1;
+        }
+
+        if(esInt(arg) == false || esInt(arg2) == false){
+            move(24,10);
+            clrtoeol();
+            mvprintw(24,2,"Alguno de los argumentos no es un numero.");
+        }
+
+        if(basura != NULL){
+            move(24,10);
+            clrtoeol();
+            mvprintw(24, 10,"Demasiados argumentos.");
+            return 0;
+        }else {
+            *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos
+            *ptr_inst = atoi(arg2);
+            return 5;
+        }
+
     }
 
     return 0;

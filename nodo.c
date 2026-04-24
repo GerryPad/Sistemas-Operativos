@@ -7,9 +7,14 @@ struct Nodo* crearCabecera(){
     return cabecera;
 }
 
-struct Nodo* crearNodo(int n, char *archivo){
+struct Nodo* crearNodo(int n, int m, char *archivo){
     struct Nodo *nuevo = malloc(sizeof(struct Nodo));
+    if (nuevo == NULL){
+        mvprintw(30,2, "No se reservo memoria");
+        return NULL;
+    }
     nuevo->PID = n;
+    nuevo->GID = m;
     nuevo->PC = 0; 
     for (int i=0; i<4; i++){
         nuevo->registros[i] = 0;
@@ -18,6 +23,7 @@ struct Nodo* crearNodo(int n, char *archivo){
     strcpy(nuevo->IR, "---");
     nuevo->siguiente = NULL;
     strcpy(nuevo->estado, "listos");
+    nuevo->prioridad = 0; //Si deberia empezar en 20 o en 0?
     return nuevo;
 }
 
@@ -30,7 +36,7 @@ void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo){
     aux->siguiente = nuevo;
 }
 
-struct Nodo *buscaPID(struct Nodo *lista, int PID){
+struct Nodo *mataPID(struct Nodo *lista, int PID){
     struct Nodo * aux = lista->siguiente;
     struct Nodo * aux2 = lista;
 
