@@ -69,8 +69,20 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
     return contador;
 }
 
-void calculoPrioridades(struct Nodo *listos, int wk) {
-    struct Nodo *aux = listos;
+void calculoPrioridades(struct Nodo *listos, int wk, struct Nodo *saliendo) {
+    
+    // Solo castigamos/aliviamos al que acaba de usar la CPU
+    saliendo->CPU /= 2;
+    saliendo->GCPU /= 2;
+    
+    // Recalculamos prioridades de todos sin dividir sus CPUs entre 2
+    struct Nodo *aux = listos->siguiente;
+    while(aux != NULL) {
+        aux->prioridad = 20 + (aux->CPU / 2) + (aux->GCPU / (4 * wk));
+        aux = aux->siguiente;
+    }
+
+    /*struct Nodo *aux = listos;
     int p_base = 20;
 
     while(aux!= NULL){
@@ -78,7 +90,7 @@ void calculoPrioridades(struct Nodo *listos, int wk) {
         aux->GCPU = aux->GCPU/2;
         aux->prioridad = p_base + (aux->CPU/2) + (aux->GCPU/4*wk);
         aux = aux->siguiente;
-    }
+    }*/
 }
 
 int kbhit(void);        
@@ -411,11 +423,11 @@ int main(){
                     break;
                 }               
             }
-
+            
             if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
                 move(23, 2); clrtoeol();
                 mvprintw(23, 2, "Quantum = 3. Cambio de proceso");
-                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
+                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid),proceso_a_terminar); //agregamos el nodo que solo queremos castigar
                 refresh();
             } else if(!interrumpido){
                 move(23, 2); clrtoeol();

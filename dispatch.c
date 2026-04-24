@@ -28,6 +28,8 @@ struct Nodo* planificador(struct Nodo *listos, struct Nodo *ejecutando) {
     if (listos->siguiente == NULL){
         return NULL; //Caundo no hay nada en listos
     } 
+
+    
     struct Nodo *proceso = desencolar(listos);
     strcpy(proceso->estado, "ejecutando");
     insertarFinal(ejecutando, proceso);

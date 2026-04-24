@@ -24,6 +24,8 @@ struct Nodo* crearNodo(int n, int m, char *archivo){
     nuevo->siguiente = NULL;
     strcpy(nuevo->estado, "listos");
     nuevo->prioridad = 0; //Si deberia empezar en 20 o en 0?
+    nuevo->CPU=0;
+    nuevo->GCPU=0;
     return nuevo;
 }
 
