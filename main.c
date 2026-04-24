@@ -34,7 +34,21 @@ struct Nodo *buscaGID(struct Nodo *lista, int gid) {
     if(aux==NULL){
             return NULL;
         }
+        //aux->GCPU= aux->GCPU+20;
         return aux;
+}
+
+void aumentaGCPU(struct Nodo *listos, int gid){
+    struct Nodo *aux = listos->siguiente;
+
+    while (aux != NULL) {
+        if(aux->GID== gid){
+            aux->GCPU= aux->GCPU+20;
+        }
+        aux = aux->siguiente;
+    }
+    
+
 }
 
 int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
@@ -59,7 +73,7 @@ void calculoPrioridades(struct Nodo *listos, int wk) {
     struct Nodo *aux = listos;
     int p_base = 20;
 
-    while(aux->siguiente != NULL){
+    while(aux!= NULL){
         aux->CPU = aux->CPU/2;
         aux->GCPU = aux->GCPU/2;
         aux->prioridad = p_base + (aux->CPU/2) + (aux->GCPU/4*wk);
@@ -82,7 +96,7 @@ int main(){
 
 
     char archivo[64], linea[128], comando[256], com_mata[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, wk = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool fin_quantum, limpieza = false; 
@@ -255,7 +269,8 @@ int main(){
                     pc++;
                     quantum++;
                     proceso_actual->CPU = proceso_actual->CPU + 20;
-
+                    proceso_actual->GCPU=proceso_actual->GCPU + 20;
+                    aumentaGCPU(listos,proceso_actual->GID);
                     if(tokEND){
                         continue;
                     }
@@ -397,9 +412,10 @@ int main(){
                 }               
             }
 
-            if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumped
+            if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
                 move(23, 2); clrtoeol();
                 mvprintw(23, 2, "Quantum = 3. Cambio de proceso");
+                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 refresh();
             } else if(!interrumpido){
                 move(23, 2); clrtoeol();
