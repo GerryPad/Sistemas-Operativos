@@ -55,6 +55,18 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
     return contador;
 }
 
+void calculoPrioridades(struct Nodo *listos, int wk) {
+    struct Nodo *aux = listos;
+    int p_base = 20;
+
+    while(aux->siguiente != NULL){
+        aux->CPU = aux->CPU/2;
+        aux->GCPU = aux->GCPU/2;
+        aux->prioridad = p_base + (aux->CPU/2) + (aux->GCPU/4*wk);
+        aux = aux->siguiente;
+    }
+}
+
 int kbhit(void);        
 int main(){
 
@@ -70,7 +82,7 @@ int main(){
 
 
     char archivo[64], linea[128], comando[256], com_mata[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, wk = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool fin_quantum, limpieza = false; 
