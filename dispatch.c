@@ -24,12 +24,22 @@ int restauraPCB(struct Nodo *proceso_actual, char *archivo){
 }
 
 //El planificador primitivo, solo devuelve el primero que este en listos
-struct Nodo* planificador(struct Nodo *listos, struct Nodo *ejecutando) {
+struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
     if (listos->siguiente == NULL){
         return NULL; //Caundo no hay nada en listos
     } 
-    struct Nodo *proceso = desencolar(listos);
-    strcpy(proceso->estado, "ejecutando");
+
+    struct Nodo *aux = listos->siguiente; //Para ir recorriendo la lista de listos
+    struct Nodo *proceso_prioritario = aux; //De primeras, suponemos que el primer nodo es el que tiene mayor prioridad (numero menor)
+    while(aux != NULL){ //Recorremos hasta el final de la lista
+        if(aux->prioridad < proceso_prioritario->prioridad){ //Preguntamos si el proceso actual en listos tiene prioridad mayor
+            proceso_prioritario = aux; //En caso de que si, el nuevo proceso prioritario es el de actual de listos
+        }
+        aux=aux->siguiente;
+    }
+
+    struct Nodo *proceso = mataPID(listos, proceso_prioritario->PID); //"desencolamos" el proceso de mayor prioridad
+    strcpy(proceso_prioritario->estado, "ejecutando");
     insertarFinal(ejecutando, proceso);
     return proceso;
 }

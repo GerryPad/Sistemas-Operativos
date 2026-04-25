@@ -69,14 +69,15 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
     return contador;
 }
 
-void calculoPrioridades(struct Nodo *listos, int wk) {
-    struct Nodo *aux = listos;
+void calculoPrioridades(struct Nodo *listos, int grupos) {
+    struct Nodo *aux = listos->siguiente;
     int p_base = 20;
+    //float wk=1.0/grupos;
 
     while(aux!= NULL){
         aux->CPU = aux->CPU/2;
         aux->GCPU = aux->GCPU/2;
-        aux->prioridad = p_base + (aux->CPU/2) + (aux->GCPU/4*wk);
+        aux->prioridad = p_base + (int) ((aux->CPU/2.0)) + (int) ((aux->GCPU * grupos/4.0));
         aux = aux->siguiente;
     }
 }
@@ -107,6 +108,9 @@ int main(){
 
         if(ejecutando->siguiente == NULL){ //Cambiar el uso de la bandera pedir archivo
             if(listos->siguiente != NULL){
+                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
+                imprimir_listas(ejecutando, listos, terminados);
+                //usleep(5000000);
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
@@ -415,7 +419,8 @@ int main(){
             if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
                 move(23, 2); clrtoeol();
                 mvprintw(23, 2, "Quantum = 3. Cambio de proceso");
-                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
+                //calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
+                imprimir_listas(ejecutando, listos, terminados);
                 refresh();
             } else if(!interrumpido){
                 move(23, 2); clrtoeol();
