@@ -65,32 +65,21 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
         }
     }
 
-    mvprintw(30, 0, "Grupos: %-4d", contador);
+    //mvprintw(30, 0, "Grupos: %-4d", contador);
     return contador;
 }
 
-void calculoPrioridades(struct Nodo *listos, int wk, struct Nodo *saliendo) {
-    
-    // Solo castigamos/aliviamos al que acaba de usar la CPU
-    saliendo->CPU /= 2;
-    saliendo->GCPU /= 2;
-    
-    // Recalculamos prioridades de todos sin dividir sus CPUs entre 2
+void calculoPrioridades(struct Nodo *listos, int grupos) {
     struct Nodo *aux = listos->siguiente;
-    while(aux != NULL) {
-        aux->prioridad = 20 + (aux->CPU / 2) + (aux->GCPU / (4 * wk));
-        aux = aux->siguiente;
-    }
-
-    /*struct Nodo *aux = listos;
     int p_base = 20;
+    //float wk=1.0/grupos;
 
     while(aux!= NULL){
         aux->CPU = aux->CPU/2;
         aux->GCPU = aux->GCPU/2;
-        aux->prioridad = p_base + (aux->CPU/2) + (aux->GCPU/4*wk);
+        aux->prioridad = p_base + (int) ((aux->CPU/2.0)) + (int) ((aux->GCPU * grupos/4.0));
         aux = aux->siguiente;
-    }*/
+    }
 }
 
 int kbhit(void);        
@@ -108,7 +97,7 @@ int main(){
 
 
     char archivo[64], linea[128], comando[256], com_mata[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, wk = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool fin_quantum, limpieza = false; 
@@ -119,6 +108,9 @@ int main(){
 
         if(ejecutando->siguiente == NULL){ //Cambiar el uso de la bandera pedir archivo
             if(listos->siguiente != NULL){
+                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
+                imprimir_listas(ejecutando, listos, terminados);
+                //usleep(4000000);
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
@@ -161,8 +153,12 @@ int main(){
                         nuevo=crearNodo(pid, gid, "file4"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file7"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file8"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file9"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file10"); pid++; gid++; insertarFinal(listos,nuevo);
                     } else if (com == 5){ //comando fork
-                        mvprintw(30, 0, "Si entra al comando fork");
+                        mvprintw(26, 2, "No hay procesos para copiar");
                     }
                     
                     else { //error al ingresar comando
@@ -277,7 +273,7 @@ int main(){
                             break; 
                         }
                     }
-                    usleep(1000000);
+                    //usleep(1000000);
                     pc++;
                     quantum++;
                     proceso_actual->CPU = proceso_actual->CPU + 20;
@@ -371,6 +367,7 @@ int main(){
                                nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                pid++;
                                nuevo->PC = num_inst;
+                               nuevo->GCPU=proceso_a_copiar->GCPU;
                                insertarFinal(listos, nuevo);
                                imprimir_listas(ejecutando, listos, terminados);
                             } else {
@@ -379,6 +376,7 @@ int main(){
                                     nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                     pid++;
                                     nuevo->PC = num_inst;
+                                    nuevo->GCPU=proceso_a_copiar->GCPU;
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados);
                                 } else {
@@ -423,11 +421,12 @@ int main(){
                     break;
                 }               
             }
-            
+
             if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
                 move(23, 2); clrtoeol();
                 mvprintw(23, 2, "Quantum = 3. Cambio de proceso");
-                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid),proceso_a_terminar); //agregamos el nodo que solo queremos castigar
+                //calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
+                imprimir_listas(ejecutando, listos, terminados);
                 refresh();
             } else if(!interrumpido){
                 move(23, 2); clrtoeol();
@@ -489,7 +488,7 @@ int kbhit(void)
 {
     struct timeval tv;
     fd_set read_fd;
-    tv.tv_sec = 0;
+    tv.tv_sec = 0;      
     tv.tv_usec = 0;
     FD_ZERO(&read_fd);
     FD_SET(0, &read_fd);

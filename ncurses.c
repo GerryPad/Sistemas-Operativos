@@ -24,6 +24,7 @@ void limpia_lineas() {
     move(24,2); clrtoeol();
     move(25,2); clrtoeol();
     move(20,2); clrtoeol();
+    move(26,2); clrtoeol();
     refresh();
 }
 
@@ -109,7 +110,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_te->registros[3],
         aux_te->CPU,
         aux_te->GCPU,
-        aux_te->prioridad
+        aux_te->prioridad 
         );
 
         aux_te = aux_te->siguiente;
