@@ -16,7 +16,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
-%.o: %.c instrucciones.h ncurses.h
+%.o: %.c instrucciones.h ncurses.h dispatch.h nodo.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

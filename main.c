@@ -65,7 +65,7 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
         }
     }
 
-    mvprintw(30, 0, "Grupos: %-4d", contador);
+    //mvprintw(30, 0, "Grupos: %-4d", contador);
     return contador;
 }
 
@@ -110,7 +110,7 @@ int main(){
             if(listos->siguiente != NULL){
                 calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 imprimir_listas(ejecutando, listos, terminados);
-                //usleep(5000000);
+                usleep(5000000);
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
@@ -154,7 +154,7 @@ int main(){
                         nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);
                     } else if (com == 5){ //comando fork
-                        mvprintw(30, 0, "Si entra al comando fork");
+                        mvprintw(30, 0, "No hay procesos para copiar");
                     }
                     
                     else { //error al ingresar comando
@@ -363,6 +363,7 @@ int main(){
                                nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                pid++;
                                nuevo->PC = num_inst;
+                               nuevo->GCPU = proceso_a_copiar->GCPU;
                                insertarFinal(listos, nuevo);
                                imprimir_listas(ejecutando, listos, terminados);
                             } else {
@@ -371,6 +372,7 @@ int main(){
                                     nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                     pid++;
                                     nuevo->PC = num_inst;
+                                    nuevo->GCPU = proceso_a_copiar->GCPU;
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados);
                                 } else {

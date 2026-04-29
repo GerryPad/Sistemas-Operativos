@@ -24,6 +24,7 @@ void limpia_lineas() {
     move(24,2); clrtoeol();
     move(25,2); clrtoeol();
     move(20,2); clrtoeol();
+    move(26,2); clrtoeol();
     refresh();
 }
 
