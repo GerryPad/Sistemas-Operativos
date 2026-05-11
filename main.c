@@ -10,34 +10,6 @@
 #include "dispatch.h"
 #include <sys/select.h>
 
-struct Nodo *buscaPID(struct Nodo *lista, int pid){
-    struct Nodo * aux = lista->siguiente;
-
-    while(aux != NULL && aux->PID != pid){
-        aux = aux->siguiente;
-    
-    }
-
-    if(aux==NULL){
-        return NULL;
-    }
-    return aux;
-}
-
-struct Nodo *buscaGID(struct Nodo *lista, int gid) {
-    struct Nodo *aux = lista->siguiente;
-
-    while (aux != NULL && aux->GID != gid) {
-        aux = aux->siguiente;
-    }
-
-    if(aux==NULL){
-            return NULL;
-        }
-        //aux->GCPU= aux->GCPU+20;
-        return aux;
-}
-
 int kbhit(void);        
 int main(){
 

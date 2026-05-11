@@ -23,9 +23,9 @@ struct Nodo* crearNodo(int n, int m, char *archivo){
     strcpy(nuevo->IR, "---");
     nuevo->siguiente = NULL;
     strcpy(nuevo->estado, "listos");
+    nuevo->CPU = 0;
+    nuevo->GCPU = 0;
     nuevo->prioridad = 0; //Si deberia empezar en 20 o en 0?
-    nuevo->CPU=0;
-    nuevo->GCPU=0;
     return nuevo;
 }
 
@@ -68,4 +68,32 @@ struct Nodo * desencolar(struct Nodo *lista){
     lista->siguiente=lista->siguiente->siguiente;
     aux->siguiente=NULL;
     return(aux);
+} 
+
+struct Nodo *buscaPID(struct Nodo *lista, int pid){ //mover a nodo.c
+    struct Nodo * aux = lista->siguiente;
+
+    while(aux != NULL && aux->PID != pid){
+        aux = aux->siguiente;
+    
+    }
+
+    if(aux==NULL){
+        return NULL;
+    }
+    return aux;
+}
+
+struct Nodo *buscaGID(struct Nodo *lista, int gid) { //mover a nodo.c
+    struct Nodo *aux = lista->siguiente;
+
+    while (aux != NULL && aux->GID != gid) {
+        aux = aux->siguiente;
+    }
+
+    if(aux==NULL){
+        return NULL;
+    }
+
+    return aux;
 }
