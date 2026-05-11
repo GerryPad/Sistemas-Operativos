@@ -32,10 +32,10 @@ struct Nodo *buscaGID(struct Nodo *lista, int gid) {
     }
 
     if(aux==NULL){
-            return NULL;
-        }
-        //aux->GCPU= aux->GCPU+20;
-        return aux;
+        return NULL;
+    }
+
+    return aux;
 }
 
 void aumentaGCPU(struct Nodo *listos, int gid){
@@ -47,8 +47,6 @@ void aumentaGCPU(struct Nodo *listos, int gid){
         }
         aux = aux->siguiente;
     }
-    
-
 }
 
 int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
@@ -65,14 +63,12 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
         }
     }
 
-    //mvprintw(30, 0, "Grupos: %-4d", contador);
     return contador;
 }
 
 void calculoPrioridades(struct Nodo *listos, int grupos) {
     struct Nodo *aux = listos->siguiente;
     int p_base = 20;
-    //float wk=1.0/grupos;
 
     while(aux!= NULL){
         aux->CPU = aux->CPU/2;
@@ -96,7 +92,7 @@ int main(){
     struct Nodo *proceso_a_copiar  = NULL;
 
 
-    char archivo[64], linea[128], comando[256], com_mata[256], linea_original[128];; //Buffers para leer nombre y linea del archivo.
+    char archivo[64], linea[128], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
     int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
@@ -110,7 +106,7 @@ int main(){
             if(listos->siguiente != NULL){
                 calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 imprimir_listas(ejecutando, listos, terminados);
-                usleep(5000000);
+                //usleep(5000000);
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
@@ -161,7 +157,7 @@ int main(){
                         move(25,2);
                         clrtoeol();
                         if (com == -1) {
-                            mvprintw(25,2, "Error: Falta nombre de archivo.");
+                            mvprintw(25,2, "Error: Comando incompleto.");
                         } else {
                             mvprintw(25,2,"Error: Comando invalido");
                             
@@ -170,7 +166,6 @@ int main(){
                     }
                 }
                 continue;
-
             }
 
         }
@@ -268,8 +263,8 @@ int main(){
                             limpieza = true;
                             break; 
                         }
-                    }
-                    usleep(1000000);
+                    } //NOS quedamos aqui
+                    //usleep(1000000);
                     pc++;
                     quantum++;
                     proceso_actual->CPU = proceso_actual->CPU + 20;
@@ -312,7 +307,7 @@ int main(){
                         mvscanw(20,3,"%255[^\n]",comando);
                         noecho();
                         limpieza = true;
-                        strcpy(com_mata, comando);
+                        //strcpy(com_mata, comando);
                         com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst);
 
                         if (com == 1){
@@ -424,7 +419,7 @@ int main(){
                 //calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
-            } else if(!interrumpido){
+            } else if(!interrumpido){ //Cuando el quantum no termina, osea no es multiplo de 3 el numero de instrucciones
                 move(23, 2); clrtoeol();
                 if (tokEND){
                     move(23,2);
@@ -455,7 +450,7 @@ int main(){
                 proceso_actual = NULL;
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
-            } else {
+            } else { //este era el else de cuando se ejecutaba el archivo hasta el final
                 fclose(file);
                 if(proceso_actual!=NULL){
                     guardaPCB(proceso_actual,pc,linea_original);

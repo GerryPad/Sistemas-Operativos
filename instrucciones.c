@@ -51,7 +51,7 @@ Registro* buscaRegistro(char *nombre){
 
 //Funciones para cada una de las instrucciones
 bool instMOV(char *args){
-    char op1[32], op2[32];
+    char op1[32], op2[32], basura[32];
     int leidos = 0;
     Registro *reg1, *reg2;
 
@@ -65,6 +65,13 @@ bool instMOV(char *args){
             return false;
         }
         mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        return false;
+    }
+
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
+        move(24,10);
+        clrtoeol();
+        mvprintw(24, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -95,7 +102,7 @@ bool instMOV(char *args){
 }
 
 bool instADD(char *args){
-    char op1[32], op2[32];
+    char op1[32], op2[32], basura[32];
     int leidos = 0;
     Registro *reg1, *reg2;
 
@@ -109,6 +116,13 @@ bool instADD(char *args){
             return false;
         }
         mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        return false;
+    }
+
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
+        move(24,10);
+        clrtoeol();
+        mvprintw(24, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -143,7 +157,7 @@ bool instADD(char *args){
 }
 
 bool instSUB(char *args){
-    char op1[32], op2[32];
+    char op1[32], op2[32], basura[32];
     int leidos = 0;
     Registro *reg1, *reg2;
 
@@ -157,6 +171,13 @@ bool instSUB(char *args){
             return false;
         }
         mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        return false;
+    }
+
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
+        move(24,10);
+        clrtoeol();
+        mvprintw(24, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -189,7 +210,7 @@ bool instSUB(char *args){
 }
 
 bool instMUL(char *args){
-    char op1[32], op2[32];
+    char op1[32], op2[32], basura[32];
     int leidos = 0;
     Registro *reg1, *reg2;
 
@@ -203,6 +224,13 @@ bool instMUL(char *args){
             return false;
         }
         mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        return false;
+    }
+
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
+        move(24,10);
+        clrtoeol();
+        mvprintw(24, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -237,7 +265,7 @@ bool instMUL(char *args){
 }
 
 bool instDIV(char *args){
-    char op1[32], op2[32];
+    char op1[32], op2[32], basura[32];
     int leidos = 0, divisor;
     Registro *reg1, *reg2;
 
@@ -251,6 +279,13 @@ bool instDIV(char *args){
             return false;
         }
         mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        return false;
+    }
+
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
+        move(24,10);
+        clrtoeol();
+        mvprintw(24, 10,"Demasiados argumentos.");
         return false;
     }
 
