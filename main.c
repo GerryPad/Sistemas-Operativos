@@ -10,46 +10,6 @@
 #include "dispatch.h"
 #include <sys/select.h>
 
-void aumentaGCPU(struct Nodo *listos, int gid){ //mover a dispatch.c
-    struct Nodo *aux = listos->siguiente;
-
-    while (aux != NULL) {
-        if(aux->GID== gid){
-            aux->GCPU= aux->GCPU+20;
-        }
-        aux = aux->siguiente;
-    }
-}
-
-int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) { //mover a dispatch.c
-    int contador = max_gid;  //Asumir que todos los grupos estan activos
-
-    for (int i = 1; i <= max_gid; i++) {
-        if (buscaGID(ejecutando, i) != NULL) {
-            continue; //Si esta en ejecutando ya no lo busques en listos
-        } else {
-            if (buscaGID(listos, i) == NULL) {
-                //Si tampoco esta en listos, el grupo no esta activo
-                contador--;
-            }
-        }
-    }
-
-    return contador;
-}
-
-void calculoPrioridades(struct Nodo *listos, int grupos) {
-    struct Nodo *aux = listos->siguiente; //mover a dispatch.c
-    int p_base = 20;
-
-    while(aux!= NULL){
-        aux->CPU = aux->CPU/2;
-        aux->GCPU = aux->GCPU/2;
-        aux->prioridad = p_base + (int) ((aux->CPU/2.0)) + (int) ((aux->GCPU * grupos/4.0));
-        aux = aux->siguiente;
-    }
-}
-
 int kbhit(void);        
 int main(){
 
