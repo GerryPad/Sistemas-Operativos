@@ -68,4 +68,32 @@ struct Nodo * desencolar(struct Nodo *lista){
     lista->siguiente=lista->siguiente->siguiente;
     aux->siguiente=NULL;
     return(aux);
+} 
+
+struct Nodo *buscaPID(struct Nodo *lista, int pid){ //mover a nodo.c
+    struct Nodo * aux = lista->siguiente;
+
+    while(aux != NULL && aux->PID != pid){
+        aux = aux->siguiente;
+    
+    }
+
+    if(aux==NULL){
+        return NULL;
+    }
+    return aux;
+}
+
+struct Nodo *buscaGID(struct Nodo *lista, int gid) { //mover a nodo.c
+    struct Nodo *aux = lista->siguiente;
+
+    while (aux != NULL && aux->GID != gid) {
+        aux = aux->siguiente;
+    }
+
+    if(aux==NULL){
+        return NULL;
+    }
+
+    return aux;
 }

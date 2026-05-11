@@ -10,35 +10,7 @@
 #include "dispatch.h"
 #include <sys/select.h>
 
-struct Nodo *buscaPID(struct Nodo *lista, int pid){
-    struct Nodo * aux = lista->siguiente;
-
-    while(aux != NULL && aux->PID != pid){
-        aux = aux->siguiente;
-    
-    }
-
-    if(aux==NULL){
-        return NULL;
-    }
-    return aux;
-}
-
-struct Nodo *buscaGID(struct Nodo *lista, int gid) {
-    struct Nodo *aux = lista->siguiente;
-
-    while (aux != NULL && aux->GID != gid) {
-        aux = aux->siguiente;
-    }
-
-    if(aux==NULL){
-        return NULL;
-    }
-
-    return aux;
-}
-
-void aumentaGCPU(struct Nodo *listos, int gid){
+void aumentaGCPU(struct Nodo *listos, int gid){ //mover a dispatch.c
     struct Nodo *aux = listos->siguiente;
 
     while (aux != NULL) {
@@ -49,7 +21,7 @@ void aumentaGCPU(struct Nodo *listos, int gid){
     }
 }
 
-int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
+int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) { //mover a dispatch.c
     int contador = max_gid;  //Asumir que todos los grupos estan activos
 
     for (int i = 1; i <= max_gid; i++) {
@@ -67,7 +39,7 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
 }
 
 void calculoPrioridades(struct Nodo *listos, int grupos) {
-    struct Nodo *aux = listos->siguiente;
+    struct Nodo *aux = listos->siguiente; //mover a dispatch.c
     int p_base = 20;
 
     while(aux!= NULL){
