@@ -22,8 +22,51 @@ int restauraPCB(struct Nodo *proceso_actual, char *archivo){
     strcpy(archivo, proceso_actual->archivo); 
     return proceso_actual->PC; //Se ocupaba hacer esto porque si no, jamas devolvia el valor
 }
+//---------------------------------------------------------------------------------------------------------------------------------
+void aumentaGCPU(struct Nodo *listos, int gid){
+    struct Nodo *aux = listos->siguiente;
 
-//El planificador primitivo, solo devuelve el primero que este en listos
+    while (aux != NULL) {
+        if(aux->GID== gid){
+            aux->GCPU= aux->GCPU+20;
+        }
+        aux = aux->siguiente;
+    }
+    
+
+}
+
+int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
+    int contador = max_gid;  //Asumir que todos los grupos estan activos
+
+    for (int i = 1; i <= max_gid; i++) {
+        if (buscaGID(ejecutando, i) != NULL) {
+            continue; //Si esta en ejecutando ya no lo busques en listos
+        } else {
+            if (buscaGID(listos, i) == NULL) {
+                //Si tampoco esta en listos, el grupo no esta activo
+                contador--;
+            }
+        }
+    }
+
+    //mvprintw(30, 0, "Grupos: %-4d", contador);
+    return contador;
+}
+
+void calculoPrioridades(struct Nodo *listos, int grupos) {
+    struct Nodo *aux = listos->siguiente;
+    int p_base = 20;
+    //float wk=1.0/grupos;
+
+    while(aux!= NULL){
+        aux->CPU = aux->CPU/2;
+        aux->GCPU = aux->GCPU/2;
+        aux->prioridad = p_base + (int) ((aux->CPU/2.0)) + (int) ((aux->GCPU * grupos/4.0));
+        aux = aux->siguiente;
+    }
+}
+
 struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
     if (listos->siguiente == NULL){
         return NULL; //Caundo no hay nada en listos
@@ -43,3 +86,4 @@ struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
     insertarFinal(ejecutando, proceso);
     return proceso;
 }
+

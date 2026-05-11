@@ -38,50 +38,6 @@ struct Nodo *buscaGID(struct Nodo *lista, int gid) {
         return aux;
 }
 
-void aumentaGCPU(struct Nodo *listos, int gid){
-    struct Nodo *aux = listos->siguiente;
-
-    while (aux != NULL) {
-        if(aux->GID== gid){
-            aux->GCPU= aux->GCPU+20;
-        }
-        aux = aux->siguiente;
-    }
-    
-
-}
-
-int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
-    int contador = max_gid;  //Asumir que todos los grupos estan activos
-
-    for (int i = 1; i <= max_gid; i++) {
-        if (buscaGID(ejecutando, i) != NULL) {
-            continue; //Si esta en ejecutando ya no lo busques en listos
-        } else {
-            if (buscaGID(listos, i) == NULL) {
-                //Si tampoco esta en listos, el grupo no esta activo
-                contador--;
-            }
-        }
-    }
-
-    //mvprintw(30, 0, "Grupos: %-4d", contador);
-    return contador;
-}
-
-void calculoPrioridades(struct Nodo *listos, int grupos) {
-    struct Nodo *aux = listos->siguiente;
-    int p_base = 20;
-    //float wk=1.0/grupos;
-
-    while(aux!= NULL){
-        aux->CPU = aux->CPU/2;
-        aux->GCPU = aux->GCPU/2;
-        aux->prioridad = p_base + (int) ((aux->CPU/2.0)) + (int) ((aux->GCPU * grupos/4.0));
-        aux = aux->siguiente;
-    }
-}
-
 int kbhit(void);        
 int main(){
 
@@ -110,7 +66,7 @@ int main(){
             if(listos->siguiente != NULL){
                 calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 imprimir_listas(ejecutando, listos, terminados);
-                //usleep(4000000);
+                //usleep(3000000);
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
@@ -153,12 +109,8 @@ int main(){
                         nuevo=crearNodo(pid, gid, "file4"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file7"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file8"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file9"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file10"); pid++; gid++; insertarFinal(listos,nuevo);
                     } else if (com == 5){ //comando fork
-                        mvprintw(26, 2, "No hay procesos para copiar");
+                        mvprintw(30, 0, "No hay procesos para copiar");
                     }
                     
                     else { //error al ingresar comando
@@ -204,14 +156,14 @@ int main(){
             interrumpido=false; //Bandera para cada archivo
             strcpy(linea_original, "---");
             while (fgets(linea, sizeof(linea), file) != NULL) {
-                linea[strcspn(linea, "\n\r")] = '\0';
+                linea[strcspn(linea, "\n\r")] = '\0'; //para ponerle fin de cadena en la linea, donde haya un \n o \t que lo cambie por un fin de cadena \0
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
                 imprimir_registros(pc, linea);
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
                 
                 ptr = linea;
-                while (*ptr == ' ' || *ptr == '\t') ptr++; 
+                while (*ptr == ' ' || *ptr == '\t') ptr++;
                 token = strtok(ptr, " \n");
 
                 if (tokEND){ //Si hayamos un END...
@@ -273,7 +225,7 @@ int main(){
                             break; 
                         }
                     }
-                    //usleep(1000000);
+                   usleep(1000000);
                     pc++;
                     quantum++;
                     proceso_actual->CPU = proceso_actual->CPU + 20;
@@ -367,7 +319,7 @@ int main(){
                                nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                pid++;
                                nuevo->PC = num_inst;
-                               nuevo->GCPU=proceso_a_copiar->GCPU;
+                               nuevo->GCPU = proceso_a_copiar->GCPU;
                                insertarFinal(listos, nuevo);
                                imprimir_listas(ejecutando, listos, terminados);
                             } else {
@@ -376,7 +328,7 @@ int main(){
                                     nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                     pid++;
                                     nuevo->PC = num_inst;
-                                    nuevo->GCPU=proceso_a_copiar->GCPU;
+                                    nuevo->GCPU = proceso_a_copiar->GCPU;
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados);
                                 } else {
@@ -428,7 +380,7 @@ int main(){
                 //calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
-            } else if(!interrumpido){
+            } else if(!interrumpido){//Cuando el quantum no termina en un multiplo de 3
                 move(23, 2); clrtoeol();
                 if (tokEND){
                     move(23,2);
@@ -459,7 +411,7 @@ int main(){
                 proceso_actual = NULL;
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
-            } else {
+            } else { //Este es ejecuta hasta el final.
                 fclose(file);
                 if(proceso_actual!=NULL){
                     guardaPCB(proceso_actual,pc,linea_original);
@@ -488,7 +440,7 @@ int kbhit(void)
 {
     struct timeval tv;
     fd_set read_fd;
-    tv.tv_sec = 0;      
+    tv.tv_sec = 0;
     tv.tv_usec = 0;
     FD_ZERO(&read_fd);
     FD_SET(0, &read_fd);
