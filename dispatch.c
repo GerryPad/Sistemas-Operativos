@@ -54,14 +54,26 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
     return contador;
 }
 
+void actualizaCGPU(struct Nodo *aux){
+    
+    while(aux != NULL) {
+        aux->CPU = aux->CPU/2;
+        aux->GCPU = aux->GCPU/2;
+        aux = aux->siguiente;
+    }
+}
+
 void calculoPrioridades(struct Nodo *listos, int grupos) {
     struct Nodo *aux = listos->siguiente;
+    struct Nodo *aux2 = listos->siguiente;
     int p_base = 20;
     //float wk=1.0/grupos;
 
+    actualizaCGPU(aux2);
+    
     while(aux!= NULL){
-        aux->CPU = aux->CPU/2;
-        aux->GCPU = aux->GCPU/2;
+        //aux->CPU = aux->CPU/2;
+        //aux->GCPU = aux->GCPU/2;
         aux->prioridad = p_base + (int) ((aux->CPU/2.0)) + (int) ((aux->GCPU * grupos/4.0));
         aux = aux->siguiente;
     }

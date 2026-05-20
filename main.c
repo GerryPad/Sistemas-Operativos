@@ -14,9 +14,11 @@ int kbhit(void);
 int main(){
 
     //Creando nodo de prueba para impresion
+    //struct Nodo *nuevos = crearCabecera();
     struct Nodo *listos = crearCabecera();
     struct Nodo *terminados = crearCabecera();
     struct Nodo *ejecutando = crearCabecera();
+    struct Nodo *suspendidos = crearCabecera();
     struct Nodo *nuevo;
     struct Nodo *proceso_actual = NULL; //El que se esta ejecutando
     struct Nodo *proceso_a_terminar = NULL;
@@ -25,7 +27,7 @@ int main(){
 
 
     char archivo[64], linea[128], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //com es para hacer un "switch" 
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst, *ptr_pc=&pc; //com es para hacer un "switch" 
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool fin_quantum, limpieza = false; 
@@ -37,8 +39,9 @@ int main(){
         if(ejecutando->siguiente == NULL){ //Cambiar el uso de la bandera pedir archivo
             if(listos->siguiente != NULL){
                 calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
+                actualizaCGPU(suspendidos->siguiente);
                 imprimir_listas(ejecutando, listos, terminados);
-                //usleep(5000000);
+                usleep(3000000);
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
@@ -129,9 +132,11 @@ int main(){
             while (fgets(linea, sizeof(linea), file) != NULL) {
                 linea[strcspn(linea, "\n\r")] = '\0';
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
+                usleep(1000000);
                 imprimir_registros(pc, linea);
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
+                *ptr_pid = 0;
                 
                 ptr = linea;
                 while (*ptr == ' ' || *ptr == '\t') ptr++; 
@@ -179,8 +184,36 @@ int main(){
                             limpieza=true;
                             break;
                         }
-                    } else {
-                        if (!ejecOperacion(token, argumentos)) {
+                    } else if(strcmp(token, "JNZ") == 0){
+                        if(instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid)){
+                            rewind(file); //Regresa al inicio del archivo
+                            int j=1;
+                            while(j<pc && fgets(linea,sizeof(linea), file) != NULL) {
+                                j++;
+                            }
+                            quantum++;
+                            proceso_actual->CPU = proceso_actual->CPU + 20;
+                            proceso_actual->GCPU=proceso_actual->GCPU + 20;
+                            aumentaGCPU(listos,proceso_actual->GID);
+
+                            if (quantum == 3) {
+                                guardaPCB(proceso_actual, pc, linea_original);
+                                proceso_a_terminar = desencolar(ejecutando);
+                                if (proceso_a_terminar!= NULL) {
+                                    strcpy(proceso_a_terminar->estado, "listos");
+                                    insertarFinal(listos, proceso_a_terminar);
+                                }
+                                fclose(file);
+                                proceso_actual = NULL;
+                                fin_quantum = true;
+                                limpieza = true;
+                                imprimir_listas(ejecutando, listos, terminados);
+                                refresh();
+                                
+                                break; 
+                            }
+                            continue;
+                        } else {
                             guardaPCB(proceso_actual,pc,linea_original);
                             mvprintw(22, 2, "ABORTADO: Error en renglon %d", pc);
                             mvprintw(24,2, "Motivo:");
@@ -195,9 +228,27 @@ int main(){
                             limpieza = true;
                             break; 
                         }
-                    } //NOS quedamos aqui
-                    //usleep(1000000);
-                    pc++;
+                    } else {
+                        if (!ejecOperacion(token, argumentos, proceso_actual, ptr_pc, ptr_pid)) {
+                            guardaPCB(proceso_actual,pc,linea_original);
+                            mvprintw(22, 2, "ABORTADO: Error en renglon %d", pc);
+                            mvprintw(24,2, "Motivo:");
+                            //Mover los procesos fallidos a terminados
+                            proceso_a_terminar = desencolar(ejecutando);
+                            if (proceso_a_terminar != NULL) {
+                                strcpy(proceso_a_terminar->estado, "terminado*");
+                                insertarFinal(terminados, proceso_a_terminar);
+                            }
+                            imprimir_listas(ejecutando, listos, terminados);
+
+                            limpieza = true;
+                            break; 
+                        }
+                    } 
+                    usleep(2000000);
+                    if(*ptr_pid != -1){
+                        pc++;
+                    }
                     quantum++;
                     proceso_actual->CPU = proceso_actual->CPU + 20;
                     proceso_actual->GCPU=proceso_actual->GCPU + 20;

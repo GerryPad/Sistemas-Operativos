@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "instrucciones.h"
 
-char *instruccion[] = {"MOV", "ADD", "SUB", "MUL", "DIV", "INC", "DEC", "END", NULL};
+char *instruccion[] = {"MOV", "ADD", "SUB", "MUL", "DIV", "INC", "DEC", "JNZ", "END", NULL};
 
 //Cada registro tiene un nombre y valor asociados.
 Registro registros[] = {
@@ -396,6 +396,42 @@ bool instDEC(char *args){
     return true;
 }
 
+bool instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
+    char op1[32], basura[32];
+    int n, leidos = 0;
+    
+    if (sscanf(args, "%31s %n", op1, &leidos) !=1) { 
+        move(24,10);
+        clrtoeol();
+        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'JNZ valor'");
+        return false;
+    }
+
+    if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
+        move(24,10);
+        clrtoeol();
+        mvprintw(24, 10,"Demasiados argumentos.");
+        return false;
+    }
+   
+    if (esInt(op1)){
+        n = atoi(op1);
+        if(n>0 && registros[2].valor != 0) {
+            *ptr_pc = n;
+            *ptr_pid = -1;
+            return true;
+        } else {
+            return false;
+        }    
+    } else {
+        move(24,10);
+        clrtoeol();
+        mvprintw(24, 10,"El operando de JNZ no es un numero.");
+        return false;
+    }
+    return true;
+}
+
 bool instEND(){
     char *extra;    
     extra = strtok(NULL, " \n\t");
@@ -409,7 +445,7 @@ bool instEND(){
 }
 
 //Función "switch" para elegir la instruccion correspondiente. 
-bool ejecOperacion(char *instruccion, char *args){
+bool ejecOperacion(char *instruccion, char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
     if (strcmp(instruccion, "MOV") == 0){
         return instMOV(args);
     } else if (strcmp(instruccion, "ADD") == 0){
@@ -424,7 +460,9 @@ bool ejecOperacion(char *instruccion, char *args){
         return instINC(args);          
     } else if (strcmp(instruccion, "DEC") == 0) {
         return instDEC(args);
-    } else {
+    } /*else if(strcmp(instruccion, "JNZ") == 0){
+        return instJNZ(args, nodo, ptr_pc, ptr_pid);
+    }*/else {
         return false;
     }
 }
