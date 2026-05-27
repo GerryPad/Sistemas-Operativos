@@ -58,27 +58,27 @@ bool instMOV(char *args){
     char *coma = strchr(args, ','); 
 
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
         if (coma == NULL) {
-            mvprintw(24, 10,"Falta la coma divisoria."); 
+            mvprintw(36, 10,"Falta la coma divisoria."); 
             return false;
         }
-        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(36, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Demasiados argumentos.");
+        mvprintw(36, 10,"Demasiados argumentos.");
         return false;
     }
 
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10, "No se permiten espacios antes o despues de la coma");
+        mvprintw(36, 10, "No se permiten espacios antes o despues de la coma");
         return false;
     }
 
@@ -91,11 +91,11 @@ bool instMOV(char *args){
         } else if (esInt(op2)) {
             reg1->valor = atoi(op2);
         } else {
-            mvprintw(24, 10,"El segundo operando no es valido o hay demasiados argumentos.");
+            mvprintw(36, 10,"El segundo operando no es valido o hay demasiados argumentos.");
             return false;
         }
     } else {
-        mvprintw(24, 10,"El operando uno de MOV no es un registro");
+        mvprintw(36, 10,"El operando uno de MOV no es un registro");
         return false;
     }
     return true;
@@ -109,27 +109,27 @@ bool instADD(char *args){
     char *coma = strchr(args, ','); 
 
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
         if (coma == NULL) {
-            mvprintw(24, 10,"Falta la coma divisoria."); 
+            mvprintw(36, 10,"Falta la coma divisoria."); 
             return false;
         }
-        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(36, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Demasiados argumentos.");
+        mvprintw(36, 10,"Demasiados argumentos.");
         return false;
     }
 
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10, "No se permiten espacios antes o despues de la coma");
+        mvprintw(36, 10, "No se permiten espacios antes o despues de la coma");
         return false;
     }
 
@@ -142,15 +142,15 @@ bool instADD(char *args){
         } else if (esInt(op2)) {
             reg1->valor = reg1->valor + atoi(op2); 
         } else {
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24, 10,"El segundo operando no es valido o hay demasiados argumentos");
+            mvprintw(36, 10,"El segundo operando no es valido o hay demasiados argumentos");
             return false;
         }
     } else {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"El operando uno de ADD no es un registro");
+        mvprintw(36, 10,"El operando uno de ADD no es un registro");
         return false;
     }
     return true;
@@ -164,27 +164,27 @@ bool instSUB(char *args){
     char *coma = strchr(args, ','); 
 
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
         if (coma == NULL) {
-            mvprintw(24, 10,"Falta la coma divisoria."); 
+            mvprintw(36, 10,"Falta la coma divisoria."); 
             return false;
         }
-        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(36, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Demasiados argumentos.");
+        mvprintw(36, 10,"Demasiados argumentos.");
         return false;
     }
 
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10, "No se permiten espacios antes o despues de la coma");
+        mvprintw(36, 10, "No se permiten espacios antes o despues de la coma");
         return false;
     }
 
@@ -197,9 +197,9 @@ bool instSUB(char *args){
         } else if (esInt(op2)) {
             reg1->valor = reg1->valor - atoi(op2); 
         } else {
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24, 10,"El segundo operando no es valido o hay demasiados argumentos.");
+            mvprintw(36, 10,"El segundo operando no es valido o hay demasiados argumentos.");
             return false;
         }
     } else {
@@ -217,27 +217,27 @@ bool instMUL(char *args){
     char *coma = strchr(args, ','); 
 
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
         if (coma == NULL) {
-            mvprintw(24, 10,"Falta la coma divisoria."); 
+            mvprintw(36, 10,"Falta la coma divisoria."); 
             return false;
         }
-        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(36, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Demasiados argumentos.");
+        mvprintw(36, 10,"Demasiados argumentos.");
         return false;
     }
 
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10, "No se permiten espacios antes o despues de la coma");
+        mvprintw(36, 10, "No se permiten espacios antes o despues de la coma");
         return false;
     }
 
@@ -250,15 +250,15 @@ bool instMUL(char *args){
         } else if (esInt(op2)) {
             reg1->valor = reg1->valor * atoi(op2);
         } else {
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24, 10,"El segundo operando no es valido o hay demasiados argumentos.");
+            mvprintw(36, 10,"El segundo operando no es valido o hay demasiados argumentos.");
             return false;
         }
     } else {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"El operando uno de MUL no es un registro");
+        mvprintw(36, 10,"El operando uno de MUL no es un registro");
         return false;
     }
     return true;
@@ -272,27 +272,27 @@ bool instDIV(char *args){
     char *coma = strchr(args, ',');
 
     if (sscanf(args, "%31[^,],%31s %n", op1, op2, &leidos) < 2) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
         if (coma == NULL) {
-            mvprintw(24, 10,"Falta la coma divisoria."); 
+            mvprintw(36, 10,"Falta la coma divisoria."); 
             return false;
         }
-        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(36, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Demasiados argumentos.");
+        mvprintw(36, 10,"Demasiados argumentos.");
         return false;
     }
 
     if (*(coma - 1) == ' ' || *(coma + 1) == ' ') {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"No se permiten espacios antes o despues de la coma");
+        mvprintw(36, 10,"No se permiten espacios antes o despues de la coma");
         return false;
     }
 
@@ -302,31 +302,31 @@ bool instDIV(char *args){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
             if(reg2->valor == 0){
-                move(24,10);
+                move(36,10);
                 clrtoeol();
-                mvprintw(24, 10,"División por cero.");
+                mvprintw(36, 10,"División por cero.");
                 return false;
             }
             reg1->valor = reg1->valor / reg2->valor;
         } else if (esInt(op2)) {
             divisor = atoi(op2);
             if (divisor == 0){
-                move(24,10);
+                move(36,10);
                 clrtoeol();
-                mvprintw(24, 10,"División por cero.");
+                mvprintw(36, 10,"División por cero.");
                 return false;
             }
             reg1->valor = reg1->valor / divisor;
         } else {
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24, 10,"El segundo operando no es valido o hay demasiados argumentos");
+            mvprintw(36, 10,"El segundo operando no es valido o hay demasiados argumentos");
             return false;
         }
     } else {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"El operando uno de DIV no es un registro");
+        mvprintw(36, 10,"El operando uno de DIV no es un registro");
         return false;
     }
     return true;
@@ -338,16 +338,16 @@ bool instINC(char *args){
     Registro *reg1;
     
     if (sscanf(args, "%31s %n", op1, &leidos) !=1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(36, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Demasiados argumentos.");
+        mvprintw(36, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -356,9 +356,9 @@ bool instINC(char *args){
     if (reg1 != NULL){
         reg1->valor = reg1->valor + 1;
     } else {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"El operando de INC no es un registro");
+        mvprintw(36, 10,"El operando de INC no es un registro");
         return false;
     }
     return true;
@@ -370,16 +370,16 @@ bool instDEC(char *args){
     Registro *reg1;
     
     if (sscanf(args, "%31s %n", op1, &leidos) !=1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
+        mvprintw(36, 10,"Sintaxis incorrecta. Se esperaba 'REG,VALOR'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Demasiados argumentos.");
+        mvprintw(36, 10,"Demasiados argumentos.");
         return false;
     }
 
@@ -388,9 +388,9 @@ bool instDEC(char *args){
     if (reg1 != NULL){
         reg1->valor = reg1->valor - 1;
     } else {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"El operando uno de INC no es un registro.");
+        mvprintw(36, 10,"El operando uno de INC no es un registro.");
         return false;
     }
     return true;
@@ -401,16 +401,16 @@ bool instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
     int n, leidos = 0;
     
     if (sscanf(args, "%31s %n", op1, &leidos) !=1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Sintaxis incorrecta. Se esperaba 'JNZ valor'");
+        mvprintw(36, 10,"Sintaxis incorrecta. Se esperaba 'JNZ valor'");
         return false;
     }
 
     if (leidos > 0 && sscanf(args + leidos, "%31s", basura) == 1) { 
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"Demasiados argumentos.");
+        mvprintw(36, 10,"Demasiados argumentos.");
         return false;
     }
    
@@ -424,9 +424,9 @@ bool instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
             return false;
         }    
     } else {
-        move(24,10);
+        move(36,10);
         clrtoeol();
-        mvprintw(24, 10,"El operando de JNZ no es un numero.");
+        mvprintw(36, 10,"El operando de JNZ no es un numero.");
         return false;
     }
     return true;
@@ -436,9 +436,9 @@ bool instEND(){
     char *extra;    
     extra = strtok(NULL, " \n\t");
     if (extra != NULL){
-        move(24,2);
+        move(36,2);
         clrtoeol();
-        mvprintw(24, 2,"Demasiados argumentos o instrucciones despues de END.");
+        mvprintw(36, 2,"Demasiados argumentos o instrucciones despues de END.");
         return false;
     }
     return true;
@@ -477,9 +477,9 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_ins
 
     if (strcmp(cmd, "salir") == 0) {
             if(arg != NULL){
-                move(24,10);
+                move(36,10);
                 clrtoeol();
-                mvprintw(24, 10,"Demasiados argumentos.");
+                mvprintw(36, 10,"Demasiados argumentos.");
                 return 0;
             }
         return 1; 
@@ -492,17 +492,17 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_ins
         }
 
         if(basura != NULL){
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24, 10,"Demasiados argumentos.");
+            mvprintw(36, 10,"Demasiados argumentos.");
             return 0;
         } else {
             //tenemos que intentar abrir el archivo para que no nos salga nada raro y no se creen archivos fantasmas
             FILE *f = fopen(arg, "r");
             if(f == NULL){ //esque intente poner file1 y si se creo
-                move(24,10);
+                move(36,10);
                 clrtoeol();
-                mvprintw(24,2,"Error: archivo no existe.");
+                mvprintw(36,2,"Error: archivo no existe.");
                 move(20,2);
                 clrtoeol();
                 return 0;
@@ -521,15 +521,15 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_ins
             return -1;
         }
         if(esInt(arg)== false){
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24,2,"El argumento no es un numero.");
+            mvprintw(36,2,"El argumento no es un numero.");
         }
 
         if(basura != NULL){
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24, 10,"Demasiados argumentos.");
+            mvprintw(36, 10,"Demasiados argumentos.");
             return 0;
         }else {
             *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos
@@ -541,9 +541,9 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_ins
 
     if (strcmp(cmd, "prueba") == 0) {
             if(arg != NULL){
-                move(24,10);
+                move(36,10);
                 clrtoeol();
-                mvprintw(24, 10,"Demasiados argumentos.");
+                mvprintw(36, 10,"Demasiados argumentos.");
                 return 0;
             }
         return 4; 
@@ -558,15 +558,15 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_ins
         }
 
         if(esInt(arg) == false || esInt(arg2) == false){
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24,2,"Alguno de los argumentos no es un numero.");
+            mvprintw(36,2,"Alguno de los argumentos no es un numero.");
         }
 
         if(basura != NULL){
-            move(24,10);
+            move(36,10);
             clrtoeol();
-            mvprintw(24, 10,"Demasiados argumentos.");
+            mvprintw(36, 10,"Demasiados argumentos.");
             return 0;
         }else {
             *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos

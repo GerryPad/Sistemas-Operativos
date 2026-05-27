@@ -41,7 +41,7 @@ int main(){
                 calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 actualizaCGPU(suspendidos->siguiente);
                 imprimir_listas(ejecutando, listos, terminados);
-                usleep(3000000);
+                //usleep(3000000);
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
                 //cargar su "contexto", de momento pues esta en ceros
@@ -52,13 +52,14 @@ int main(){
 
                 while (!com_valido){ //Solicitamos comando hasta que haya uno valido
                 
-                    move(20,2);
+                    move(40,2);
                     clrtoeol();
-                    mvprintw(20,2, ">");
+                    mvprintw(40,2, ">");
                     echo();
+                    comando[0] = '\0';
                     getstr(comando);
                     noecho();
-                    move(20, 2); 
+                    move(40, 2); 
                     clrtoeol(); 
                     refresh();
                 
@@ -75,7 +76,7 @@ int main(){
                         gid++;
                         insertarFinal(listos,nuevo);
                     } else if(com == 3){ //comando mata
-                        mvprintw(25, 2, "No hay ningun proceso para matar.");
+                        mvprintw(37, 2, "No hay ningun proceso para matar.");
                     } else if (com == 4){ //comando prueba
                         com_valido = true;
                         nuevo=crearNodo(pid, gid, "file"); pid++; gid++; insertarFinal(listos,nuevo);
@@ -85,16 +86,16 @@ int main(){
                         nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);
                     } else if (com == 5){ //comando fork
-                        mvprintw(30, 0, "No hay procesos para copiar");
+                        mvprintw(39, 0, "No hay procesos para copiar");
                     }
                     
                     else { //error al ingresar comando
-                        move(25,2);
+                        move(37,2);
                         clrtoeol();
                         if (com == -1) {
-                            mvprintw(25,2, "Error: Comando incompleto.");
+                            mvprintw(37,2, "Error: Comando incompleto.");
                         } else {
-                            mvprintw(25,2,"Error: Comando invalido");
+                            mvprintw(37,2,"Error: Comando invalido");
                             
                         }
                         refresh();
@@ -122,7 +123,7 @@ int main(){
             contarGrupos(listos, ejecutando, gid);
             
             int i=1;
-            while(i<pc && fgets(linea, sizeof(linea), file) != NULL){
+            while(i<=pc && fgets(linea, sizeof(linea), file) != NULL){
                 i++;
                 continue;
             }
@@ -132,7 +133,7 @@ int main(){
             while (fgets(linea, sizeof(linea), file) != NULL) {
                 linea[strcspn(linea, "\n\r")] = '\0';
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
-                usleep(1000000);
+                //usleep(1000000);
                 imprimir_registros(pc, linea);
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
@@ -144,13 +145,14 @@ int main(){
 
                 if (tokEND){ //Si hayamos un END...
                     if (token != NULL) { //Pero hay mas cosas despues
-                        move(24,10);
+                        move(36,10);
                         clrtoeol();
-                        mvprintw(24, 10, "Error: Contenido tras END en Renglon %d", pc);
+                        mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
                         proceso_a_terminar = desencolar(ejecutando); //Siguiendo la logica de Pedro
 
                         if (proceso_a_terminar != NULL) {
-                            strcpy(proceso_a_terminar->estado, "terminado*");
+                            //strcpy(proceso_a_terminar->estado, "terminado*");
+                            proceso_a_terminar->estadoTermino = 1;
                             insertarFinal(terminados, proceso_a_terminar);
                         }
                         imprimir_listas(ejecutando, listos, terminados);
@@ -178,7 +180,8 @@ int main(){
                             tokEND = false;
                             proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
-                                strcpy(proceso_a_terminar->estado, "terminado*");
+                                //strcpy(proceso_a_terminar->estado, "terminado*");
+                                proceso_a_terminar->estadoTermino = 1;
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             limpieza=true;
@@ -200,7 +203,8 @@ int main(){
                                 guardaPCB(proceso_actual, pc, linea_original);
                                 proceso_a_terminar = desencolar(ejecutando);
                                 if (proceso_a_terminar!= NULL) {
-                                    strcpy(proceso_a_terminar->estado, "listos");
+                                    //strcpy(proceso_a_terminar->estado, "listos");
+                                    proceso_a_terminar->estadoTermino = 0;
                                     insertarFinal(listos, proceso_a_terminar);
                                 }
                                 fclose(file);
@@ -215,12 +219,13 @@ int main(){
                             continue;
                         } else {
                             guardaPCB(proceso_actual,pc,linea_original);
-                            mvprintw(22, 2, "ABORTADO: Error en renglon %d", pc);
-                            mvprintw(24,2, "Motivo:");
+                            mvprintw(34, 2, "ABORTADO: Error en renglon %d", pc);
+                            mvprintw(36,2, "Motivo:");
                             //Mover los procesos fallidos a terminados
                             proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
-                                strcpy(proceso_a_terminar->estado, "terminado*");
+                                //strcpy(proceso_a_terminar->estado, "terminado*");
+                                proceso_a_terminar->estadoTermino = 1;
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             imprimir_listas(ejecutando, listos, terminados);
@@ -231,12 +236,13 @@ int main(){
                     } else {
                         if (!ejecOperacion(token, argumentos, proceso_actual, ptr_pc, ptr_pid)) {
                             guardaPCB(proceso_actual,pc,linea_original);
-                            mvprintw(22, 2, "ABORTADO: Error en renglon %d", pc);
-                            mvprintw(24,2, "Motivo:");
+                            mvprintw(34, 2, "ABORTADO: Error en renglon %d", pc);
+                            mvprintw(36,2, "Motivo:");
                             //Mover los procesos fallidos a terminados
                             proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
-                                strcpy(proceso_a_terminar->estado, "terminado*");
+                                //strcpy(proceso_a_terminar->estado, "terminado*");
+                                proceso_a_terminar->estadoTermino = 1;
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             imprimir_listas(ejecutando, listos, terminados);
@@ -245,7 +251,7 @@ int main(){
                             break; 
                         }
                     } 
-                    usleep(2000000);
+                    //usleep(2000000);
                     if(*ptr_pid != -1){
                         pc++;
                     }
@@ -261,7 +267,8 @@ int main(){
                         guardaPCB(proceso_actual, pc, linea_original);
                         proceso_a_terminar = desencolar(ejecutando);
                         if (proceso_a_terminar!= NULL) {
-                            strcpy(proceso_a_terminar->estado, "listos");
+                            //strcpy(proceso_a_terminar->estado, "listos");
+                            proceso_a_terminar->estadoTermino = 0;
                             insertarFinal(listos, proceso_a_terminar);
                         }
                         fclose(file);
@@ -280,14 +287,16 @@ int main(){
                             limpia_lineas();
                         }
                         interrumpido=true;
-                        getch();
+                        //Basto comentar el getch(), ahora ya no se ocupa dar enter y luego comando
+                        //getch();
 
                         refresh();
-                        move(20,2);
+                        move(40,2);
                         clrtoeol();
-                        mvprintw(20, 2, ">");
+                        mvprintw(40, 2, ">");
                         echo();
-                        mvscanw(20,3,"%255[^\n]",comando);
+                        comando[0] = '\0';
+                        mvscanw(40,3,"%255[^\n]",comando);
                         noecho();
                         limpieza = true;
                         //strcpy(com_mata, comando);
@@ -306,32 +315,34 @@ int main(){
                                 interrumpido = false;
                                 continue; //Para seguir con el proceso actual y que no se cambie por el nuevo
                             } else {
-                                move(25,2);
+                                move(37,2);
                                 clrtoeol();
-                                mvprintw(25,2,"Archivo no existente");
+                                mvprintw(37,2,"Archivo no existente");
                                 limpieza = true;
-                                move(20,2);
+                                move(40,2);
                                 clrtoeol();
                                 refresh();
                             }      
                         
                         } else if(com == 3){
-                            proceso_a_matar = mataPID(ejecutando, pid_kill);
+                            proceso_a_matar = extraerPID(ejecutando, pid_kill);
                             if(proceso_a_matar != NULL){
-                                strcpy(proceso_a_matar->estado, "terminados**");
+                                //strcpy(proceso_a_matar->estado, "terminados**");
+                                proceso_a_terminar->estadoTermino = 2;
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando,listos,terminados);
                                 break; 
                             } else{
-                                proceso_a_matar = mataPID(listos, pid_kill);
+                                proceso_a_matar = extraerPID(listos, pid_kill);
                                 if(proceso_a_matar != NULL){
-                                    strcpy(proceso_a_matar->estado, "terminados**");
+                                    //strcpy(proceso_a_matar->estado, "terminados**");
+                                    proceso_a_terminar->estadoTermino = 2;
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando,listos,terminados);
                                 } else {
-                                    move(25,2);
+                                    move(37,2);
                                     clrtoeol();
-                                    mvprintw(25,2, "El PID asociado al proceso no existe.");
+                                    mvprintw(37,2, "El PID asociado al proceso no existe.");
                                     mvprintw(27,2, "Ese proceso no existe o ya termino");
                                 }
                             } 
@@ -354,9 +365,9 @@ int main(){
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados);
                                 } else {
-                                    move(30,2);
+                                    move(39,2);
                                     clrtoeol();
-                                    mvprintw(30,2,"No existe el proceso asociado al PID o el proceso ya termino.");
+                                    mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
                                 }
                                 
                             }
@@ -364,14 +375,14 @@ int main(){
                         }
                         
                         else {
-                            move(25,2);
+                            move(37,2);
                             clrtoeol();
                             if (com == -1) {
-                                mvprintw(25,2, "Error: Falta nombre de archivo.");
+                                mvprintw(37,2, "Error: Falta nombre de archivo.");
                                 limpieza = true;
                                 continue;
                             } else {
-                                mvprintw(25,2,"Error: Comando invalido");
+                                mvprintw(37,2,"Error: Comando invalido");
                                 limpieza = true;
                                 continue;
                             }
@@ -383,12 +394,13 @@ int main(){
                     }
 
                 } else {
-                    move(24,2);
+                    move(36,2);
                     clrtoeol();
-                    mvprintw(24, 2, "Token no valido: [%s]", token);
+                    mvprintw(36, 2, "Token no valido: [%s]", token);
                     proceso_a_terminar = desencolar(ejecutando);
                     if (proceso_a_terminar != NULL) {
-                        strcpy(proceso_a_terminar->estado, "terminado*");
+                        //strcpy(proceso_a_terminar->estado, "terminado*");
+                        proceso_a_terminar->estadoTermino = 1;
                         insertarFinal(terminados, proceso_a_terminar);
                     }
                     limpieza = true;
@@ -397,34 +409,36 @@ int main(){
             }
 
             if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
-                move(23, 2); clrtoeol();
-                mvprintw(23, 2, "Quantum = 3. Cambio de proceso");
+                move(35, 2); clrtoeol();
+                mvprintw(35, 2, "Quantum = 3. Cambio de proceso");
                 //calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 imprimir_listas(ejecutando, listos, terminados);
                 refresh();
             } else if(!interrumpido){ //Cuando el quantum no termina, osea no es multiplo de 3 el numero de instrucciones
-                move(23, 2); clrtoeol();
+                move(35, 2); clrtoeol();
                 if (tokEND){
-                    move(23,2);
+                    move(35,2);
                     clrtoeol();
-                    mvprintw(23, 2, "Estado: Procesado con éxito.");
+                    mvprintw(35, 2, "Estado: Procesado con éxito.");
                     guardaPCB(proceso_actual,pc,linea_original);
                     proceso_a_terminar = desencolar(ejecutando);
 
                     if (proceso_a_terminar != NULL) {
-                        strcpy(proceso_a_terminar->estado, "terminado");
+                        //strcpy(proceso_a_terminar->estado, "terminado");
+                        proceso_a_terminar->estadoTermino = 0;
                         insertarFinal(terminados, proceso_a_terminar);
                     }
 
                     imprimir_listas(ejecutando, listos, terminados);
                 } else {
-                    mvprintw(23, 2, "Estado: Error - Falto END o abortado.");
+                    mvprintw(35, 2, "Estado: Error - Falto END o abortado.");
                     limpieza = true;
                     guardaPCB(proceso_actual,pc,linea_original);
                     proceso_a_terminar = desencolar(ejecutando);
 
                     if (proceso_a_terminar != NULL) {
-                        strcpy(proceso_a_terminar->estado, "terminado*");
+                        //strcpy(proceso_a_terminar->estado, "terminado*");
+                        proceso_a_terminar->estadoTermino = 1;
                         insertarFinal(terminados, proceso_a_terminar);
                     }
                     proceso_actual = NULL;
@@ -441,7 +455,8 @@ int main(){
 
                 proceso_a_terminar = desencolar(ejecutando);
                 if (proceso_a_terminar != NULL) {
-                    strcpy(proceso_a_terminar->estado, "terminado");
+                    //strcpy(proceso_a_terminar->estado, "terminado");
+                    proceso_a_terminar->estadoTermino = 0;
                     insertarFinal(terminados, proceso_a_terminar);
                 }
                 //Si el proceso actual termino, ya no estamos ejecutando nada
@@ -449,7 +464,7 @@ int main(){
             }
 
         } else {
-            mvprintw(22, 2, "El archivo NO existe.");
+            mvprintw(34, 2, "El archivo NO existe.");
             limpieza = true;
             
         }

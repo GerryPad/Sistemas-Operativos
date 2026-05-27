@@ -7,7 +7,8 @@
 struct Nodo{
     int PID;
     int GID;
-    char estado[16];
+    //char estado[16];
+    int estadoTermino;
     int PC;
     char archivo[64]; 
     char IR[64];
@@ -22,7 +23,7 @@ struct Nodo{
 struct Nodo *crearCabecera();
 struct Nodo *crearNodo(int n, int m, char *archivo);
 void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo);
-struct Nodo *mataPID(struct Nodo *lista, int PID);
+struct Nodo *extraerPID(struct Nodo *lista, int PID);
 struct Nodo *desencolar(struct Nodo *lista);
 struct Nodo *buscaPID(struct Nodo *lista, int pid);
 struct Nodo *buscaGID(struct Nodo *lista, int gid);

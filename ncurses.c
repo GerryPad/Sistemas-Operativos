@@ -19,13 +19,9 @@ void imprimir_registros(int renglon, char *instruccion){
 }
 
 void limpia_lineas() {
-    move(22,2); clrtoeol();
-    move(23,2); clrtoeol();
-    move(24,2); clrtoeol();
-    move(25,2); clrtoeol();
-    move(20,2); clrtoeol();
-    move(26,2); clrtoeol();
-    move(30,2); clrtoeol();
+    for (int i = 34; i<= 40 ; i++) {
+        move(i,2); clrtoeol();    
+    }
     refresh();
 }
 
@@ -44,13 +40,14 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         clrtoeol();
     } 
  //Esta es la lista de ejecutando
-   
+ //La impresion ahora es mas bonita 
+   int i = 8;
     if(aux_e != NULL){
-        mvprintw(8, 2,"%-6d %-6d %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s %-8d %-8d %-8d", 
+        mvprintw(i, 2,"%-6d %-6d %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s %-8d %-8d %-8d", 
         aux_e->PID,
         aux_e->GID,
         aux_e->archivo,
-        aux_e->estado,
+        "ejecutando",
         "---",
         "---",
         "---",
@@ -61,9 +58,10 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_e->GCPU,
         aux_e->prioridad
         );
+        i++;
     }
 
-    int i=9;
+    //int i=9;
     while(aux_l != NULL){
         if(i>=20 || aux_l == NULL){
             break;
@@ -75,7 +73,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_l->PID,
         aux_l->GID,
         aux_l->archivo,
-        aux_l->estado,
+        "listos"
         aux_l->PC,
         aux_l->IR,
         aux_l->registros[0],
@@ -102,7 +100,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_te->PID,
         aux_te->GID,
         aux_te->archivo,
-        aux_te->estado,
+        aux_te->estado, //Aqui va la logica de terminados con errorm normal o matados 
         aux_te->PC,
         aux_te->IR,
         aux_te->registros[0],

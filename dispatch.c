@@ -66,7 +66,7 @@ void actualizaCGPU(struct Nodo *aux){
 void calculoPrioridades(struct Nodo *listos, int grupos) {
     struct Nodo *aux = listos->siguiente;
     struct Nodo *aux2 = listos->siguiente;
-    int p_base = 20;
+    int p_base = 60; //Cambiamos la prioridad base a 60 
     //float wk=1.0/grupos;
 
     actualizaCGPU(aux2);
@@ -93,8 +93,9 @@ struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
         aux=aux->siguiente;
     }
 
-    struct Nodo *proceso = mataPID(listos, proceso_prioritario->PID); //"desencolamos" el proceso de mayor prioridad
-    strcpy(proceso_prioritario->estado, "ejecutando");
+    struct Nodo *proceso = extraerPID(listos, proceso_prioritario->PID); //"desencolamos" el proceso de mayor prioridad
+    //strcpy(proceso_prioritario->estado, "ejecutando");
+    proceso_prioritario->estadoTermino = 0;
     insertarFinal(ejecutando, proceso);
     return proceso;
 }
