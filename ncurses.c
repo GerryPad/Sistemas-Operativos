@@ -31,7 +31,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
     struct Nodo *aux_l = cabecera_listos->siguiente;
     struct Nodo *aux_te = cabecera_terminados->siguiente;
 
-    mvprintw(7, 2, "%-6s %-6s %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s %-8s %-8s %-8s", 
+    mvprintw(7, 2, "%-6s %-6s %-8s %-14s %-8s %-15s %-20s %-20s %-20s %-20s %-8s %-8s %-8s", 
         "PID", "GID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX", "CPU", "GCPU", "Prioridad");
 
 
@@ -43,7 +43,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
  //La impresion ahora es mas bonita 
    int i = 8;
     if(aux_e != NULL){
-        mvprintw(i, 2,"%-6d %-6d %-8s %-12s %-8s %-15s %-20s %-20s %-20s %-20s %-8d %-8d %-8d", 
+        mvprintw(i, 2,"%-6d %-6d %-8s %-14s %-8s %-15s %-20s %-20s %-20s %-20s %-8d %-8d %-8d", 
         aux_e->PID,
         aux_e->GID,
         aux_e->archivo,
@@ -69,11 +69,11 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
 
         move(i,2);
         clrtoeol();
-        mvprintw(i, 2, "%-6d %-6d %-8s %-12s %-8d %-15s %-20d %-20d %-20d %-20d %-8d %-8d %-8d", 
+        mvprintw(i, 2, "%-6d %-6d %-8s %-14s %-8d %-15s %-20d %-20d %-20d %-20d %-8d %-8d %-8d", 
         aux_l->PID,
         aux_l->GID,
         aux_l->archivo,
-        "listos"
+        "listos",
         aux_l->PC,
         aux_l->IR,
         aux_l->registros[0],
@@ -96,11 +96,20 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         }
         move(i,2);
         clrtoeol();
-        mvprintw(i, 2, "%-6d %-6d %-8s %-12s %-8d %-15s %-20d %-20d %-20d %-20d %-8d %-8d %-8d", 
+        mvprintw(i, 2, "%-6d %-6d %-8s", 
         aux_te->PID,
         aux_te->GID,
-        aux_te->archivo,
-        aux_te->estado, //Aqui va la logica de terminados con errorm normal o matados 
+        aux_te->archivo
+        );
+        if (aux_te -> estadoTermino == 0){
+            mvprintw(i,25, "%-12s", "terminados");
+        } else if(aux_te -> estadoTermino == 1) {
+            mvprintw(i,25, "%-12s", "terminados*");
+        } else if(aux_te -> estadoTermino == 2) {
+            mvprintw(i,25, "%-12s", "terminados**");
+        }
+        //aux_te->estado, //Aqui va la logica de terminados con errorm normal o matados 
+        mvprintw(i, 40, "%-8d %-15s %-20d %-20d %-20d %-20d %-8d %-8d %-8d",
         aux_te->PC,
         aux_te->IR,
         aux_te->registros[0],

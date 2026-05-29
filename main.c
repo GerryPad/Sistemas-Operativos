@@ -328,7 +328,7 @@ int main(){
                             proceso_a_matar = extraerPID(ejecutando, pid_kill);
                             if(proceso_a_matar != NULL){
                                 //strcpy(proceso_a_matar->estado, "terminados**");
-                                proceso_a_terminar->estadoTermino = 2;
+                                proceso_a_matar->estadoTermino = 2;
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando,listos,terminados);
                                 break; 
@@ -336,7 +336,7 @@ int main(){
                                 proceso_a_matar = extraerPID(listos, pid_kill);
                                 if(proceso_a_matar != NULL){
                                     //strcpy(proceso_a_matar->estado, "terminados**");
-                                    proceso_a_terminar->estadoTermino = 2;
+                                    proceso_a_matar->estadoTermino = 2;
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando,listos,terminados);
                                 } else {
