@@ -191,7 +191,7 @@ int main(){
                         if(instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid)){
                             rewind(file); //Regresa al inicio del archivo
                             int j=1;
-                            while(j<pc && fgets(linea,sizeof(linea), file) != NULL) {
+                            while(j<=pc && fgets(linea,sizeof(linea), file) != NULL) {
                                 j++;
                             }
                             quantum++;

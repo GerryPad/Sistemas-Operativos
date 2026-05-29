@@ -416,13 +416,14 @@ bool instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
    
     if (esInt(op1)){
         n = atoi(op1);
-        if(n>0 && registros[2].valor != 0) {
+        if(n>=0 && registros[2].valor != 0) {
             *ptr_pc = n;
             *ptr_pid = -1;
             return true;
-        } else {
+        }  else {
+            mvprintw(36, 10,"El operando de JNZ es negativo.");
             return false;
-        }    
+        }
     } else {
         move(36,10);
         clrtoeol();
