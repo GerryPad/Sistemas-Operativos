@@ -1,3 +1,0 @@
-MOV EAX,10
-ADD EAX,11 hola
-END

@@ -54,14 +54,26 @@ int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid) {
     return contador;
 }
 
-void calculoPrioridades(struct Nodo *listos, int grupos) {
-    struct Nodo *aux = listos->siguiente;
-    int p_base = 20;
-    //float wk=1.0/grupos;
-
-    while(aux!= NULL){
+void actualizaCGPU(struct Nodo *aux){
+    
+    while(aux != NULL) {
         aux->CPU = aux->CPU/2;
         aux->GCPU = aux->GCPU/2;
+        aux = aux->siguiente;
+    }
+}
+
+void calculoPrioridades(struct Nodo *listos, int grupos) {
+    struct Nodo *aux = listos->siguiente;
+    struct Nodo *aux2 = listos->siguiente;
+    int p_base = 60; //Cambiamos la prioridad base a 60 
+    //float wk=1.0/grupos;
+
+    actualizaCGPU(aux2);
+    
+    while(aux!= NULL){
+        //aux->CPU = aux->CPU/2;
+        //aux->GCPU = aux->GCPU/2;
         aux->prioridad = p_base + (int) ((aux->CPU/2.0)) + (int) ((aux->GCPU * grupos/4.0));
         aux = aux->siguiente;
     }
@@ -81,9 +93,9 @@ struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
         aux=aux->siguiente;
     }
 
-    struct Nodo *proceso = mataPID(listos, proceso_prioritario->PID); //"desencolamos" el proceso de mayor prioridad
-    strcpy(proceso_prioritario->estado, "ejecutando");
+    struct Nodo *proceso = extraerPID(listos, proceso_prioritario->PID); //"desencolamos" el proceso de mayor prioridad
+    //strcpy(proceso_prioritario->estado, "ejecutando");
+    proceso_prioritario->estadoTermino = 0;
     insertarFinal(ejecutando, proceso);
     return proceso;
 }
-

@@ -10,7 +10,7 @@ struct Nodo* crearCabecera(){
 struct Nodo* crearNodo(int n, int m, char *archivo){
     struct Nodo *nuevo = malloc(sizeof(struct Nodo));
     if (nuevo == NULL){
-        mvprintw(30,2, "No se reservo memoria");
+        mvprintw(39,2, "No se reservo memoria");
         return NULL;
     }
     nuevo->PID = n;
@@ -22,7 +22,8 @@ struct Nodo* crearNodo(int n, int m, char *archivo){
     strcpy(nuevo->archivo, archivo);
     strcpy(nuevo->IR, "---");
     nuevo->siguiente = NULL;
-    strcpy(nuevo->estado, "listos");
+    //strcpy(nuevo->estado, "listos");
+    nuevo->estadoTermino = 0;
     nuevo->CPU = 0;
     nuevo->GCPU = 0;
     nuevo->prioridad = 0; //Si deberia empezar en 20 o en 0?
@@ -38,7 +39,7 @@ void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo){
     aux->siguiente = nuevo;
 }
 
-struct Nodo *mataPID(struct Nodo *lista, int PID){
+struct Nodo *extraerPID(struct Nodo *lista, int PID){
     struct Nodo * aux = lista->siguiente;
     struct Nodo * aux2 = lista;
 
@@ -61,7 +62,7 @@ struct Nodo * desencolar(struct Nodo *lista){
     struct Nodo *aux=lista->siguiente;
     if(aux==NULL){
         
-        mvprintw(25,2,"No hay mas procesos en listos.");
+        mvprintw(37,2,"No hay mas procesos en listos.");
         return NULL;
     }
 

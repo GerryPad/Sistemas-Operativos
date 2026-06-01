@@ -9,5 +9,6 @@ void aumentaGCPU(struct Nodo *listos, int gid);
 int contarGrupos(struct Nodo *listos, struct Nodo *ejecutando, int max_gid);
 void calculoPrioridades(struct Nodo *listos, int grupos);
 struct Nodo* planificador(struct Nodo *listos, struct Nodo *ejecutando);
+void actualizaCGPU(struct Nodo *aux);
 
 #endif
