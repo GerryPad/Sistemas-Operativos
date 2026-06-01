@@ -10,9 +10,45 @@
 #include "dispatch.h"
 #include <sys/select.h>
 
+#define TAMANO_IR 64
+
 char RAM[4096]; //Nuestro IR es de 64 asi que 64*64=4096
 
-int kbhit(void);        
+int kbhit(void); 
+
+void guardarTextoABinario(const char *archivoTexto, const char *archivoBinario) {
+    FILE *txt = fopen(archivoTexto, "r");
+    FILE *bin = fopen(archivoBinario, "wb"); 
+
+    if (!txt || !bin) {
+        printf("Error al abrir los archivos.\n");
+        return;
+    }
+
+    char linea[64];
+    char bufferFijo[TAMANO_IR];
+
+    // Leer el archivo de texto línea por línea
+    while (fgets(linea, sizeof(linea), txt)) {
+        linea[strcspn(linea, "\r\n")] = 0;
+
+        //Saltar líneas vacías
+        if (strlen(linea) == 0) continue;
+
+        //Llenamos el marco inicialmente con 0's
+        memset(bufferFijo, 0, TAMANO_IR);
+
+        //Copiamos el texto de la instrucción al buffer seguro
+        strncpy(bufferFijo, linea, TAMANO_IR - 1);
+
+        //Escribimos exactamente 64 bytes en el archivo binario
+        fwrite(bufferFijo, sizeof(char), TAMANO_IR, bin);
+    }
+
+    fclose(txt);
+    fclose(bin);
+}
+
 int main(){
 
     //Creando nodo de prueba para impresion
@@ -26,6 +62,8 @@ int main(){
     struct Nodo *proceso_a_terminar = NULL;
     struct Nodo *proceso_a_matar = NULL;
     struct Nodo *proceso_a_copiar  = NULL;
+
+    ///FILE *bin = "disco_virtual.bin";
 
 
     char archivo[64], linea[128], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
@@ -74,6 +112,7 @@ int main(){
                     } else if (com == 2){ //comando ejecuta
                         com_valido = true;
                         nuevo=crearNodo(pid, gid, archivo);
+                        guardarTextoABinario(archivo, "disco_virtual.bin");
                         pid++;
                         gid++;
                         insertarFinal(listos,nuevo);
@@ -311,6 +350,7 @@ int main(){
                         } else if (com == 2){
                             if (access(archivo, F_OK) == 0){
                                 nuevo=crearNodo(pid, gid, archivo);
+                                guardarTextoABinario(archivo, "disco_virtual.bin");
                                 pid++;
                                 gid++;
                                 insertarFinal(listos,nuevo);

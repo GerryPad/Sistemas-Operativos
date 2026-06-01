@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define TAMANO_IR 64 //Tamaño de instruccion?
+#define TAMANO_IR 64 //Tamaño de instruccion
 #define INSTRUCCIONES_POR_MARCO 4
 #define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) 
 
@@ -15,7 +15,7 @@ void guardarTextoABinario(const char *archivoTexto, const char *archivoBinario) 
         return;
     }
 
-    char linea[128];
+    char linea[64];
     char bufferFijo[TAMANO_IR];
 
     // Leer el archivo de texto línea por línea
@@ -39,7 +39,7 @@ void guardarTextoABinario(const char *archivoTexto, const char *archivoBinario) 
     fclose(bin);
 }
 
-// Estructura auxiliar para representar un marco en tu memoria física (RAM)
+//Estructura para representar un marco en memoria física (RAM)
 struct MarcoPagina {
     char instrucciones[INSTRUCCIONES_POR_MARCO][TAMANO_IR];
 };
@@ -70,7 +70,7 @@ void cargarMarcoDesdeBinario(const char *archivoBinario, int numeroMarco) {
     //Validar cuántas instrucciones reales pudimos leer (por si es el final del archivo)
     int instruccionesLeidas = leidos / TAMANO_IR;
     
-    printf("\n--- Mostrando contenido del Marco %d (%d bytes leídos) ---\n", numeroMarco, (int)leidos);
+    printf("\nContenido del Marco %d (%d bytes leídos) ---\n", numeroMarco, (int)leidos);
     for (int i = 0; i < instruccionesLeidas; i++) {
         printf("  Instruccion [%d] (Offset %d): %s\n", i + (numeroMarco * 4), i, miMarcoRAM.instrucciones[i]);
     }
