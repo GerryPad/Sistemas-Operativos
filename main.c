@@ -10,6 +10,8 @@
 #include "dispatch.h"
 #include <sys/select.h>
 
+char RAM[4096]; //Nuestro IR es de 64 asi que 64*64=4096
+
 int kbhit(void);        
 int main(){
 
