@@ -396,7 +396,7 @@ bool instDEC(char *args){
     return true;
 }
 
-bool instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
+int instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
     char op1[32], basura[32];
     int n, leidos = 0;
     
@@ -419,10 +419,12 @@ bool instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
         if(n>=0 && registros[2].valor != 0) {
             *ptr_pc = n;
             *ptr_pid = -1;
-            return true;
-        }  else {
+            return 1; 
+        }else if(registros[2].valor==0){
+            return 2;
+        }else { 
             mvprintw(36, 10,"El operando de JNZ es negativo.");
-            return false;
+            return 3;
         }
     } else {
         move(36,10);

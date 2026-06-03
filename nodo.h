@@ -11,7 +11,7 @@ struct Nodo{
     int estadoTermino;
     int PC;
     char archivo[64]; 
-    char IR[64]; //Tamaño de instruccion, dejar basura en bytes no usados
+    char IR[64];
     int registros[4];
     int CPU; 
     int GCPU;

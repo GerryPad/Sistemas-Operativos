@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <curses.h>
+#include <math.h>
 #include "instrucciones.h"
 #include "ncurses.h"
 #include "nodo.h"
@@ -11,10 +12,20 @@
 #include <sys/select.h>
 
 #define TAMANO_IR 64
+#define INSTRUCCIONES_POR_MARCO 4
+#define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) 
+#define TOTAL_MARCOS_RAM 16
 
-char RAM[4096]; //Nuestro IR es de 64 asi que 64*64=4096
+typedef struct {
+    int num_marco;
+    int propietario; // 0= libre, 0 != pid asignado
+} TMM; 
 
-int kbhit(void); 
+TMM tmm[TOTAL_MARCOS_RAM];
+
+
+char RAM[TOTAL_MARCOS_RAM]; //1 = libre, 0 = ocupado
+//char RAM[64][TAMANO_IR] //Esto es una forma de hacerlo, no la unica char RAM[64*TAMANO_IR]
 
 void guardarTextoABinario(const char *archivoTexto, const char *archivoBinario) {
     FILE *txt = fopen(archivoTexto, "r");
@@ -49,10 +60,11 @@ void guardarTextoABinario(const char *archivoTexto, const char *archivoBinario) 
     fclose(bin);
 }
 
+int kbhit(void);        
 int main(){
 
     //Creando nodo de prueba para impresion
-    //struct Nodo *nuevos = crearCabecera();
+    struct Nodo *nuevos = crearCabecera();
     struct Nodo *listos = crearCabecera();
     struct Nodo *terminados = crearCabecera();
     struct Nodo *ejecutando = crearCabecera();
@@ -63,14 +75,23 @@ int main(){
     struct Nodo *proceso_a_matar = NULL;
     struct Nodo *proceso_a_copiar  = NULL;
 
-    ///FILE *bin = "disco_virtual.bin";
-
-
     char archivo[64], linea[128], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0, *ptr_pid = &pid_kill, *ptr_inst = &num_inst, *ptr_pc=&pc; //com es para hacer un "switch" 
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0;
+    int *ptr_pid = &pid_kill, *ptr_inst = &num_inst, *ptr_pc=&pc; //com es para hacer un "switch" 
+    int total_instrucciones, total_marcos_necesarios, cnt_marcos_libres;
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool fin_quantum, limpieza = false; 
+    long tamano_bytes;
+
+    /*for (int i=0; i<TOTAL_MARCOS_RAM; i++){
+        RAM[i] = true;
+    }*/
+
+    for (int i=0; i<TOTAL_MARCOS_RAM; i++) {
+        tmm[i].num_marco = i;
+        tmm[i].propietario = 0;
+    }
     
     initscr();
     do{
@@ -80,7 +101,7 @@ int main(){
             if(listos->siguiente != NULL){
                 calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 actualizaCGPU(suspendidos->siguiente);
-                imprimir_listas(ejecutando, listos, terminados);
+                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 //usleep(3000000);
                 proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
 
@@ -111,11 +132,66 @@ int main(){
                         return 0;
                     } else if (com == 2){ //comando ejecuta
                         com_valido = true;
-                        nuevo=crearNodo(pid, gid, archivo);
                         guardarTextoABinario(archivo, "disco_virtual.bin");
-                        pid++;
-                        gid++;
-                        insertarFinal(listos,nuevo);
+
+                        FILE *bin = fopen("disco_virtual.bin", "rb");
+                        if (!bin) {
+                            perror("fopen");
+                            continue;
+                        }
+                        fseek(bin, 0, SEEK_END); //Movernos al final del archivo
+                        tamano_bytes = ftell(bin); //ftell devuelve en bytes la posicion actual del archivo, equivalente a la cantidad
+                        fclose(bin);
+                        total_instrucciones = tamano_bytes/TAMANO_IR; //En teoria deberia ser forzosamente un entero
+                        total_marcos_necesarios = ceil(total_instrucciones/INSTRUCCIONES_POR_MARCO); 
+
+                        cnt_marcos_libres = 0;
+                        for(int m = 0; m < TOTAL_MARCOS_RAM; m++) {
+                            if(tmm[m].propietario == 0){
+                                cnt_marcos_libres++;
+                            } 
+                        }
+
+                        if (cnt_marcos_libres < total_marcos_necesarios) {  //FAltaria la logica de swapping
+                            nuevo=crearNodo(pid,gid,archivo);
+                            pid++;
+                            gid++;
+                            insertarFinal(nuevos, nuevo);
+                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                            mvprintw(37, 2, "Error: Memoria RAM insuficiente para el proceso."); //Quiatre esto cuando ya tenga la logica
+                            refresh();
+                            continue;
+                        } else { //Aqui iria la logica de fallo de pagina
+                            bin = fopen("disco_virtual.bin", "rb");
+                            if (!bin) {
+                                perror("fopen");
+                                continue;
+                            }
+                            int pagina_actual = 0;
+                            for(int i=0; i<TOTAL_MARCOS_RAM; i++){
+                                if(tmm[i].propietario == 0){
+                                    fseek(bin, pagina_actual*TAMANO_MARCO, SEEK_SET);
+
+                                    if(fread(RAM + (i*TAMANO_MARCO), sizeof(char), TAMANO_IR, bin) > 0) {
+                                        tmm[i].propietario = pid;
+                                        pagina_actual++;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                            //Modifciar el abrir/cerrar archivos solo una vez con el bin
+                            fclose(bin);
+                            nuevo=crearNodo(pid, gid, archivo);
+                            pid++;
+                            gid++;
+                            insertarFinal(suspendidos,nuevo); //Debe quedarse aqui un ratito aleatorio
+                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                            usleep(5000000);
+                            /*nuevo = extraerPID(suspendidos, pid-1);
+                            insertarFinal(listos, nuevo);*/
+                        }
+
                     } else if(com == 3){ //comando mata
                         mvprintw(37, 2, "No hay ningun proceso para matar.");
                     } else if (com == 4){ //comando prueba
@@ -176,7 +252,7 @@ int main(){
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
                 //usleep(1000000);
                 imprimir_registros(pc, linea);
-                imprimir_listas(ejecutando, listos, terminados);
+                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 refresh();
                 *ptr_pid = 0;
                 
@@ -196,7 +272,7 @@ int main(){
                             proceso_a_terminar->estadoTermino = 1;
                             insertarFinal(terminados, proceso_a_terminar);
                         }
-                        imprimir_listas(ejecutando, listos, terminados);
+                        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                         tokEND = false; 
                         limpieza = true;
                         break;
@@ -229,12 +305,15 @@ int main(){
                             break;
                         }
                     } else if(strcmp(token, "JNZ") == 0){
-                        if(instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid)){
+                        int a = instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid);
+                        if(a==1 || a == 2){
+                            if(a==1){
                             rewind(file); //Regresa al inicio del archivo
                             int j=1;
                             while(j<=pc && fgets(linea,sizeof(linea), file) != NULL) {
                                 j++;
                             }
+                        }
                             quantum++;
                             proceso_actual->CPU = proceso_actual->CPU + 20;
                             proceso_actual->GCPU=proceso_actual->GCPU + 20;
@@ -252,7 +331,7 @@ int main(){
                                 proceso_actual = NULL;
                                 fin_quantum = true;
                                 limpieza = true;
-                                imprimir_listas(ejecutando, listos, terminados);
+                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 refresh();
                                 
                                 break; 
@@ -269,7 +348,7 @@ int main(){
                                 proceso_a_terminar->estadoTermino = 1;
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
-                            imprimir_listas(ejecutando, listos, terminados);
+                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
 
                             limpieza = true;
                             break; 
@@ -286,7 +365,7 @@ int main(){
                                 proceso_a_terminar->estadoTermino = 1;
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
-                            imprimir_listas(ejecutando, listos, terminados);
+                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
 
                             limpieza = true;
                             break; 
@@ -316,7 +395,7 @@ int main(){
                         proceso_actual = NULL;
                         fin_quantum = true;
                         limpieza = true;
-                        imprimir_listas(ejecutando, listos, terminados);
+                        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                         refresh();
                         
                         break; 
@@ -372,7 +451,7 @@ int main(){
                                 //strcpy(proceso_a_matar->estado, "terminados**");
                                 proceso_a_matar->estadoTermino = 2;
                                 insertarFinal(terminados,proceso_a_matar);
-                                imprimir_listas(ejecutando,listos,terminados);
+                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 break; 
                             } else{
                                 proceso_a_matar = extraerPID(listos, pid_kill);
@@ -380,7 +459,7 @@ int main(){
                                     //strcpy(proceso_a_matar->estado, "terminados**");
                                     proceso_a_matar->estadoTermino = 2;
                                     insertarFinal(terminados,proceso_a_matar);
-                                    imprimir_listas(ejecutando,listos,terminados);
+                                    imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
                                     move(37,2);
                                     clrtoeol();
@@ -396,7 +475,7 @@ int main(){
                                nuevo->PC = num_inst;
                                nuevo->GCPU = proceso_a_copiar->GCPU;
                                insertarFinal(listos, nuevo);
-                               imprimir_listas(ejecutando, listos, terminados);
+                               imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                             } else {
                                 proceso_a_copiar = buscaPID(listos, pid_kill);
                                 if(proceso_a_copiar != NULL) {
@@ -405,7 +484,7 @@ int main(){
                                     nuevo->PC = num_inst;
                                     nuevo->GCPU = proceso_a_copiar->GCPU;
                                     insertarFinal(listos, nuevo);
-                                    imprimir_listas(ejecutando, listos, terminados);
+                                    imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
                                     move(39,2);
                                     clrtoeol();
@@ -454,7 +533,7 @@ int main(){
                 move(35, 2); clrtoeol();
                 mvprintw(35, 2, "Quantum = 3. Cambio de proceso");
                 //calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
-                imprimir_listas(ejecutando, listos, terminados);
+                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 refresh();
             } else if(!interrumpido){ //Cuando el quantum no termina, osea no es multiplo de 3 el numero de instrucciones
                 move(35, 2); clrtoeol();
@@ -471,7 +550,7 @@ int main(){
                         insertarFinal(terminados, proceso_a_terminar);
                     }
 
-                    imprimir_listas(ejecutando, listos, terminados);
+                    imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 } else {
                     mvprintw(35, 2, "Estado: Error - Falto END o abortado.");
                     limpieza = true;
@@ -487,7 +566,7 @@ int main(){
                 }
                 fclose(file);
                 proceso_actual = NULL;
-                imprimir_listas(ejecutando, listos, terminados);
+                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 refresh();
             } else { //este era el else de cuando se ejecutaba el archivo hasta el final
                 fclose(file);
