@@ -132,7 +132,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_s->PID,
         aux_s->GID,
         aux_s->archivo,
-        "listos",
+        "suspendidos",
         aux_s->PC,
         aux_s->IR,
         aux_s->registros[0],

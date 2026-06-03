@@ -16,6 +16,8 @@
 #define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) 
 #define TOTAL_MARCOS_RAM 16
 
+ FILE *bin;
+
 typedef struct {
     int num_marco;
     int propietario; // 0= libre, 0 != pid asignado
@@ -84,6 +86,11 @@ int main(){
     bool fin_quantum, limpieza = false; 
     long tamano_bytes;
 
+    bin = fopen("disco_virtual.bin", "rb");
+    if (!bin) {
+        perror("fopen");
+    }
+
     /*for (int i=0; i<TOTAL_MARCOS_RAM; i++){
         RAM[i] = true;
     }*/
@@ -129,19 +136,14 @@ int main(){
 
                     if (com == 1){ //comando salir
                         endwin();
+                        fclose(bin);
                         return 0;
                     } else if (com == 2){ //comando ejecuta
                         com_valido = true;
                         guardarTextoABinario(archivo, "disco_virtual.bin");
 
-                        FILE *bin = fopen("disco_virtual.bin", "rb");
-                        if (!bin) {
-                            perror("fopen");
-                            continue;
-                        }
                         fseek(bin, 0, SEEK_END); //Movernos al final del archivo
                         tamano_bytes = ftell(bin); //ftell devuelve en bytes la posicion actual del archivo, equivalente a la cantidad
-                        fclose(bin);
                         total_instrucciones = tamano_bytes/TAMANO_IR; //En teoria deberia ser forzosamente un entero
                         total_marcos_necesarios = ceil(total_instrucciones/INSTRUCCIONES_POR_MARCO); 
 
@@ -162,11 +164,6 @@ int main(){
                             refresh();
                             continue;
                         } else { //Aqui iria la logica de fallo de pagina
-                            bin = fopen("disco_virtual.bin", "rb");
-                            if (!bin) {
-                                perror("fopen");
-                                continue;
-                            }
                             int pagina_actual = 0;
                             for(int i=0; i<TOTAL_MARCOS_RAM; i++){
                                 if(tmm[i].propietario == 0){
@@ -181,15 +178,14 @@ int main(){
                                 }
                             }
                             //Modifciar el abrir/cerrar archivos solo una vez con el bin
-                            fclose(bin);
                             nuevo=crearNodo(pid, gid, archivo);
                             pid++;
                             gid++;
                             insertarFinal(suspendidos,nuevo); //Debe quedarse aqui un ratito aleatorio
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                             usleep(5000000);
-                            /*nuevo = extraerPID(suspendidos, pid-1);
-                            insertarFinal(listos, nuevo);*/
+                            nuevo = extraerPID(suspendidos, pid-1);
+                            insertarFinal(listos, nuevo);
                         }
 
                     } else if(com == 3){ //comando mata
@@ -424,6 +420,7 @@ int main(){
 
                         if (com == 1){
                             fclose(file);
+                            fclose(bin);
                             endwin();
                             return 0;
                         } else if (com == 2){
