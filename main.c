@@ -15,18 +15,19 @@
 #define INSTRUCCIONES_POR_MARCO 4
 #define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) 
 #define TOTAL_MARCOS_RAM 16
+#define TOTAL_MARCOS_DISCO 32768
 
  FILE *bin;
 
 typedef struct {
     int num_marco;
     int propietario; // 0= libre, 0 != pid asignado
-} TMM; 
+} TablaMarcos; 
 
-TMM tmm[TOTAL_MARCOS_RAM];
+TablaMarcos tmm[TOTAL_MARCOS_RAM];
+TablaMarcos tms[TOTAL_MARCOS_DISCO];
 
-
-char RAM[TOTAL_MARCOS_RAM]; //1 = libre, 0 = ocupado
+char RAM[TOTAL_MARCOS_RAM*TAMANO_MARCO]; //1 = libre, 0 = ocupado
 //char RAM[64][TAMANO_IR] //Esto es una forma de hacerlo, no la unica char RAM[64*TAMANO_IR]
 
 void guardarTextoABinario(const char *archivoTexto, const char *archivoBinario) {
@@ -169,7 +170,7 @@ int main(){
                                 if(tmm[i].propietario == 0){
                                     fseek(bin, pagina_actual*TAMANO_MARCO, SEEK_SET);
 
-                                    if(fread(RAM + (i*TAMANO_MARCO), sizeof(char), TAMANO_IR, bin) > 0) {
+                                    if(fread(RAM + (i*TAMANO_MARCO), sizeof(char), TAMANO_MARCO, bin) > 0) {
                                         tmm[i].propietario = pid;
                                         pagina_actual++;
                                     } else {

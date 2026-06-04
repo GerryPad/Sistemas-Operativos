@@ -6,7 +6,7 @@ CC = gcc
 # -Wall muestra todas las advertencias y -g añade información de depuración
 # -lncurses es para poder compialr con ncurses
 CFLAGS = -Wall -g
-LDFLAGS = -lncurses
+LDFLAGS = -lncurses -lm
 
 SRCS = main.c instrucciones.c ncurses.c nodo.c dispatch.c
 OBJS = $(SRCS:.c=.o)
