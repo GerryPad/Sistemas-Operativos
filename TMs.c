@@ -95,10 +95,56 @@ void cargarMarcoDesdeBinario(FILE *bin, int numeroMarco) {
     }
 }
 
-void imprimeTMM(){
-    for (int i=0; i<TOTAL_MARCOS_RAM; i++){
-        printf("El marco %d tiene el propietario %d\n", tmm[i].num_marco, tmm[i].propietario);
+void imprimeRAM() {
+    printf("Marcos en la RAM\n");
+    for(int i = 0; i < TOTAL_MARCOS_RAM; i++) {
+        if(tmm[i].propietario != 0) {
+            printf("Contenido del Marco de RAM %d (PID %d)\n", i, tmm[i].propietario);
+            for(int j = 0; j < INSTRUCCIONES_POR_MARCO; j++) { //Osea solo imprime 4 instrucciones
+                printf("  Instruccion [%d] (Offset %d): %s\n", j + (i * 4), j, &RAM[(i * TAMANO_MARCO) + (j * TAMANO_IR)]);   
+            }
+        }
     }
+}
+
+// Retorna el número de marco de RAM donde se cargó, o -1 si no hay espacio
+int cargarARAM(int pid, int num_pagina, FILE *bin) {
+    int marco_disco = -1;
+    int contador_paginas = 0;
+
+    //Buscar en la TMS la ubicacion fisica de la pagina
+    for (int i = 0; i < TOTAL_MARCOS_DISCO; i++) {
+        if (tms[i].propietario == pid) {
+            if (contador_paginas == num_pagina) {
+                marco_disco = i;
+                break;
+            }
+            contador_paginas++;
+        }
+    }
+
+    if (marco_disco == -1) {
+        printf("Error: La pagina %d del PID %d no existe en SWAP.\n", num_pagina, pid);
+        return -1;
+    }
+
+    // Buscar un marco libre en la TMM 
+    for (int marco_ram = 0; marco_ram < TOTAL_MARCOS_RAM; marco_ram++) {
+        if (tmm[marco_ram].propietario == 0) {
+            
+            //Copiar datos del disco a la RAM
+            fseek(bin, marco_disco * TAMANO_MARCO, SEEK_SET);
+            fread(RAM + (marco_ram * TAMANO_MARCO), 1, TAMANO_MARCO, bin);
+            
+            //Actualizar TMM 
+            tmm[marco_ram].propietario = pid;
+            printf("Pagina %d del PID %d cargada en Marco RAM %d\n", num_pagina, pid, marco_ram);
+            return marco_ram; 
+        }
+    }
+
+    printf("Fallo de pagina: No hay marcos libres en RAM para el PID %d\n", pid);
+    return -1;
 }
 
 int main() {
@@ -121,34 +167,36 @@ int main() {
         tmm[i].propietario = 0;
     }
 
-      for (int i=0; i<TOTAL_MARCOS_DISCO; i++) {
+    for (int i=0; i<TOTAL_MARCOS_DISCO; i++) {
         tms[i].num_marco = i;
         tms[i].propietario = 0;
     }
 
     fseek(bin, 0, SEEK_SET);
     int cont = 0;
-    for (int i=0; i<2; i++){
+    for (int i=0; i<3; i++){
         if(cont==0){
             total_instrucciones = guardarTextoABinario("file3", bin, pid);
-        } else {
+        } else if(cont ==1) {
             total_instrucciones = guardarTextoABinario("file7", bin, pid);
+        } else {
+            total_instrucciones = guardarTextoABinario("file8", bin, pid);
         }
         tamano_bytes = total_instrucciones*64;
         printf("Total de bytes: %ld\n", tamano_bytes);
-        //total_instrucciones = tamano_bytes/TAMANO_IR; //En teoria deberia ser forzosamente un entero
         printf("Numero de instrucciones: %d\n", total_instrucciones);
         total_marcos_necesarios = ceil( (float) total_instrucciones /INSTRUCCIONES_POR_MARCO); //Corregir para que pueda isar ceil
         printf("Numero de marcos necesarios: %d\n", total_marcos_necesarios);
 
-        int counter = total_marcos_necesarios;
+        //No se ocupaba porque guardartextoabinario ya actualizaba la tms
+        /*int counter = total_marcos_necesarios; 
         for (int i = 0; i<TOTAL_MARCOS_DISCO; i++){
             if(tms[i].propietario == 0){
                 tms[i].propietario = pid;
                 counter--;
             }
             if(counter == 0) break;
-        }
+        }*/
 
         cnt_marcos_libres = 0;
 
@@ -165,17 +213,27 @@ int main() {
             printf("Se inserto al final de nuevos\n");//insertarFinal(nuevos, nuevo);
             //imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
             printf("Error: Memoria RAM insuficiente para el proceso.\n"); //Quiatre esto cuando ya tenga la logica
-        } else { //Aqui iria la logica de fallo de pagina
-            int pagina_actual = 0;
+        } else {
+            //int pagina_actual = 0;
+            int total_paginas = total_marcos_necesarios;
 
-            for(int marco_ram = 0; marco_ram < TOTAL_MARCOS_RAM && pagina_actual < total_marcos_necesarios; marco_ram++){
+            for (int p = 0; p < total_paginas; p++) {
+                int resultado = cargarARAM(pid, p, bin);
+                if (resultado == -1) {
+                    //Logica para algoritmo de reemplazo
+                    printf("Necesario ejecutar algoritmo de reemplazo...\n");
+                    break; 
+                }
+            }
+
+            /*for(int marco_ram = 0; marco_ram < TOTAL_MARCOS_RAM && pagina_actual < total_marcos_necesarios; marco_ram++){
                 if(tmm[marco_ram].propietario == 0){
                     fseek(bin, pagina_actual*TAMANO_MARCO, SEEK_SET);
                     fread(RAM + marco_ram*TAMANO_MARCO, 1, TAMANO_MARCO, bin);
                     tmm[marco_ram].propietario = pid;
                     pagina_actual++;
                 }
-            }
+            }*/
 
             //Modifciar el abrir/cerrar archivos solo una vez con el bin
             printf("Se creo un proceso nuevo con el PID %d y el GID %d\n", pid, gid);//nuevo=crearNodo(pid, gid, archivo);
@@ -189,11 +247,7 @@ int main() {
             //insertarFinal(listos, nuevo);
         }
 
-        //Simulamos que el OS necesita cargar los marcos
-        for(int i =0; i<TOTAL_MARCOS_RAM; i++){
-            cargarMarcoDesdeBinario(bin, i);    
-        }
-        imprimeTMM();
+        imprimeRAM();
         cont++;
     }
 
