@@ -19,12 +19,6 @@
 
 FILE *bin;
 
-typedef struct {
-    int num_marco;
-    int propietario; // 0= libre, 0 != pid asignado
-    int num_pagina;
-} TablaMarcos; 
-
 TablaMarcos tmm[TOTAL_MARCOS_RAM];
 TablaMarcos tms[TOTAL_MARCOS_DISCO];
 
@@ -120,6 +114,8 @@ bool verificarEspacioEnSwap(const char *nombre_archivo) {
     //Si cabe, retornamos true   
     return true;
 }
+
+
 
 int cargarARAM(int pid, int num_pagina, FILE *bin) {
     int marco_disco = -1;
@@ -252,20 +248,21 @@ int main(){
                         com_valido = true;
 
                         if(verificarEspacioEnSwap(archivo)){
-                            nuevo=crearNodo(pid,gid,archivo);
+                            total_instrucciones = guardarTextoABinario(archivo, bin, pid);
+                            total_marcos_necesarios = ceil((float)total_instrucciones/INSTRUCCIONES_POR_MARCO); 
+                            nuevo=crearNodo(pid,gid,archivo, total_marcos_necesarios);
+                            actualizaTMP(nuevo, tms);
+                            imprimirTms(tms);
+                            imprimirTmp(nuevo, total_marcos_necesarios);
                             pid++;
                             gid++;
                             insertarFinal(nuevos, nuevo);
-                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                            //imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                             //mvprintw(37, 2, "Error: Memoria RAM insuficiente para el proceso."); //Quiatre esto cuando ya tenga la logica
                             refresh();
                             continue;
 
-                            /*total_instrucciones = guardarTextoABinario(archivo, bin, pid);
-
-                            total_marcos_necesarios = ceil((float)total_instrucciones/INSTRUCCIONES_POR_MARCO); 
-
-                            cnt_marcos_libres = 0;
+                            /*cnt_marcos_libres = 0;
                             for(int m = 0; m < TOTAL_MARCOS_RAM; m++) {
                                 if(tmm[m].propietario == 0){
                                     cnt_marcos_libres++;
@@ -307,12 +304,12 @@ int main(){
                         mvprintw(37, 2, "No hay ningun proceso para matar.");
                     } else if (com == 4){ //comando prueba
                         com_valido = true;
-                        nuevo=crearNodo(pid, gid, "file"); pid++; gid++; insertarFinal(listos,nuevo);
+                        /*nuevo=crearNodo(pid, gid, "file"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file2"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file3"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file4"); pid++; gid++; insertarFinal(listos,nuevo);
                         nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);
+                        nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);*/
                     } else if (com == 5){ //comando fork
                         mvprintw(39, 0, "No hay procesos para copiar");
                     }
@@ -539,7 +536,7 @@ int main(){
                             endwin();
                             return 0;
                         } else if (com == 2){
-                            if (access(archivo, F_OK) == 0){
+                            /*if (access(archivo, F_OK) == 0){
                                 nuevo=crearNodo(pid, gid, archivo);
                                 guardarTextoABinario(archivo, bin, pid);
                                 pid++;
@@ -555,7 +552,7 @@ int main(){
                                 move(40,2);
                                 clrtoeol();
                                 refresh();
-                            }      
+                            }   */   
                         
                         } else if(com == 3){
                             proceso_a_matar = extraerPID(ejecutando, pid_kill);
@@ -580,7 +577,7 @@ int main(){
                                 }
                             } 
                         } else if(com == 5){
-                            proceso_a_copiar = buscaPID(ejecutando, pid_kill);
+                            /*proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
                                nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
                                pid++;
@@ -603,7 +600,7 @@ int main(){
                                     mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
                                 }
                                 
-                            }
+                            }*/
 
                         }
                         

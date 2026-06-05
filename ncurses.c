@@ -25,6 +25,24 @@ void limpia_lineas() {
     refresh();
 }
 
+void imprimirTms(TablaMarcos *tms){
+    mvprintw(24,2,"%-8s %-8s %-8s", "Marco", "PID", "#Pagina" );
+    int marco=0;
+    for(int i=25; i<40; i++){
+        mvprintw(i,2, "%-8d %-8d %-8d", tms[marco].num_marco, tms[marco].propietario, tms[marco].num_pagina);
+    marco++;
+    }
+}
+
+void imprimirTmp(struct Nodo *proceso, int espacio){
+    mvprintw(24,30,"%-8s %-8s %-8s", "Pagina", "MarcoRAM", "#MarcoD" );
+    int marco=0;
+    for(int i=25; i<25+espacio; i++){
+        mvprintw(i,30, "%-8d %-8d %-8d", proceso->tmp[marco].num_pagina, proceso->tmp[marco].num_marco_ram, proceso->tmp[marco].num_marco_disco);
+    marco++;
+    }
+}
+
 //Imprimir primero el ejecutando, despues los listos en el orden que estan en listos y finalmente los terminados en su orden
 void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_listos, struct Nodo *cabecera_terminados, struct Nodo *cabecera_suspendidos, struct Nodo *cabecera_nuevos){
     struct Nodo *aux_e = cabecera_ejecutando->siguiente;
