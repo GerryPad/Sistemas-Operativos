@@ -71,7 +71,7 @@ void cargarMarcoDesdeBinario(const char *archivoBinario, int numeroMarco) {
     int instruccionesLeidas = leidos / TAMANO_IR;
     
     printf("\nContenido del Marco %d (%d bytes leídos) ---\n", numeroMarco, (int)leidos);
-    for (int i = 0; i < instruccionesLeidas; i++) {
+    for (int i = 0; i <= instruccionesLeidas; i++) {
         printf("  Instruccion [%d] (Offset %d): %s\n", i + (numeroMarco * 4), i, miMarcoRAM.instrucciones[i]);
     }
 
@@ -80,7 +80,7 @@ void cargarMarcoDesdeBinario(const char *archivoBinario, int numeroMarco) {
 
 int main() {
     //Conversion de archivo de texto a binario 
-    guardarTextoABinario("file7", "disco_virtual.bin");
+    guardarTextoABinario("file3", "disco_virtual.bin");
 
     //Simulamos que el OS necesita cargar el Marco 1 y 2 a la RAM
     cargarMarcoDesdeBinario("disco_virtual.bin", 1); 

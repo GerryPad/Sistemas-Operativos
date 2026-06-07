@@ -11,7 +11,7 @@
 #include "dispatch.h"
 #include <sys/select.h>
 
-#define TAMANO_IR 64
+#define TAMANO_IR 64 
 #define INSTRUCCIONES_POR_MARCO 4
 #define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) 
 #define TOTAL_MARCOS_RAM 16
@@ -207,6 +207,8 @@ struct Nodo* buscarHerederoGID(struct Nodo *listos, struct Nodo *ejecutando, str
 void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos){
     int pid_busqueda = proceso->PID;
     struct Nodo *heredero = buscarHerederoGID(listos, ejecutando, suspendidos, proceso->GID, pid_busqueda);
+    char buffer[TAMANO_MARCO];
+    memset(buffer,0,sizeof(buffer));
     //int procesos_mismo_gid = cuentaPorGID(listos, ejecutando, suspendidos, proceso->GID, proceso->PID);
     
     //No la esta eliminando cuadno ya es el ultimo proceso y acaba
@@ -232,14 +234,22 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
                 tmm[i].propietario = 0;
                 tmm[i].num_pagina = -1; 
             }
+
         }
 
         for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
-            if(tms[i].propietario == pid_busqueda){
+            if(tms[i].propietario == pid_busqueda){ // 0 1 2 3
                 tms[i].propietario = 0;
                 tms[i].num_pagina = -1;
+                fseek(bin,TAMANO_MARCO*i,SEEK_SET); //en el binario a partir del 0 256*3 = 768
+                fwrite(buffer,sizeof(char),TAMANO_MARCO,bin);
             }
+            //fseek(binario,Tamaño marco * i, SET);
+            //fwrite(bufferFijo, sizeof(char), TAMANO_IR, bin);
+            // buffer tendria que ser de 0 y del tamaño de marco  
+
         }
+        fflush(bin); //vacía el búfer hacia el archivo físico
 
     }
 
