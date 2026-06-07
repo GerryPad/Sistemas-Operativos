@@ -79,6 +79,25 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
     //fclose(bin);
 }
 
+int cuentaMarcosNecesarios(const char *nombre_archivo){
+    FILE *archivo = fopen(nombre_archivo, "r");
+    if (archivo == NULL) {
+        mvprintw(35, 2, "Error: No se pudo abrir el archivo.");
+        return -1;
+    }
+
+    int lineas = 0;
+    char buffer[64]; 
+    while (fgets(buffer, sizeof(buffer), archivo) != NULL) {
+        lineas++;
+    }
+    fclose(archivo);
+
+    //Calcular cuantas paginas va a necesitar
+    int marcos_necesarios = ceil((float) lineas  / INSTRUCCIONES_POR_MARCO);
+    return marcos_necesarios;
+}
+
 bool verificarEspacioEnSwap(const char *nombre_archivo) {
     FILE *archivo = fopen(nombre_archivo, "r");
     if (archivo == NULL) {
@@ -155,6 +174,94 @@ int cargarARAM(int pid, int num_pagina, FILE *bin) {
 
     mvprintw(38, 2, "Fallo de pagina: No hay marcos libres en RAM");
     return -1;
+}
+
+int cuentaPorGID(struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos, int gid, int pid){
+    struct Nodo *aux_l = listos->siguiente;
+    struct Nodo *aux_e = ejecutando->siguiente;
+    struct Nodo *aux_s = suspendidos->siguiente;
+    int procesos_mismo_gid = 0;
+
+    while(aux_l != NULL){
+        if(aux_l->GID == gid && aux_l->PID != pid){
+            procesos_mismo_gid++;
+        }
+        aux_l = aux_l->siguiente;
+    }
+
+    while(aux_e != NULL){
+        if(aux_e->GID == gid && aux_e->PID != pid){
+            procesos_mismo_gid++;
+        }
+        aux_e = aux_e->siguiente;
+    }
+
+    //DE este si no estoy seguro
+    while(aux_s != NULL){
+        if(aux_s->GID == gid && aux_s->PID != pid){
+            procesos_mismo_gid++;
+        }
+        aux_s = aux_s->siguiente;
+    }
+    return procesos_mismo_gid;
+}
+
+//Funcion que borraria paginas de la TMS y TMM, aun no las borra de RAM ni de disco
+//Aun no consideramos que pasa si otro proceso creado con fork las necesita
+void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos){
+    int pid_busqueda = proceso->PID;
+    int procesos_mismo_gid = cuentaPorGID(listos, ejecutando, suspendidos, proceso->GID, proceso->PID);
+    
+    //No la esta eliminando cuadno ya es el ultimo proceso y acaba
+    if(procesos_mismo_gid == 0) {
+        //tal vez crear funcion que cuente cuantos procesos tienen el mismo GID?
+
+        for (int i=0; i<TOTAL_MARCOS_RAM; i++){
+            if(tmm[i].propietario == pid_busqueda){
+                tmm[i].propietario = 0;
+                tmm[i].num_pagina = -1; 
+            }
+        }
+
+        for (int i=0; i<TOTAL_MARCOS_DISCO; i++){
+            if(tms[i].propietario == pid_busqueda){
+                tms[i].propietario = 0;
+                tms[i].num_pagina = -1;
+            }
+        }
+    }
+
+    for (int i=0; i<proceso->num_paginas; i++){
+        proceso->tmp[i].num_marco_disco = -1;
+        proceso->tmp[i].num_marco_ram = -1;
+    }
+    
+}
+
+void porcentajeDiscoRAM(){
+    int ocupado_disco = 0;
+    int ocupado_ram = 0;
+
+    for (int i=0; i<TOTAL_MARCOS_RAM; i++){
+        if(tmm[i].propietario != 0){
+            ocupado_ram++;
+        }
+    }
+
+    for (int i=0; i<TOTAL_MARCOS_DISCO; i++){
+        if(tms[i].propietario != 0){
+            ocupado_disco++;
+        }
+    }
+
+    float porcentajeRAM = 0;
+    float porcentajeDISCO = 0;
+
+    porcentajeRAM = (ocupado_ram * 100.0) * (0.0625);
+    porcentajeDISCO = (ocupado_disco * 100) * (0.0000305176);
+    mvprintw(28, 162, "Uso RAM: %.2f%%", porcentajeRAM);
+    mvprintw(29, 162, "Uso DISCO: %.2f%%", porcentajeDISCO);
+
 }
 
 int kbhit(void);        
@@ -357,9 +464,10 @@ int main(){
 
                 if(marco_ram == -1 ){ //Fallo de pagina
                     marco_ram = cargarARAM(proceso_actual->PID, pag_actual, bin); //Intentar cargarala a RAM
-
                     if(marco_ram != -1) { //Si se pudo cargar en RAM
                         proceso_actual->tmp[pag_actual].num_marco_ram = marco_ram;
+                        porcentajeDiscoRAM();
+                        refresh();
                     } else{ 
                         //No se pudo cargar porque esta llena, implementar algoritmo de reemplazo
                     }
@@ -394,6 +502,11 @@ int main(){
                         if (proceso_a_terminar != NULL) {
                             //strcpy(proceso_a_terminar->estado, "terminado*");
                             proceso_a_terminar->estadoTermino = 1;
+                            eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                            imprimirTmm(tmm);
+                            imprimirTms(tms);
+                            imprimirTmp(proceso_a_terminar);
+                            porcentajeDiscoRAM();
                             insertarFinal(terminados, proceso_a_terminar);
                         }
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
@@ -423,6 +536,11 @@ int main(){
                             if (proceso_a_terminar != NULL) {
                                 //strcpy(proceso_a_terminar->estado, "terminado*");
                                 proceso_a_terminar->estadoTermino = 1;
+                                eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                                imprimirTmm(tmm);
+                                imprimirTms(tms);
+                                imprimirTmp(proceso_a_terminar);
+                                porcentajeDiscoRAM();
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             limpieza=true;
@@ -470,6 +588,11 @@ int main(){
                             if (proceso_a_terminar != NULL) {
                                 //strcpy(proceso_a_terminar->estado, "terminado*");
                                 proceso_a_terminar->estadoTermino = 1;
+                                eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                                imprimirTmm(tmm);
+                                imprimirTms(tms);
+                                imprimirTmp(proceso_a_terminar);
+                                porcentajeDiscoRAM();
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
@@ -487,6 +610,11 @@ int main(){
                             if (proceso_a_terminar != NULL) {
                                 //strcpy(proceso_a_terminar->estado, "terminado*");
                                 proceso_a_terminar->estadoTermino = 1;
+                                eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                                imprimirTmm(tmm);
+                                imprimirTms(tms);
+                                imprimirTmp(proceso_a_terminar);
+                                porcentajeDiscoRAM();
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
@@ -553,26 +681,36 @@ int main(){
                             endwin();
                             return 0;
                         } else if (com == 2){
-                            /*if (access(archivo, F_OK) == 0){
-                                nuevo=crearNodo(pid, gid, archivo);
-                                guardarTextoABinario(archivo, bin, pid);
-                                pid++;
-                                gid++;
-                                insertarFinal(listos,nuevo);
-                                interrumpido = false;
-                                continue; //Para seguir con el proceso actual y que no se cambie por el nuevo
+                            if (access(archivo, F_OK) == 0){
+                                if(verificarEspacioEnSwap(archivo)){
+                                    total_instrucciones = guardarTextoABinario(archivo, bin, pid);
+                                    total_marcos_necesarios = ceil((float)total_instrucciones/INSTRUCCIONES_POR_MARCO);
+                                    nuevo=crearNodo(pid, gid, archivo, total_marcos_necesarios);
+                                    actualizaTMP(nuevo, tms);
+                                    imprimirTms(tms);
+                                    pid++;
+                                    gid++;
+                                    insertarFinal(listos,nuevo);
+                                    interrumpido = false;
+                                    continue; //Para seguir con el proceso actual y que no se cambie por el nuevo
+                                }
                             } else {
                                 mvprintw(37,2,"Archivo no existente");
                                 limpieza = true;
                                 mvprintw(40, 2, "%-28s", ""); 
                                 refresh();
-                            }   */   
+                            }      
                         
                         } else if(com == 3){
                             proceso_a_matar = extraerPID(ejecutando, pid_kill);
                             if(proceso_a_matar != NULL){
                                 //strcpy(proceso_a_matar->estado, "terminados**");
                                 proceso_a_matar->estadoTermino = 2;
+                                eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                                imprimirTmm(tmm);
+                                imprimirTms(tms);
+                                imprimirTmp(proceso_a_matar);
+                                porcentajeDiscoRAM();
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 break; 
@@ -581,6 +719,11 @@ int main(){
                                 if(proceso_a_matar != NULL){
                                     //strcpy(proceso_a_matar->estado, "terminados**");
                                     proceso_a_matar->estadoTermino = 2;
+                                    eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                                    imprimirTmm(tmm);
+                                    imprimirTms(tms);
+                                    imprimirTmp(proceso_a_matar);
+                                    porcentajeDiscoRAM();
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
@@ -589,28 +732,39 @@ int main(){
                                 }
                             } 
                         } else if(com == 5){
-                            /*proceso_a_copiar = buscaPID(ejecutando, pid_kill);
+                            proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
-                               nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
-                               pid++;
-                               nuevo->PC = num_inst;
-                               nuevo->GCPU = proceso_a_copiar->GCPU;
-                               insertarFinal(listos, nuevo);
-                               imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                            } else {
-                                proceso_a_copiar = buscaPID(listos, pid_kill);
-                                if(proceso_a_copiar != NULL) {
-                                    nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo);
+                                if(verificarEspacioEnSwap(archivo)){
+                                    total_marcos_necesarios = cuentaMarcosNecesarios(proceso_a_copiar->archivo);
+                                    nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
+                                    actualizaTMP(nuevo, tms);
+                                    imprimirTms(tms);
                                     pid++;
                                     nuevo->PC = num_inst;
                                     nuevo->GCPU = proceso_a_copiar->GCPU;
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                } //creo que aqui falta mandarlo a nuevos 
+                              
+                            } else { 
+                                proceso_a_copiar = buscaPID(listos, pid_kill);
+                                if(proceso_a_copiar != NULL) {
+                                    if(verificarEspacioEnSwap(archivo)){
+                                        total_marcos_necesarios = cuentaMarcosNecesarios(proceso_a_copiar->archivo);
+                                        nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
+                                        actualizaTMP(nuevo, tms);
+                                        imprimirTms(tms);
+                                        pid++;
+                                        nuevo->PC = num_inst;
+                                        nuevo->GCPU = proceso_a_copiar->GCPU;
+                                        insertarFinal(listos, nuevo);
+                                        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                    }
                                 } else {
                                     mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
                                 }
                                 
-                            }*/
+                            }
 
                         }
                         
@@ -637,6 +791,11 @@ int main(){
                     if (proceso_a_terminar != NULL) {
                         //strcpy(proceso_a_terminar->estado, "terminado*");
                         proceso_a_terminar->estadoTermino = 1;
+                        eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                        imprimirTmm(tmm);
+                        imprimirTms(tms);
+                        imprimirTmp(proceso_a_terminar);
+                        porcentajeDiscoRAM();
                         insertarFinal(terminados, proceso_a_terminar);
                     }
                     limpieza = true;
@@ -658,6 +817,11 @@ int main(){
                     if (proceso_a_terminar != NULL) {
                         //strcpy(proceso_a_terminar->estado, "terminado");
                         proceso_a_terminar->estadoTermino = 0;
+                        eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                        imprimirTmm(tmm);
+                        imprimirTms(tms);
+                        imprimirTmp(proceso_a_terminar);
+                        porcentajeDiscoRAM();
                         insertarFinal(terminados, proceso_a_terminar);
                     }
 
@@ -671,6 +835,11 @@ int main(){
                     if (proceso_a_terminar != NULL) {
                         //strcpy(proceso_a_terminar->estado, "terminado*");
                         proceso_a_terminar->estadoTermino = 1;
+                        eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                        imprimirTmm(tmm);
+                        imprimirTms(tms);
+                        imprimirTmp(proceso_a_terminar);
+                        porcentajeDiscoRAM();
                         insertarFinal(terminados, proceso_a_terminar);
                     }
                     proceso_actual = NULL;
@@ -689,6 +858,11 @@ int main(){
                 if (proceso_a_terminar != NULL) {
                     //strcpy(proceso_a_terminar->estado, "terminado");
                     proceso_a_terminar->estadoTermino = 0;
+                    eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                    imprimirTmm(tmm);
+                    imprimirTms(tms);
+                    imprimirTmp(proceso_a_terminar);
+                    porcentajeDiscoRAM();
                     insertarFinal(terminados, proceso_a_terminar);
                 }
                 //Si el proceso actual termino, ya no estamos ejecutando nada
