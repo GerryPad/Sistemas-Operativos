@@ -233,6 +233,10 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = 0;
                 tmm[i].num_pagina = -1; 
+                //fread(RAM + (marco_ram * TAMANO_MARCO), 1, TAMANO_MARCO, bin);
+                
+                memset((RAM + TAMANO_MARCO * i) ,0,TAMANO_MARCO);
+                
             }
 
         }
