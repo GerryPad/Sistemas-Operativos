@@ -212,7 +212,7 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
     //No la esta eliminando cuadno ya es el ultimo proceso y acaba
     if(heredero != NULL) { //Hay mas de un proceso con el mismo GID
         //tal vez crear funcion que cuente cuantos procesos tienen el mismo GID?
-
+ 
         for (int i=0; i<TOTAL_MARCOS_RAM; i++){
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = heredero->PID;
