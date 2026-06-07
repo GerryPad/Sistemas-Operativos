@@ -176,46 +176,59 @@ int cargarARAM(int pid, int num_pagina, FILE *bin) {
     return -1;
 }
 
-int cuentaPorGID(struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos, int gid, int pid){
+struct Nodo* buscarHerederoGID(struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos, int gid, int pid_actual) {
     struct Nodo *aux_l = listos->siguiente;
     struct Nodo *aux_e = ejecutando->siguiente;
     struct Nodo *aux_s = suspendidos->siguiente;
-    int procesos_mismo_gid = 0;
 
-    while(aux_l != NULL){
-        if(aux_l->GID == gid && aux_l->PID != pid){
-            procesos_mismo_gid++;
-        }
+    while(aux_l != NULL) {
+        if(aux_l->GID == gid && aux_l->PID != pid_actual){
+            return aux_l;
+        } 
         aux_l = aux_l->siguiente;
     }
 
-    while(aux_e != NULL){
-        if(aux_e->GID == gid && aux_e->PID != pid){
-            procesos_mismo_gid++;
-        }
+    while(aux_e != NULL) {
+        if(aux_e->GID == gid && aux_e->PID != pid_actual){
+            return aux_e;
+        } 
         aux_e = aux_e->siguiente;
     }
 
-    //DE este si no estoy seguro
-    while(aux_s != NULL){
-        if(aux_s->GID == gid && aux_s->PID != pid){
-            procesos_mismo_gid++;
-        }
+    while(aux_s != NULL) {
+        if(aux_s->GID == gid && aux_s->PID != pid_actual){
+            return aux_s;
+        } 
         aux_s = aux_s->siguiente;
     }
-    return procesos_mismo_gid;
+    return NULL; //No hay nadie mas en el grupo
 }
 
 //Funcion que borraria paginas de la TMS y TMM, aun no las borra de RAM ni de disco
 //Aun no consideramos que pasa si otro proceso creado con fork las necesita
 void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos){
     int pid_busqueda = proceso->PID;
-    int procesos_mismo_gid = cuentaPorGID(listos, ejecutando, suspendidos, proceso->GID, proceso->PID);
+    struct Nodo *heredero = buscarHerederoGID(listos, ejecutando, suspendidos, proceso->GID, pid_busqueda);
+    //int procesos_mismo_gid = cuentaPorGID(listos, ejecutando, suspendidos, proceso->GID, proceso->PID);
     
     //No la esta eliminando cuadno ya es el ultimo proceso y acaba
-    if(procesos_mismo_gid == 0) {
+    if(heredero != NULL) { //Hay mas de un proceso con el mismo GID
         //tal vez crear funcion que cuente cuantos procesos tienen el mismo GID?
 
+        for (int i=0; i<TOTAL_MARCOS_RAM; i++){
+            if(tmm[i].propietario == pid_busqueda){
+                tmm[i].propietario = heredero->PID;
+                //tmm[i].num_pagina = -1; 
+            }
+        }
+
+        for (int i=0; i<TOTAL_MARCOS_DISCO; i++){
+            if(tms[i].propietario == pid_busqueda){
+                tms[i].propietario = heredero->PID;
+                //tms[i].num_pagina = -1;
+            }
+        }
+    } else { //No hay mas procesos con el mismo GID
         for (int i=0; i<TOTAL_MARCOS_RAM; i++){
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = 0;
@@ -223,12 +236,13 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
             }
         }
 
-        for (int i=0; i<TOTAL_MARCOS_DISCO; i++){
+        for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
             if(tms[i].propietario == pid_busqueda){
                 tms[i].propietario = 0;
                 tms[i].num_pagina = -1;
             }
         }
+
     }
 
     for (int i=0; i<proceso->num_paginas; i++){
@@ -312,7 +326,7 @@ int main(){
     for (int i=0; i<TOTAL_MARCOS_DISCO; i++) {
         tms[i].num_marco = i;
         tms[i].propietario = 0;
-        tmm[i].num_pagina = -1;
+        tms[i].num_pagina = -1;
     }
     fseek(bin, 0, SEEK_SET);
     
@@ -706,7 +720,7 @@ int main(){
                             if(proceso_a_matar != NULL){
                                 //strcpy(proceso_a_matar->estado, "terminados**");
                                 proceso_a_matar->estadoTermino = 2;
-                                eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                                eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos);
                                 imprimirTmm(tmm);
                                 imprimirTms(tms);
                                 imprimirTmp(proceso_a_matar);
@@ -719,7 +733,7 @@ int main(){
                                 if(proceso_a_matar != NULL){
                                     //strcpy(proceso_a_matar->estado, "terminados**");
                                     proceso_a_matar->estadoTermino = 2;
-                                    eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                                    eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos);
                                     imprimirTmm(tmm);
                                     imprimirTms(tms);
                                     imprimirTmp(proceso_a_matar);
