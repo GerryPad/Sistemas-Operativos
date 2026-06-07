@@ -29,7 +29,7 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
     //FILE *bin = fopen(archivoBinario, "wb"); 
 
     if (!txt || !bin) {
-        printf("Error al abrir los archivos.\n");
+        mvprintw(34, 2, "Error al abrir los archivos.");
         return 0;
     }
 
@@ -82,7 +82,7 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
 bool verificarEspacioEnSwap(const char *nombre_archivo) {
     FILE *archivo = fopen(nombre_archivo, "r");
     if (archivo == NULL) {
-        printf("Error: No se pudo abrir el archivo %s para verificacion.\n", nombre_archivo);
+        mvprintw(35, 2, "Error: No se pudo abrir el archivo.");
         return false;
     }
 
@@ -133,7 +133,7 @@ int cargarARAM(int pid, int num_pagina, FILE *bin) {
     }
 
     if (marco_disco == -1) {
-        printf("Error: La pagina %d del PID %d no existe en SWAP.\n", num_pagina, pid);
+        mvprintw(36, 2, "Error: La pagina %d del PID %d no existe en SWAP.", num_pagina, pid);
         return -1;
     }
 
@@ -147,12 +147,13 @@ int cargarARAM(int pid, int num_pagina, FILE *bin) {
             
             //Actualizar TMM 
             tmm[marco_ram].propietario = pid;
-            printf("Pagina %d del PID %d cargada en Marco RAM %d\n", num_pagina, pid, marco_ram);
+            tmm[marco_ram].num_pagina = num_pagina;
+            mvprintw(39, 2, "Pagina %d del PID %d cargada en Marco RAM %d", num_pagina, pid, marco_ram);
             return marco_ram; 
         }
     }
 
-    printf("Fallo de pagina: No hay marcos libres en RAM para el PID %d\n", pid);
+    mvprintw(38, 2, "Fallo de pagina: No hay marcos libres en RAM");
     return -1;
 }
 
@@ -198,11 +199,13 @@ int main(){
     for (int i=0; i<TOTAL_MARCOS_RAM; i++) {
         tmm[i].num_marco = i;
         tmm[i].propietario = 0;
+        tmm[i].num_pagina = -1;
     }
 
     for (int i=0; i<TOTAL_MARCOS_DISCO; i++) {
         tms[i].num_marco = i;
         tms[i].propietario = 0;
+        tmm[i].num_pagina = -1;
     }
     fseek(bin, 0, SEEK_SET);
     
@@ -225,16 +228,13 @@ int main(){
                 com_valido = false; //Suponemos de entrada que el comando no es valido
 
                 while (!com_valido){ //Solicitamos comando hasta que haya uno valido
-                
-                    move(40,2);
-                    clrtoeol();
+                    mvprintw(40, 2, "%-28s", ""); 
                     mvprintw(40,2, ">");
                     echo();
                     comando[0] = '\0';
                     getstr(comando);
                     noecho();
-                    move(40, 2); 
-                    clrtoeol(); 
+                    mvprintw(40, 2, "%-28s", ""); 
                     refresh();
                 
                     com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst); 
@@ -252,13 +252,10 @@ int main(){
                             total_marcos_necesarios = ceil((float)total_instrucciones/INSTRUCCIONES_POR_MARCO); 
                             nuevo=crearNodo(pid,gid,archivo, total_marcos_necesarios);
                             actualizaTMP(nuevo, tms);
-                            imprimirTms(tms);
-                            imprimirTmp(nuevo, total_marcos_necesarios);
                             pid++;
                             gid++;
-                            insertarFinal(nuevos, nuevo);
-                            //imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                            //mvprintw(37, 2, "Error: Memoria RAM insuficiente para el proceso."); //Quiatre esto cuando ya tenga la logica
+                            insertarFinal(listos, nuevo);
+                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                             refresh();
                             continue;
 
@@ -315,8 +312,6 @@ int main(){
                     }
                     
                     else { //error al ingresar comando
-                        move(37,2);
-                        clrtoeol();
                         if (com == -1) {
                             mvprintw(37,2, "Error: Comando incompleto.");
                         } else {
@@ -356,11 +351,34 @@ int main(){
             interrumpido=false; //Bandera para cada archivo
             strcpy(linea_original, "---");
             while (fgets(linea, sizeof(linea), file) != NULL) {
+                int pag_actual = pc / INSTRUCCIONES_POR_MARCO;
+                int desplazamiento = pc % INSTRUCCIONES_POR_MARCO;
+                int marco_ram = proceso_actual->tmp[pag_actual].num_marco_ram;
+
+                if(marco_ram == -1 ){ //Fallo de pagina
+                    marco_ram = cargarARAM(proceso_actual->PID, pag_actual, bin); //Intentar cargarala a RAM
+
+                    if(marco_ram != -1) { //Si se pudo cargar en RAM
+                        proceso_actual->tmp[pag_actual].num_marco_ram = marco_ram;
+                    } else{ 
+                        //No se pudo cargar porque esta llena, implementar algoritmo de reemplazo
+                    }
+                } else {
+                    int pos_fisica = (marco_ram*TAMANO_MARCO) + (desplazamiento*TAMANO_IR);
+                    //strncpy(linea, &RAM[pos_fisica], TAMANO_IR);
+                }
+                
+
                 linea[strcspn(linea, "\n\r")] = '\0';
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
                 //usleep(1000000);
                 imprimir_registros(pc, linea);
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                imprimirTmm(tmm);
+                imprimirTmp(proceso_actual);
+                imprimirTms(tms);
+
+                //break;
                 refresh();
                 *ptr_pid = 0;
                 
@@ -370,8 +388,6 @@ int main(){
 
                 if (tokEND){ //Si hayamos un END...
                     if (token != NULL) { //Pero hay mas cosas despues
-                        move(36,10);
-                        clrtoeol();
                         mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
                         proceso_a_terminar = desencolar(ejecutando); //Siguiendo la logica de Pedro
 
@@ -519,8 +535,9 @@ int main(){
                         //getch();
 
                         refresh();
-                        move(40,2);
-                        clrtoeol();
+                        /*move(40,2);
+                        clrtoeol();*/
+                        mvprintw(40, 2, "%-28s", ""); 
                         mvprintw(40, 2, ">");
                         echo();
                         comando[0] = '\0';
@@ -545,12 +562,9 @@ int main(){
                                 interrumpido = false;
                                 continue; //Para seguir con el proceso actual y que no se cambie por el nuevo
                             } else {
-                                move(37,2);
-                                clrtoeol();
                                 mvprintw(37,2,"Archivo no existente");
                                 limpieza = true;
-                                move(40,2);
-                                clrtoeol();
+                                mvprintw(40, 2, "%-28s", ""); 
                                 refresh();
                             }   */   
                         
@@ -570,8 +584,6 @@ int main(){
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
-                                    move(37,2);
-                                    clrtoeol();
                                     mvprintw(37,2, "El PID asociado al proceso no existe.");
                                     mvprintw(27,2, "Ese proceso no existe o ya termino");
                                 }
@@ -595,8 +607,6 @@ int main(){
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
-                                    move(39,2);
-                                    clrtoeol();
                                     mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
                                 }
                                 
@@ -605,8 +615,6 @@ int main(){
                         }
                         
                         else {
-                            move(37,2);
-                            clrtoeol();
                             if (com == -1) {
                                 mvprintw(37,2, "Error: Falta nombre de archivo.");
                                 limpieza = true;
@@ -624,8 +632,6 @@ int main(){
                     }
 
                 } else {
-                    move(36,2);
-                    clrtoeol();
                     mvprintw(36, 2, "Token no valido: [%s]", token);
                     proceso_a_terminar = desencolar(ejecutando);
                     if (proceso_a_terminar != NULL) {
@@ -639,16 +645,12 @@ int main(){
             }
 
             if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
-                move(35, 2); clrtoeol();
                 mvprintw(35, 2, "Quantum = 3. Cambio de proceso");
                 //calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 refresh();
             } else if(!interrumpido){ //Cuando el quantum no termina, osea no es multiplo de 3 el numero de instrucciones
-                move(35, 2); clrtoeol();
                 if (tokEND){
-                    move(35,2);
-                    clrtoeol();
                     mvprintw(35, 2, "Estado: Procesado con éxito.");
                     guardaPCB(proceso_actual,pc,linea_original);
                     proceso_a_terminar = desencolar(ejecutando);
