@@ -5,9 +5,9 @@
 void imprimir_registros(int renglon, char *instruccion){
     mvprintw(3, 2, "%-8s %-15s %-20s %-20s %-20s %-20s", 
         "PC", "IR", "EAX", "EBX", "ECX", "EDX");
-    move(5,2);
+    move(4,2);
     clrtoeol();
-    mvprintw(5, 2, "%-8d %-15s %-20d %-20d %-20d %-20d", 
+    mvprintw(4, 2, "%-8d %-15s %-20d %-20d %-20d %-20d", 
         renglon, 
         instruccion, 
         registros[0].valor, 
@@ -19,31 +19,68 @@ void imprimir_registros(int renglon, char *instruccion){
 }
 
 void limpia_lineas() {
-    for (int i = 34; i<= 40 ; i++) {
-        move(i,2); clrtoeol();    
-    }
+    for(int j = 34; j<=40; j++){
+        mvprintw(j, 2, "%-100s", "");
+    } 
     refresh();
 }
 
+//En teoria esta no tiene que verse en pantalla, se usa solo para debug
+void imprimirTms(TablaMarcos *tms){
+    mvprintw(27, 140, "TMS");
+    mvprintw(28,140,"%-6s %-6s %-6s", "Marco", "PID", "#Pagina" );
+    int marco=0;
+    for(int i=29; i<45; i++){
+        mvprintw(i,140, "%-6d %-6d %-6d", tms[marco].num_marco, tms[marco].propietario, tms[marco].num_pagina);
+    marco++;
+    }
+}
+
+void imprimirTmm(TablaMarcos *tmm){
+    mvprintw(6, 168, "TMM");
+    mvprintw(8, 168,"%-8s %-8s %-8s", "Marco", "PID", "#Pagina" );
+    int marco=0;
+    for(int i=9; i<25; i++){
+        mvprintw(i,168, "%-8d %-8d %-8d", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].num_pagina);
+    marco++;
+    }
+}
+
+void imprimirTmp(struct Nodo *proceso){
+    for(int j=6; j<25; j++){
+        mvprintw(j, 140, "%-28s", ""); 
+    }
+    mvprintw(6, 140, "TMP");
+    mvprintw(8, 140,"%-8s %-8s %-8s", "Pagina", "MarcoRAM", "#MarcoD" );
+    int marco=0;
+    int aux = 9 + proceso->num_paginas;
+    if (aux >= 25) aux=25;
+    for(int i=9; i<aux; i++){
+        mvprintw(i,140, "%-8d %-8d %-8d", proceso->tmp[marco].num_pagina, proceso->tmp[marco].num_marco_ram, proceso->tmp[marco].num_marco_disco);
+        marco++;
+    }
+}
+
 //Imprimir primero el ejecutando, despues los listos en el orden que estan en listos y finalmente los terminados en su orden
-void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_listos, struct Nodo *cabecera_terminados){
+void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_listos, struct Nodo *cabecera_terminados, struct Nodo *cabecera_suspendidos, struct Nodo *cabecera_nuevos){
     struct Nodo *aux_e = cabecera_ejecutando->siguiente;
     struct Nodo *aux_l = cabecera_listos->siguiente;
     struct Nodo *aux_te = cabecera_terminados->siguiente;
+    struct Nodo *aux_n = cabecera_nuevos->siguiente;
+    struct Nodo *aux_s = cabecera_suspendidos->siguiente;
 
-    mvprintw(7, 2, "%-6s %-6s %-8s %-14s %-8s %-15s %-20s %-20s %-20s %-20s %-8s %-8s %-8s", 
+    mvprintw(6, 2, "%-4s %-4s %-7s %-13s %-6s %-12s %-11s %-11s %-11s %-11s %-8s %-8s %-8s", 
         "PID", "GID", "File", "Estatus", "PC", "IR", "EAX", "EBX", "ECX", "EDX", "CPU", "GCPU", "Prioridad");
 
 
-    for(int j = 8; j<20; j++){
-        move(j,2);
-        clrtoeol();
+    for(int j = 7; j<34; j++){
+        mvprintw(j, 2, "%-100s", "");
     } 
  //Esta es la lista de ejecutando
  //La impresion ahora es mas bonita 
-   int i = 8;
+   int i = 7;
     if(aux_e != NULL){
-        mvprintw(i, 2,"%-6d %-6d %-8s %-14s %-8s %-15s %-20s %-20s %-20s %-20s %-8d %-8d %-8d", 
+        mvprintw(i, 2,"%-4d %-4d %-7s %-13s %-6s %-12s %-11s %-11s %-11s %-11s %-8d %-8d %-8d", 
         aux_e->PID,
         aux_e->GID,
         aux_e->archivo,
@@ -61,15 +98,13 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         i++;
     }
 
-    //int i=9;
+    //Lista de listos
     while(aux_l != NULL){
-        if(i>=20 || aux_l == NULL){
+        if(i>=34 || aux_l == NULL){
             break;
         }
 
-        move(i,2);
-        clrtoeol();
-        mvprintw(i, 2, "%-6d %-6d %-8s %-14s %-8d %-15s %-20d %-20d %-20d %-20d %-8d %-8d %-8d", 
+        mvprintw(i, 2, "%-4d %-4d %-7s %-13s %-6d %-12s %-11d %-11d %-11d %-11d %-8d %-8d %-8d", 
         aux_l->PID,
         aux_l->GID,
         aux_l->archivo,
@@ -89,27 +124,79 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         i++;
     }
 
-    //Lista de terminados
-    while(aux_te != NULL){
-        if(i>=20 || aux_te == NULL){
+    //Lista de nuevos
+    //int i=9;
+    while(aux_n != NULL){
+        if(i>=34 || aux_n == NULL){
             break;
         }
-        move(i,2);
-        clrtoeol();
-        mvprintw(i, 2, "%-6d %-6d %-8s", 
+
+        mvprintw(i, 2, "%-4d %-4d %-7s %-13s %-6d %-12s %-11d %-11d %-11d %-11d %-8d %-8d %-8d", 
+        aux_n->PID,
+        aux_n->GID,
+        aux_n->archivo,
+        "nuevos",
+        aux_n->PC,
+        aux_n->IR,
+        aux_n->registros[0],
+        aux_n->registros[1],
+        aux_n->registros[2],
+        aux_n->registros[3],
+        aux_n->CPU,
+        aux_n->GCPU,
+        aux_n->prioridad
+        );
+
+        aux_n = aux_n->siguiente;
+        i++;
+    }
+
+    //Lista de suspendidos
+    while(aux_s != NULL){
+        if(i>=34 || aux_s == NULL){
+            break;
+        }
+
+        mvprintw(i, 2, "%-4d %-4d %-7s %-13s %-6d %-12s %-11d %-11d %-11d %-11d %-8d %-8d %-8d", 
+        aux_s->PID,
+        aux_s->GID,
+        aux_s->archivo,
+        "suspendidos",
+        aux_s->PC,
+        aux_s->IR,
+        aux_s->registros[0],
+        aux_s->registros[1],
+        aux_s->registros[2],
+        aux_s->registros[3],
+        aux_s->CPU,
+        aux_s->GCPU,
+        aux_s->prioridad
+        );
+
+        aux_s = aux_s->siguiente;
+        i++;
+    }
+
+    //Lista de terminados
+    while(aux_te != NULL){
+        if(i>=34 || aux_te == NULL){
+            break;
+        }
+
+        char *estado_termino;
+        if (aux_te->estadoTermino == 0){
+            estado_termino = "terminados";
+        } else if(aux_te->estadoTermino == 1) {
+            estado_termino = "terminados*";
+        } else if(aux_te->estadoTermino == 2) {
+            estado_termino = "terminados**";
+        }
+
+        mvprintw(i, 2, "%-4d %-4d %-7s %-13s %-6d %-12s %-11d %-11d %-11d %-11d %-8d %-8d %-8d", 
         aux_te->PID,
         aux_te->GID,
-        aux_te->archivo
-        );
-        if (aux_te -> estadoTermino == 0){
-            mvprintw(i,25, "%-12s", "terminados");
-        } else if(aux_te -> estadoTermino == 1) {
-            mvprintw(i,25, "%-12s", "terminados*");
-        } else if(aux_te -> estadoTermino == 2) {
-            mvprintw(i,25, "%-12s", "terminados**");
-        }
-        //aux_te->estado, //Aqui va la logica de terminados con errorm normal o matados 
-        mvprintw(i, 40, "%-8d %-15s %-20d %-20d %-20d %-20d %-8d %-8d %-8d",
+        aux_te->archivo,
+        estado_termino,       // <--- Aquí entra el texto dinámico perfectamente alineado a 14 caracteres
         aux_te->PC,
         aux_te->IR,
         aux_te->registros[0],

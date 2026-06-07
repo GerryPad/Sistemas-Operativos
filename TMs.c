@@ -1,0 +1,256 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+
+#define TAMANO_IR 64 //Tamaño de instruccion
+#define INSTRUCCIONES_POR_MARCO 4
+#define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) 
+#define TOTAL_MARCOS_RAM 16
+#define TOTAL_MARCOS_DISCO 32768
+
+FILE *bin;
+
+typedef struct {
+    int num_marco;
+    int propietario; // 0= libre, 0 != pid asignado
+} TablaMarcos; 
+
+TablaMarcos tmm[TOTAL_MARCOS_RAM];
+TablaMarcos tms[TOTAL_MARCOS_DISCO];
+char RAM[TOTAL_MARCOS_RAM*TAMANO_MARCO]; //1 = libre, 0 = ocupado
+
+
+int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
+    FILE *txt = fopen(archivoTexto, "r");
+    //FILE *bin = fopen(archivoBinario, "wb"); 
+
+    if (!txt || !bin) {
+        printf("Error al abrir los archivos.\n");
+        return 0;
+    }
+
+    char linea[64];
+    char bufferFijo[TAMANO_IR];
+
+    // Leer el archivo de texto línea por línea
+    int num_instrucciones = 0;
+
+    for (int i=0; i<TOTAL_MARCOS_DISCO; i++){
+        if(tms[i].propietario == 0){
+            long posicion = (long)i * INSTRUCCIONES_POR_MARCO * TAMANO_IR;
+            fseek(bin, posicion, SEEK_SET);
+            int contador_lineas = 0; 
+            while(contador_lineas<INSTRUCCIONES_POR_MARCO && fgets(linea, sizeof(linea), txt)){
+                linea[strcspn(linea, "\r\n")] = 0;
+                //Saltar líneas vacías
+                if (strlen(linea) == 0) continue;
+                //Llenamos el marco inicialmente con 0's
+                memset(bufferFijo, 0, TAMANO_IR);
+                //Copiamos el texto de la instrucción al buffer seguro
+                strncpy(bufferFijo, linea, TAMANO_IR - 1);
+                //Escribimos exactamente 64 bytes en el archivo binario
+                fwrite(bufferFijo, sizeof(char), TAMANO_IR, bin);
+                num_instrucciones++;
+                contador_lineas++;
+            }
+
+            if (contador_lineas>0){
+                tms[i].propietario = pid;
+                //tms[i].valida=1 averiguar para que es esto
+                if (feof(txt)){
+                    break;
+                }
+            }
+            //tms[i].propietario = pid;
+        } else {
+            continue;
+        }
+    }
+
+    fclose(txt);
+    return num_instrucciones;
+    //fclose(bin);
+}
+
+void cargarMarcoDesdeBinario(FILE *bin, int numeroMarco) {
+    //Calcular la posición del marco
+    long posicionBytes = (long)numeroMarco * TAMANO_MARCO;
+
+    //Mover el puntero del archivo a esa posición
+    if (fseek(bin, posicionBytes, SEEK_SET) != 0) {
+        printf("Error: El marco %d no existe en la memoria virtual.\n", numeroMarco);
+        return;
+    }
+
+    //Leer las 4 instrucciones (256 bytes totales)
+    size_t leidos = fread(&RAM, sizeof(char), TAMANO_MARCO, bin);
+
+    //Validar cuántas instrucciones reales pudimos leer (por si es el final del archivo)
+    int instruccionesLeidas = leidos / TAMANO_IR;
+    
+    printf("\nContenido del Marco %d (%d bytes leídos) ---\n", numeroMarco, (int)leidos);
+    for (int i = 0; i < instruccionesLeidas; i++) {
+        printf("  Instruccion [%d] (Offset %d): %s\n", i + (numeroMarco * 4), i, RAM + (i*TAMANO_IR));
+    }
+}
+
+void imprimeRAM() {
+    printf("Marcos en la RAM\n");
+    for(int i = 0; i < TOTAL_MARCOS_RAM; i++) {
+        if(tmm[i].propietario != 0) {
+            printf("Contenido del Marco de RAM %d (PID %d)\n", i, tmm[i].propietario);
+            for(int j = 0; j < INSTRUCCIONES_POR_MARCO; j++) { //Osea solo imprime 4 instrucciones
+                printf("  Instruccion [%d] (Offset %d): %s\n", j + (i * 4), j, &RAM[(i * TAMANO_MARCO) + (j * TAMANO_IR)]);   
+            }
+        }
+    }
+}
+
+// Retorna el número de marco de RAM donde se cargó, o -1 si no hay espacio
+int cargarARAM(int pid, int num_pagina, FILE *bin) {
+    int marco_disco = -1;
+    int contador_paginas = 0;
+
+    //Buscar en la TMS la ubicacion fisica de la pagina
+    for (int i = 0; i < TOTAL_MARCOS_DISCO; i++) {
+        if (tms[i].propietario == pid) {
+            if (contador_paginas == num_pagina) {
+                marco_disco = i;
+                break;
+            }
+            contador_paginas++;
+        }
+    }
+
+    if (marco_disco == -1) {
+        printf("Error: La pagina %d del PID %d no existe en SWAP.\n", num_pagina, pid);
+        return -1;
+    }
+
+    // Buscar un marco libre en la TMM 
+    for (int marco_ram = 0; marco_ram < TOTAL_MARCOS_RAM; marco_ram++) {
+        if (tmm[marco_ram].propietario == 0) {
+            
+            //Copiar datos del disco a la RAM
+            fseek(bin, marco_disco * TAMANO_MARCO, SEEK_SET);
+            fread(RAM + (marco_ram * TAMANO_MARCO), 1, TAMANO_MARCO, bin);
+            
+            //Actualizar TMM 
+            tmm[marco_ram].propietario = pid;
+            printf("Pagina %d del PID %d cargada en Marco RAM %d\n", num_pagina, pid, marco_ram);
+            return marco_ram; 
+        }
+    }
+
+    printf("Fallo de pagina: No hay marcos libres en RAM para el PID %d\n", pid);
+    return -1;
+}
+
+int main() {
+    int total_instrucciones, total_marcos_necesarios, cnt_marcos_libres, pid=1, gid=1; 
+    long tamano_bytes;
+
+    bin = fopen("disco_virtual.bin", "wb+");
+
+    // Mover el cursor del archivo a la posición deseada menos 1 byte
+    fseek(bin, 8388608 - 1, SEEK_SET);
+
+    // Escribir un byte nulo para definir el tamaño en el disco
+    fputc('\0', bin);
+    printf("Archivo binario creado exitosamente con el tamaño solicitado.\n");
+
+
+    //Conversion de archivo de texto a binario 
+    for (int i=0; i<TOTAL_MARCOS_RAM; i++) {
+        tmm[i].num_marco = i;
+        tmm[i].propietario = 0;
+    }
+
+    for (int i=0; i<TOTAL_MARCOS_DISCO; i++) {
+        tms[i].num_marco = i;
+        tms[i].propietario = 0;
+    }
+
+    fseek(bin, 0, SEEK_SET);
+    int cont = 0;
+    for (int i=0; i<3; i++){
+        if(cont==0){
+            total_instrucciones = guardarTextoABinario("file3", bin, pid);
+        } else if(cont ==1) {
+            total_instrucciones = guardarTextoABinario("file7", bin, pid);
+        } else {
+            total_instrucciones = guardarTextoABinario("file8", bin, pid);
+        }
+        tamano_bytes = total_instrucciones*64;
+        printf("Total de bytes: %ld\n", tamano_bytes);
+        printf("Numero de instrucciones: %d\n", total_instrucciones);
+        total_marcos_necesarios = ceil( (float) total_instrucciones /INSTRUCCIONES_POR_MARCO); //Corregir para que pueda isar ceil
+        printf("Numero de marcos necesarios: %d\n", total_marcos_necesarios);
+
+        //No se ocupaba porque guardartextoabinario ya actualizaba la tms
+        /*int counter = total_marcos_necesarios; 
+        for (int i = 0; i<TOTAL_MARCOS_DISCO; i++){
+            if(tms[i].propietario == 0){
+                tms[i].propietario = pid;
+                counter--;
+            }
+            if(counter == 0) break;
+        }*/
+
+        cnt_marcos_libres = 0;
+
+        for(int m = 0; m < TOTAL_MARCOS_RAM; m++) {
+            if(tmm[m].propietario == 0){
+                cnt_marcos_libres++;
+            } 
+        }
+
+        if (cnt_marcos_libres < total_marcos_necesarios) {  //FAltaria la logica de swapping
+            printf("Se creo un proceso con el PID %d y el GID %d\n", pid, gid);//nuevo=crearNodo(pid,gid,archivo);
+            pid++;
+            gid++;
+            printf("Se inserto al final de nuevos\n");//insertarFinal(nuevos, nuevo);
+            //imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+            printf("Error: Memoria RAM insuficiente para el proceso.\n"); //Quiatre esto cuando ya tenga la logica
+        } else {
+            //int pagina_actual = 0;
+            int total_paginas = total_marcos_necesarios;
+
+            for (int p = 0; p < total_paginas; p++) {
+                int resultado = cargarARAM(pid, p, bin);
+                if (resultado == -1) {
+                    //Logica para algoritmo de reemplazo
+                    printf("Necesario ejecutar algoritmo de reemplazo...\n");
+                    break; 
+                }
+            }
+
+            /*for(int marco_ram = 0; marco_ram < TOTAL_MARCOS_RAM && pagina_actual < total_marcos_necesarios; marco_ram++){
+                if(tmm[marco_ram].propietario == 0){
+                    fseek(bin, pagina_actual*TAMANO_MARCO, SEEK_SET);
+                    fread(RAM + marco_ram*TAMANO_MARCO, 1, TAMANO_MARCO, bin);
+                    tmm[marco_ram].propietario = pid;
+                    pagina_actual++;
+                }
+            }*/
+
+            //Modifciar el abrir/cerrar archivos solo una vez con el bin
+            printf("Se creo un proceso nuevo con el PID %d y el GID %d\n", pid, gid);//nuevo=crearNodo(pid, gid, archivo);
+            pid++;
+            gid++;
+            printf("Se inserto el proceso al final de suspendidos\n");//insertarFinal(suspendidos,nuevo); //Debe quedarse aqui un ratito aleatorio
+            //imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+            printf("5 segundos de espera...\n");
+            //usleep(5000000);
+            printf("Se extrajo el proceso de suspendidos y se puso en listos\n");// = extraerPID(suspendidos, pid-1);
+            //insertarFinal(listos, nuevo);
+        }
+
+        imprimeRAM();
+        cont++;
+    }
+
+    fclose(bin);
+    return 0;
+}
