@@ -486,6 +486,13 @@ int main(){
             while (quantum <=3) {
                 memset(linea, 0, TAMANO_IR);
                 int pag_actual = pc / INSTRUCCIONES_POR_MARCO;
+                if (pag_actual >= proceso_actual->num_paginas) {
+                    mvprintw(36, 10, "Error: Se alcanzo el fin de memoria sin encontrar END.");
+                    tokEND = false;  // Marcamos que fue un error
+                    limpieza = true;
+                    break;           // Rompemos el ciclo inmediatamente
+                }
+                
                 int desplazamiento = pc % INSTRUCCIONES_POR_MARCO;
                 int marco_ram = proceso_actual->tmp[pag_actual].num_marco_ram;
                 int pos_fisica=0;
@@ -564,42 +571,26 @@ int main(){
                 if (token!= NULL && validarToken(instruccion, token)){
                     argumentos = ptr + strlen(token) + 1; //Reconocer lo que esta despues del nemonico
 
-                    if (strcmp(token, "END") == 0){
+                    if (strcmp(token, "END") == 0) {
                         char *extra = strtok(NULL, " \r\n\t"); 
-                        if (extra != NULL) {
-                            mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
-                            proceso_a_terminar = desencolar(ejecutando);
-                            if (proceso_a_terminar != NULL) {
-                                //strcpy(proceso_a_terminar->estado, "terminado*");
-                                proceso_a_terminar->estadoTermino = 1;
-                                eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
-                                imprimirTmm(tmm);
-                                imprimirTms(tms);
-                                imprimirTmp(proceso_a_terminar);
-                                porcentajeDiscoRAM();
-                                insertarFinal(terminados, proceso_a_terminar);
-                            }
-                            limpieza=true;
-                            tokEND = false;
-                            break;
                         
-                        }else{
+                        if (extra != NULL) {
+                            // CASO 1: Hay basura después del END
+                            mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
+                            tokEND = false; 
+                            limpieza = true;
+                            break; // Salimos y el código de afuera lo manda a estadoTermino = 1
+                        } else {
+                            // CASO 2: Es un END limpio
                             if (instEND()) {
-                                tokEND = true;
-                                proceso_a_terminar = desencolar(ejecutando);
-                                if (proceso_a_terminar != NULL) {
-                                    //strcpy(proceso_a_terminar->estado, "terminado*");
-                                    proceso_a_terminar->estadoTermino = 0;
-                                    eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
-                                    imprimirTmm(tmm);
-                                    imprimirTms(tms);
-                                    imprimirTmp(proceso_a_terminar);
-                                    porcentajeDiscoRAM();
-                                    insertarFinal(terminados, proceso_a_terminar);
-                                }
-                                limpieza=true;
+                                tokEND = true; 
+                                limpieza = true;
+                                break; // Salimos y el código de afuera lo manda a estadoTermino = 0
+                            } else {
+                                tokEND = false;
+                                limpieza = true;
                                 break;
-                            }    
+                            }
                         }
                     } else if(strcmp(token, "JNZ") == 0){
                         int a = instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid);
