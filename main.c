@@ -318,6 +318,7 @@ int main(){
     struct Nodo *proceso_a_terminar = NULL;
     struct Nodo *proceso_a_matar = NULL;
     struct Nodo *proceso_a_copiar  = NULL;
+    struct Nodo *proceso_a_suspender  = NULL;
 
     char archivo[64], linea[TAMANO_IR + 1], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
     int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0;
@@ -384,7 +385,7 @@ int main(){
                             insertarFinal(listos, nuevo);
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                             refresh();
-                            continue;
+                            //continue;
 
                             /*//Aqui iria la logica de fallo de pagina
                                int total_paginas = total_marcos_necesarios;
@@ -406,6 +407,18 @@ int main(){
                                 nuevo = extraerPID(suspendidos, pid-1);
                                 insertarFinal(listos, nuevo);
                             */
+                        } else {
+                            total_marcos_necesarios = cuentaMarcosNecesarios(archivo);
+                            if(total_marcos_necesarios > TOTAL_MARCOS_DISCO) {
+                                mvprintw(39, 2, "Este archivo execde la capacidad total del disco.");
+                            } else {
+                                nuevo = crearNodo(pid, gid, archivo, total_marcos_necesarios);
+                                pid++;
+                                gid++;
+                                insertarFinal(nuevos, nuevo);
+                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                refresh();
+                            }
                         }
 
                     } else if(com == 3){ //comando mata
@@ -466,11 +479,22 @@ int main(){
                 int pos_fisica=0;
                 
                 if(marco_ram == -1 ){ //Fallo de pagina
+                    proceso_a_suspender = desencolar(ejecutando);
+                    if(proceso_a_suspender != NULL){
+                        insertarFinal(suspendidos, proceso_a_suspender);
+                    }
                     marco_ram = cargarARAM(proceso_actual->PID, pag_actual, bin); //Intentar cargarala a RAM
                     if(marco_ram != -1) { //Si se pudo cargar en RAM
                         proceso_actual->tmp[pag_actual].num_marco_ram = marco_ram;
+                        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                        porcentajeDiscoRAM();
+                        usleep(2000000);
+                        proceso_actual = desencolar(suspendidos);
+                        insertarFinal(listos, proceso_actual);
+                        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                         porcentajeDiscoRAM();
                         refresh();
+                        break;
                     } else{ 
                         //No se pudo cargar porque esta llena, implementar algoritmo de reemplazo
                     }
@@ -694,7 +718,19 @@ int main(){
                                     insertarFinal(listos,nuevo);
                                     interrumpido = false;
                                     continue; //Para seguir con el proceso actual y que no se cambie por el nuevo
-                                }
+                                } else{
+                                        total_marcos_necesarios = cuentaMarcosNecesarios(archivo);
+                                        if(total_marcos_necesarios > TOTAL_MARCOS_DISCO) {
+                                            mvprintw(39, 2, "Este archivo execde la capacidad total del disco.");
+                                        } else {
+                                            nuevo = crearNodo(pid, gid, archivo, total_marcos_necesarios);
+                                            pid++;
+                                            gid++;
+                                            insertarFinal(nuevos, nuevo);
+                                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                            refresh();
+                                        }
+                                    }
                             } else {
                                 mvprintw(37,2,"Archivo no existente");
                                 limpieza = true;
