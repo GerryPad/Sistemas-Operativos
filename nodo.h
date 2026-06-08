@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <curses.h>
+#include <time.h>
 
 typedef struct {
     int num_marco;
@@ -31,6 +32,8 @@ struct Nodo{
     struct Nodo *siguiente;
     TMP *tmp; //Ver si esto no genera conflicto
     int num_paginas;
+    time_t hora_entrada;
+    int tiempo_espera;
 };
 
 //Prototipos de funcion en ncurses.c

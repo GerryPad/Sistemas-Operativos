@@ -49,6 +49,8 @@ struct Nodo* crearNodo(int n, int m, char *archivo, int n_paginas){
     nuevo->CPU = 0;
     nuevo->GCPU = 0;
     nuevo->prioridad = 0; //Si deberia empezar en 20 o en 0?
+    nuevo->hora_entrada = 0;
+    nuevo->tiempo_espera = 0;
     //nuevo -> tmp = NULL;
     return nuevo;
 }
