@@ -305,7 +305,7 @@ int main(){
     struct Nodo *proceso_a_matar = NULL;
     struct Nodo *proceso_a_copiar  = NULL;
 
-    char archivo[64], linea[128], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
+    char archivo[64], linea[TAMANO_IR + 1], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
     int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0;
     int *ptr_pid = &pid_kill, *ptr_inst = &num_inst, *ptr_pc=&pc; //com es para hacer un "switch" 
     int total_instrucciones, total_marcos_necesarios, cnt_marcos_libres;
@@ -475,19 +475,21 @@ int main(){
             fin_quantum = false; //para saber porque motivo cerramos proceso
             contarGrupos(listos, ejecutando, gid);
             
-            int i=1;
+            /*int i=1;
             while(i<=pc && fgets(linea, sizeof(linea), file) != NULL){
                 i++;
                 continue;
-            }
+            }*/
            
             interrumpido=false; //Bandera para cada archivo
             strcpy(linea_original, "---");
-            while (fgets(linea, sizeof(linea), file) != NULL) {
+            while (quantum <=3) {
+                memset(linea, 0, TAMANO_IR);
                 int pag_actual = pc / INSTRUCCIONES_POR_MARCO;
                 int desplazamiento = pc % INSTRUCCIONES_POR_MARCO;
                 int marco_ram = proceso_actual->tmp[pag_actual].num_marco_ram;
-
+                int pos_fisica=0;
+                
                 if(marco_ram == -1 ){ //Fallo de pagina
                     marco_ram = cargarARAM(proceso_actual->PID, pag_actual, bin); //Intentar cargarala a RAM
                     if(marco_ram != -1) { //Si se pudo cargar en RAM
@@ -497,15 +499,19 @@ int main(){
                     } else{ 
                         //No se pudo cargar porque esta llena, implementar algoritmo de reemplazo
                     }
-                } else {
-                    int pos_fisica = (marco_ram*TAMANO_MARCO) + (desplazamiento*TAMANO_IR);
-                    //strncpy(linea, &RAM[pos_fisica], TAMANO_IR);
-                }
-                
 
-                linea[strcspn(linea, "\n\r")] = '\0';
+                }
+                if(marco_ram != -1) {
+                    pos_fisica = (marco_ram * TAMANO_MARCO) + (desplazamiento * TAMANO_IR);
+                    memcpy(linea, &RAM[pos_fisica], TAMANO_IR);
+                    linea[TAMANO_IR] = '\0';
+                }
+               // printf("pos_fisica= %d", pos_fisica);
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
                 //usleep(1000000);
+
+
+                
                 imprimir_registros(pc, linea);
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 imprimirTmm(tmm);
@@ -518,8 +524,13 @@ int main(){
                 
                 ptr = linea;
                 while (*ptr == ' ' || *ptr == '\t') ptr++; 
-                token = strtok(ptr, " \n");
+                token = strtok(ptr, " \r\n\t");
 
+/*                    mvprintw(0, 0, "DEBUG -> PC: %d | Linea cruda: [%s] | Token extraido: [%s]    ", 
+                            pc, linea_original, token != NULL ? token : "NULO");
+                    refresh();
+                    usleep(500000);
+*/
                 if (tokEND){ //Si hayamos un END...
                     if (token != NULL) { //Pero hay mas cosas despues
                         mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
@@ -554,10 +565,9 @@ int main(){
                     argumentos = ptr + strlen(token) + 1; //Reconocer lo que esta despues del nemonico
 
                     if (strcmp(token, "END") == 0){
-                        if (instEND()) {
-                            tokEND = true;
-                        } else {
-                            tokEND = false;
+                        char *extra = strtok(NULL, " \r\n\t"); 
+                        if (extra != NULL) {
+                            mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
                             proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
                                 //strcpy(proceso_a_terminar->estado, "terminado*");
@@ -570,7 +580,26 @@ int main(){
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             limpieza=true;
+                            tokEND = false;
                             break;
+                        
+                        }else{
+                            if (instEND()) {
+                                tokEND = true;
+                                proceso_a_terminar = desencolar(ejecutando);
+                                if (proceso_a_terminar != NULL) {
+                                    //strcpy(proceso_a_terminar->estado, "terminado*");
+                                    proceso_a_terminar->estadoTermino = 0;
+                                    eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
+                                    imprimirTmm(tmm);
+                                    imprimirTms(tms);
+                                    imprimirTmp(proceso_a_terminar);
+                                    porcentajeDiscoRAM();
+                                    insertarFinal(terminados, proceso_a_terminar);
+                                }
+                                limpieza=true;
+                                break;
+                            }    
                         }
                     } else if(strcmp(token, "JNZ") == 0){
                         int a = instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid);
@@ -595,7 +624,7 @@ int main(){
                                     proceso_a_terminar->estadoTermino = 0;
                                     insertarFinal(listos, proceso_a_terminar);
                                 }
-                                fclose(file);
+                                //fclose(file);
                                 proceso_actual = NULL;
                                 fin_quantum = true;
                                 limpieza = true;
@@ -669,7 +698,7 @@ int main(){
                             proceso_a_terminar->estadoTermino = 0;
                             insertarFinal(listos, proceso_a_terminar);
                         }
-                        fclose(file);
+                        //fclose(file);
                         proceso_actual = NULL;
                         fin_quantum = true;
                         limpieza = true;
@@ -702,7 +731,7 @@ int main(){
                         com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst);
 
                         if (com == 1){
-                            fclose(file);
+                            //fclose(file);
                             fclose(bin);
                             endwin();
                             return 0;
@@ -805,7 +834,7 @@ int main(){
                                 continue;
                             }
                             refresh();
-                            fclose(file);
+                            //fclose(file);
                             break;
                         }
                          
@@ -870,12 +899,12 @@ int main(){
                     }
                     proceso_actual = NULL;
                 }
-                fclose(file);
+                //fclose(file);
                 proceso_actual = NULL;
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 refresh();
             } else { //este era el else de cuando se ejecutaba el archivo hasta el final
-                fclose(file);
+                //fclose(file);
                 if(proceso_actual!=NULL){
                     guardaPCB(proceso_actual,pc,linea_original);
                 }
