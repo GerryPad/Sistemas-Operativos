@@ -11,13 +11,13 @@
 #include "dispatch.h"
 #include <sys/select.h>
 
-#define TAMANO_IR 64
+#define TAMANO_IR 64 
 #define INSTRUCCIONES_POR_MARCO 4
 #define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) 
 #define TOTAL_MARCOS_RAM 16
 #define TOTAL_MARCOS_DISCO 32768
 
-FILE *bin;
+FILE *bin, *txt;
 
 TablaMarcos tmm[TOTAL_MARCOS_RAM];
 TablaMarcos tms[TOTAL_MARCOS_DISCO];
@@ -25,8 +25,7 @@ TablaMarcos tms[TOTAL_MARCOS_DISCO];
 char RAM[TOTAL_MARCOS_RAM*TAMANO_MARCO];
 
 int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
-    FILE *txt = fopen(archivoTexto, "r");
-    //FILE *bin = fopen(archivoBinario, "wb"); 
+    txt = fopen(archivoTexto, "r");
 
     if (!txt || !bin) {
         mvprintw(34, 2, "Error al abrir los archivos.");
@@ -76,22 +75,21 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
 
     fclose(txt);
     return num_instrucciones; 
-    //fclose(bin);
 }
 
 int cuentaMarcosNecesarios(const char *nombre_archivo){
-    FILE *archivo = fopen(nombre_archivo, "r");
-    if (archivo == NULL) {
+    txt = fopen(nombre_archivo, "r");
+    if (txt == NULL) {
         mvprintw(35, 2, "Error: No se pudo abrir el archivo.");
         return -1;
     }
 
     int lineas = 0;
     char buffer[64]; 
-    while (fgets(buffer, sizeof(buffer), archivo) != NULL) {
+    while (fgets(buffer, sizeof(buffer), txt) != NULL) {
         lineas++;
     }
-    fclose(archivo);
+    fclose(txt);
 
     //Calcular cuantas paginas va a necesitar
     int marcos_necesarios = ceil((float) lineas  / INSTRUCCIONES_POR_MARCO);
@@ -99,18 +97,18 @@ int cuentaMarcosNecesarios(const char *nombre_archivo){
 }
 
 bool verificarEspacioEnSwap(const char *nombre_archivo) {
-    FILE *archivo = fopen(nombre_archivo, "r");
-    if (archivo == NULL) {
+    txt = fopen(nombre_archivo, "r");
+    if (txt == NULL) {
         mvprintw(35, 2, "Error: No se pudo abrir el archivo.");
         return false;
     }
 
     int lineas = 0;
     char buffer[64]; 
-    while (fgets(buffer, sizeof(buffer), archivo) != NULL) {
+    while (fgets(buffer, sizeof(buffer), txt) != NULL) {
         lineas++;
     }
-    fclose(archivo);
+    fclose(txt);
 
     //Calcular cuantas paginas va a necesitar
     int marcos_necesarios = ceil((float) lineas  / INSTRUCCIONES_POR_MARCO);
@@ -133,8 +131,6 @@ bool verificarEspacioEnSwap(const char *nombre_archivo) {
     //Si cabe, retornamos true   
     return true;
 }
-
-
 
 int cargarARAM(int pid, int num_pagina, FILE *bin) {
     int marco_disco = -1;
@@ -209,12 +205,14 @@ struct Nodo* buscarHerederoGID(struct Nodo *listos, struct Nodo *ejecutando, str
 void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos){
     int pid_busqueda = proceso->PID;
     struct Nodo *heredero = buscarHerederoGID(listos, ejecutando, suspendidos, proceso->GID, pid_busqueda);
+    char buffer[TAMANO_MARCO];
+    memset(buffer,0,sizeof(buffer));
     //int procesos_mismo_gid = cuentaPorGID(listos, ejecutando, suspendidos, proceso->GID, proceso->PID);
     
     //No la esta eliminando cuadno ya es el ultimo proceso y acaba
     if(heredero != NULL) { //Hay mas de un proceso con el mismo GID
         //tal vez crear funcion que cuente cuantos procesos tienen el mismo GID?
-
+ 
         for (int i=0; i<TOTAL_MARCOS_RAM; i++){
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = heredero->PID;
@@ -233,23 +231,30 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = 0;
                 tmm[i].num_pagina = -1; 
+                //fread(RAM + (marco_ram * TAMANO_MARCO), 1, TAMANO_MARCO, bin);
+                
+                memset((RAM + TAMANO_MARCO * i) ,0,TAMANO_MARCO);
+                
             }
+
         }
 
         for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
-            if(tms[i].propietario == pid_busqueda){
+            if(tms[i].propietario == pid_busqueda){ // 0 1 2 3
                 tms[i].propietario = 0;
                 tms[i].num_pagina = -1;
+                fseek(bin,TAMANO_MARCO*i,SEEK_SET); //en el binario a partir del 0 256*3 = 768
+                fwrite(buffer, sizeof(char), TAMANO_MARCO, bin);
             }
         }
-
+        fflush(bin); //vacía el búfer hacia el archivo físico
     }
 
     for (int i=0; i<proceso->num_paginas; i++){
         proceso->tmp[i].num_marco_disco = -1;
         proceso->tmp[i].num_marco_ram = -1;
     }
-    
+    //Si hago 2 forks a un proceso y quiero matar al segundo fork no se deberian asignar sus valores a nadie y su TMP se iria a -1
 }
 
 void porcentajeDiscoRAM(){
@@ -278,6 +283,27 @@ void porcentajeDiscoRAM(){
 
 }
 
+void iniciarDiscoYTablas(TablaMarcos *tms, TablaMarcos *tmm, FILE *bin){
+    // Mover el cursor del archivo a la posición deseada menos 1 byte
+    fseek(bin, 8388608 - 1, SEEK_SET);
+
+    // Escribir un byte nulo para definir el tamaño en el disco
+    fputc('\0', bin);
+
+    for (int i=0; i<TOTAL_MARCOS_RAM; i++) {
+        tmm[i].num_marco = i;
+        tmm[i].propietario = 0;
+        tmm[i].num_pagina = -1;
+    }
+
+    for (int i=0; i<TOTAL_MARCOS_DISCO; i++) {
+        tms[i].num_marco = i;
+        tms[i].propietario = 0;
+        tms[i].num_pagina = -1;
+    }
+    fseek(bin, 0, SEEK_SET);
+}
+
 int kbhit(void);        
 int main(){
 
@@ -293,10 +319,10 @@ int main(){
     struct Nodo *proceso_a_matar = NULL;
     struct Nodo *proceso_a_copiar  = NULL;
 
-    char archivo[64], linea[128], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
+    char archivo[64], linea[TAMANO_IR + 1], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
     int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0;
     int *ptr_pid = &pid_kill, *ptr_inst = &num_inst, *ptr_pc=&pc; //com es para hacer un "switch" 
-    int total_instrucciones, total_marcos_necesarios, cnt_marcos_libres;
+    int total_instrucciones, total_marcos_necesarios;// cnt_marcos_libres;
     char *token, *ptr, *argumentos;
     bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
     bool fin_quantum, limpieza = false; 
@@ -307,28 +333,8 @@ int main(){
         perror("fopen");
     }
 
-    // Mover el cursor del archivo a la posición deseada menos 1 byte
-    fseek(bin, 8388608 - 1, SEEK_SET);
-
-    // Escribir un byte nulo para definir el tamaño en el disco
-    fputc('\0', bin);
-
-    /*for (int i=0; i<TOTAL_MARCOS_RAM; i++){
-        RAM[i] = true;
-    }*/
-
-    for (int i=0; i<TOTAL_MARCOS_RAM; i++) {
-        tmm[i].num_marco = i;
-        tmm[i].propietario = 0;
-        tmm[i].num_pagina = -1;
-    }
-
-    for (int i=0; i<TOTAL_MARCOS_DISCO; i++) {
-        tms[i].num_marco = i;
-        tms[i].propietario = 0;
-        tms[i].num_pagina = -1;
-    }
-    fseek(bin, 0, SEEK_SET);
+    iniciarDiscoYTablas(tms, tmm, bin);
+   
     
     initscr();
     do{
@@ -380,23 +386,7 @@ int main(){
                             refresh();
                             continue;
 
-                            /*cnt_marcos_libres = 0;
-                            for(int m = 0; m < TOTAL_MARCOS_RAM; m++) {
-                                if(tmm[m].propietario == 0){
-                                    cnt_marcos_libres++;
-                                } 
-                            }
-
-                            if (cnt_marcos_libres < total_marcos_necesarios) {  //FAltaria la logica de swapping
-                                nuevo=crearNodo(pid,gid,archivo);
-                                pid++;
-                                gid++;
-                                insertarFinal(nuevos, nuevo);
-                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                //mvprintw(37, 2, "Error: Memoria RAM insuficiente para el proceso."); //Quiatre esto cuando ya tenga la logica
-                                refresh();
-                                continue;
-                            } else { //Aqui iria la logica de fallo de pagina
+                            /*//Aqui iria la logica de fallo de pagina
                                int total_paginas = total_marcos_necesarios;
 
                                 for (int p = 0; p < total_paginas; p++) {
@@ -415,7 +405,7 @@ int main(){
                                 usleep(5000000);
                                 nuevo = extraerPID(suspendidos, pid-1);
                                 insertarFinal(listos, nuevo);
-                            }*/
+                            */
                         }
 
                     } else if(com == 3){ //comando mata
@@ -452,30 +442,29 @@ int main(){
             limpieza = false;
         }
 
-        if (access(archivo, F_OK) == 0) {
-            FILE *file = fopen(archivo, "rb");
-            if (!file) {
-                perror("fopen");
-                continue;
-            }
+        if (access(archivo, F_OK) == 0) { //Cambiar condicional por proceso_actual != NULL?
+            
 
             quantum = 0;
             fin_quantum = false; //para saber porque motivo cerramos proceso
             contarGrupos(listos, ejecutando, gid);
-            
-            int i=1;
-            while(i<=pc && fgets(linea, sizeof(linea), file) != NULL){
-                i++;
-                continue;
-            }
            
             interrumpido=false; //Bandera para cada archivo
             strcpy(linea_original, "---");
-            while (fgets(linea, sizeof(linea), file) != NULL) {
+            while (quantum <=3) {
+                memset(linea, 0, TAMANO_IR);
                 int pag_actual = pc / INSTRUCCIONES_POR_MARCO;
+                if (pag_actual >= proceso_actual->num_paginas) {
+                    mvprintw(36, 10, "Error: Se alcanzo el fin de memoria sin encontrar END.");
+                    tokEND = false;  // Marcamos que fue un error
+                    limpieza = true;
+                    break;           // Rompemos el ciclo inmediatamente
+                }
+                
                 int desplazamiento = pc % INSTRUCCIONES_POR_MARCO;
                 int marco_ram = proceso_actual->tmp[pag_actual].num_marco_ram;
-
+                int pos_fisica=0;
+                
                 if(marco_ram == -1 ){ //Fallo de pagina
                     marco_ram = cargarARAM(proceso_actual->PID, pag_actual, bin); //Intentar cargarala a RAM
                     if(marco_ram != -1) { //Si se pudo cargar en RAM
@@ -485,15 +474,18 @@ int main(){
                     } else{ 
                         //No se pudo cargar porque esta llena, implementar algoritmo de reemplazo
                     }
-                } else {
-                    int pos_fisica = (marco_ram*TAMANO_MARCO) + (desplazamiento*TAMANO_IR);
-                    //strncpy(linea, &RAM[pos_fisica], TAMANO_IR);
-                }
-                
 
-                linea[strcspn(linea, "\n\r")] = '\0';
+                }
+                if(marco_ram != -1) {
+                    pos_fisica = (marco_ram * TAMANO_MARCO) + (desplazamiento * TAMANO_IR);
+                    memcpy(linea, &RAM[pos_fisica], TAMANO_IR);
+                    linea[TAMANO_IR] = '\0';
+                }
                 strcpy(linea_original, linea);//Para imprimir la linea original en PCB
                 //usleep(1000000);
+
+
+                
                 imprimir_registros(pc, linea);
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 imprimirTmm(tmm);
@@ -506,8 +498,13 @@ int main(){
                 
                 ptr = linea;
                 while (*ptr == ' ' || *ptr == '\t') ptr++; 
-                token = strtok(ptr, " \n");
+                token = strtok(ptr, " \r\n\t");
 
+/*                    mvprintw(0, 0, "DEBUG -> PC: %d | Linea cruda: [%s] | Token extraido: [%s]    ", 
+                            pc, linea_original, token != NULL ? token : "NULO");
+                    refresh();
+                    usleep(500000);
+*/
                 if (tokEND){ //Si hayamos un END...
                     if (token != NULL) { //Pero hay mas cosas despues
                         mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
@@ -541,35 +538,31 @@ int main(){
                 if (token!= NULL && validarToken(instruccion, token)){
                     argumentos = ptr + strlen(token) + 1; //Reconocer lo que esta despues del nemonico
 
-                    if (strcmp(token, "END") == 0){
-                        if (instEND()) {
-                            tokEND = true;
+                    if (strcmp(token, "END") == 0) {
+                        char *extra = strtok(NULL, " \r\n\t"); 
+                        
+                        if (extra != NULL) {
+                            //CASO 1: Hay basura después del END
+                            mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
+                            tokEND = false; 
+                            limpieza = true;
+                            break; // Salimos y el código de afuera lo manda a estadoTermino = 1
                         } else {
-                            tokEND = false;
-                            proceso_a_terminar = desencolar(ejecutando);
-                            if (proceso_a_terminar != NULL) {
-                                //strcpy(proceso_a_terminar->estado, "terminado*");
-                                proceso_a_terminar->estadoTermino = 1;
-                                eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos);
-                                imprimirTmm(tmm);
-                                imprimirTms(tms);
-                                imprimirTmp(proceso_a_terminar);
-                                porcentajeDiscoRAM();
-                                insertarFinal(terminados, proceso_a_terminar);
+                            //CASO 2: Es un END limpio
+                            if (instEND()) {
+                                tokEND = true; 
+                                limpieza = true;
+                                break; // Salimos y el código de afuera lo manda a estadoTermino = 0
+                            } else {
+                                tokEND = false;
+                                limpieza = true;
+                                break;
                             }
-                            limpieza=true;
-                            break;
                         }
                     } else if(strcmp(token, "JNZ") == 0){
-                        int a = instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid);
-                        if(a==1 || a == 2){
-                            if(a==1){
-                            rewind(file); //Regresa al inicio del archivo
-                            int j=1;
-                            while(j<=pc && fgets(linea,sizeof(linea), file) != NULL) {
-                                j++;
-                            }
-                        }
+                        int aux = instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid, pc);
+                        if(aux != -1){
+                            pc = aux;
                             quantum++;
                             proceso_actual->CPU = proceso_actual->CPU + 20;
                             proceso_actual->GCPU=proceso_actual->GCPU + 20;
@@ -583,7 +576,6 @@ int main(){
                                     proceso_a_terminar->estadoTermino = 0;
                                     insertarFinal(listos, proceso_a_terminar);
                                 }
-                                fclose(file);
                                 proceso_actual = NULL;
                                 fin_quantum = true;
                                 limpieza = true;
@@ -657,7 +649,6 @@ int main(){
                             proceso_a_terminar->estadoTermino = 0;
                             insertarFinal(listos, proceso_a_terminar);
                         }
-                        fclose(file);
                         proceso_actual = NULL;
                         fin_quantum = true;
                         limpieza = true;
@@ -677,8 +668,6 @@ int main(){
                         //getch();
 
                         refresh();
-                        /*move(40,2);
-                        clrtoeol();*/
                         mvprintw(40, 2, "%-28s", ""); 
                         mvprintw(40, 2, ">");
                         echo();
@@ -686,11 +675,9 @@ int main(){
                         mvscanw(40,3,"%255[^\n]",comando);
                         noecho();
                         limpieza = true;
-                        //strcpy(com_mata, comando);
                         com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst);
 
                         if (com == 1){
-                            fclose(file);
                             fclose(bin);
                             endwin();
                             return 0;
@@ -793,7 +780,6 @@ int main(){
                                 continue;
                             }
                             refresh();
-                            fclose(file);
                             break;
                         }
                          
@@ -858,12 +844,10 @@ int main(){
                     }
                     proceso_actual = NULL;
                 }
-                fclose(file);
                 proceso_actual = NULL;
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 refresh();
             } else { //este era el else de cuando se ejecutaba el archivo hasta el final
-                fclose(file);
                 if(proceso_actual!=NULL){
                     guardaPCB(proceso_actual,pc,linea_original);
                 }
