@@ -396,7 +396,7 @@ bool instDEC(char *args){
     return true;
 }
 
-int instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid, int pc){
+int instJNZ(char *args, struct Nodo *nodo, int pc){
     char op1[32], basura[32];
     int n, leidos = 0;
     
@@ -417,8 +417,6 @@ int instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid, int pc){
     if (esInt(op1)){
         n = atoi(op1);
         if(n>=0 && registros[2].valor != 0) {
-            //ptr_pc = n;
-            //ptr_pid = -1;
             return n; 
         }else if(registros[2].valor==0){
             return pc+1;

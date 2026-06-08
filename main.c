@@ -560,7 +560,7 @@ int main(){
                             }
                         }
                     } else if(strcmp(token, "JNZ") == 0){
-                        int aux = instJNZ(argumentos,proceso_actual,ptr_pc,ptr_pid, pc);
+                        int aux = instJNZ(argumentos,proceso_actual, pc);
                         if(aux != -1){
                             pc = aux;
                             quantum++;
