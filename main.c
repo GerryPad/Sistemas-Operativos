@@ -782,7 +782,7 @@ int main(){
                 if(marco_ram != -1) {
                     pos_fisica = (marco_ram * TAMANO_MARCO) + (desplazamiento * TAMANO_IR);
                     //if(tmm[marco_ram].usado_recien==1){
-                    //tmm[marco_ram].usado_recien = 1;
+                    tmm[marco_ram].usado_recien = 1;
                     //}
                     memcpy(linea, &RAM[pos_fisica], TAMANO_IR);
                     linea[TAMANO_IR] = '\0';
