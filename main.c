@@ -499,9 +499,9 @@ int main(){
                         } else if(com == 5){
                             proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
-                                if(verificarEspacioEnSwap(archivo)){
-                                    total_marcos_necesarios = cuentaMarcosNecesarios(proceso_a_copiar->archivo);
-                                    nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
+                                if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                    //IMPORTANTE /Tener una funcion que ligue todos los procesos con el mismo GID, avisando que tambien es participe del grupo por lo que no es necesario borrar las paginas
+                                    nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, proceso_a_copiar->num_paginas);
                                     actualizaTMP(nuevo, tms);
                                     imprimirTms(tms);
                                     pid++;
@@ -514,9 +514,8 @@ int main(){
                             } else { 
                                 proceso_a_copiar = buscaPID(listos, pid_kill);
                                 if(proceso_a_copiar != NULL) {
-                                    if(verificarEspacioEnSwap(archivo)){
-                                        total_marcos_necesarios = cuentaMarcosNecesarios(proceso_a_copiar->archivo);
-                                        nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
+                                    if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                        nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, proceso_a_copiar->num_paginas);
                                         actualizaTMP(nuevo, tms);
                                         imprimirTms(tms);
                                         pid++;
@@ -526,10 +525,26 @@ int main(){
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                     }
                                 } else {
-                                    //proceso_a_copiar = buscaPID(suspendidos, pid_kill);
-                                
+                                    proceso_a_copiar = buscaPID(suspendidos, pid_kill);
+                                    if(proceso_a_copiar != NULL){
+                                        if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                            nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
+                                            //CONTINUACION IMPORTANTE// ya no necesita hacer la actualizacion de la TMP
+                                            actualizaTMP(nuevo,tms);
+                                            imprimirTms(tms);
+                                            pid++;
+                                            nuevo->PC = num_inst;
+                                            nuevo->GCPU = proceso_a_copiar->GCPU;
+                                            insertarFinal(listos,nuevo);
+                                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                        }
+                                    }else{
+
                                     mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
+
+                                    }
                                 }
+                                
                                 
                             }
 
@@ -976,9 +991,8 @@ int main(){
                         } else if(com == 5){
                             proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
-                                if(verificarEspacioEnSwap(archivo)){
-                                    total_marcos_necesarios = cuentaMarcosNecesarios(proceso_a_copiar->archivo);
-                                    nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
+                                if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                    nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
                                     actualizaTMP(nuevo, tms);
                                     imprimirTms(tms);
                                     pid++;
@@ -991,8 +1005,8 @@ int main(){
                             } else { 
                                 proceso_a_copiar = buscaPID(listos, pid_kill);
                                 if(proceso_a_copiar != NULL) {
-                                    if(verificarEspacioEnSwap(archivo)){
-                                        total_marcos_necesarios = cuentaMarcosNecesarios(proceso_a_copiar->archivo);
+                                    if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                            nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
                                         nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
                                         actualizaTMP(nuevo, tms);
                                         imprimirTms(tms);
@@ -1003,7 +1017,22 @@ int main(){
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                     }
                                 } else {
-                                    mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
+                                    proceso_a_copiar = buscaPID(suspendidos, pid_kill);
+                                    if(proceso_a_copiar != NULL){
+                                        if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                            nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
+                                            //CONTINUACION IMPORTANTE// ya no necesita hacer la actualizacion de la TMP
+                                            actualizaTMP(nuevo,tms);
+                                            imprimirTms(tms);
+                                            pid++;
+                                            nuevo->PC = num_inst;
+                                            nuevo->GCPU = proceso_a_copiar->GCPU;
+                                            insertarFinal(listos,nuevo);
+                                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                        }
+                                    }else{
+                                        mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
+                                    }
                                 }
                                 
                             }
