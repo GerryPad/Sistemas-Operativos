@@ -133,7 +133,7 @@ bool verificarEspacioEnSwap(const char *nombre_archivo) {
     return true;
 }
 
-int cargarARAM(int pid, int num_pagina, FILE *bin) {
+int cargarARAM(int pid, int num_pagina, FILE *bin, struct TablaMarcos *manecilla) {
     int marco_disco = -1;
     int contador_paginas = 0;
 
@@ -155,7 +155,7 @@ int cargarARAM(int pid, int num_pagina, FILE *bin) {
 
     //Buscar un marco libre en la TMM 
     for (int marco_ram = 0; marco_ram < TOTAL_MARCOS_RAM; marco_ram++) {
-        if (tmm[marco_ram].propietario == 0) {
+        if (tmm[marco_ram].num_marco == manecilla->num_marco) {
             
             //Copiar datos del disco a la RAM
             fseek(bin, marco_disco * TAMANO_MARCO, SEEK_SET);
@@ -297,6 +297,7 @@ void iniciarDiscoYTablas(TablaMarcos *tms, TablaMarcos *tmm, FILE *bin){
         tmm[i].propietario = 0;
         tmm[i].num_pagina = -1;
         tmm[i].usado_recien = 0;
+        tmm[i].puntero = false;
         if(i==TOTAL_MARCOS_RAM-1){
             tmm[i].siguiente = &tmm[0];
         } else {
@@ -330,6 +331,7 @@ struct TablaMarcos *algoritmoReloj(TablaMarcos *manecilla){
     while(manecilla->usado_recien == 1){
         manecilla->usado_recien = 0;
         manecilla = manecilla->siguiente;
+        manecilla->puntero = false;
     }
 
     tmm[manecilla->num_marco].propietario = 0;
@@ -356,6 +358,7 @@ int main(){
     struct Nodo *proceso_a_suspender  = NULL;
 
     struct TablaMarcos *manecilla_reloj = &tmm[0];
+    manecilla_reloj->puntero = true;
 
     char archivo[64], linea[TAMANO_IR + 1], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
     int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0;
@@ -381,6 +384,7 @@ int main(){
         tokEND = false;
 
         sacarSuspendidos(suspendidos, listos);
+        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
         if(ejecutando->siguiente == NULL){ //Cambiar el uso de la bandera pedir archivo
             if(listos->siguiente != NULL || suspendidos->siguiente != NULL){
                 calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
@@ -394,6 +398,7 @@ int main(){
                     pc = restauraPCB(proceso_actual, archivo); 
                 } else {
                     sacarSuspendidos(suspendidos, listos);
+                    imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                     if(kbhit()){ //Cuando haya un teclazo
                         if(limpieza){ //tambien puede que no sea correco guardarlo asi
                             limpia_lineas();
@@ -521,6 +526,8 @@ int main(){
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                     }
                                 } else {
+                                    //proceso_a_copiar = buscaPID(suspendidos, pid_kill);
+                                
                                     mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
                                 }
                                 
@@ -654,6 +661,7 @@ int main(){
             interrumpido=false; //Bandera para cada archivo
             strcpy(linea_original, "---");
             sacarSuspendidos(suspendidos, listos);
+            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
             while (quantum < 3) {
                 memset(linea, 0, TAMANO_IR);
                 int pag_actual = pc / INSTRUCCIONES_POR_MARCO;
@@ -675,20 +683,19 @@ int main(){
                     if (proceso_a_suspender != NULL) {
                         insertarFinal(suspendidos, proceso_a_suspender);
                         proceso_a_suspender->hora_entrada = time(NULL);
-                        proceso_a_suspender->tiempo_espera = rand() % (9) + 2; //%(9)+2
+                        proceso_a_suspender->tiempo_espera = 1;//rand() % (2) + 2; //%(9)+2
 
-                        int marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, pag_actual, bin);
+                        int marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, pag_actual, bin, manecilla_reloj);
+                        manecilla_reloj->puntero = true;
+                        manecilla_reloj = manecilla_reloj->siguiente;
                         if (marco_ram_nuevo != -1) {
                             proceso_a_suspender->tmp[pag_actual].num_marco_ram = marco_ram_nuevo;
                             tmm[marco_ram_nuevo].usado_recien = 1;
-                        } else {
-                            //manecilla_reloj = algoritmoReloj(manecilla_reloj);
-                            //mvprintw(36, 2, "No hay marcos libres en RAM. Implementar reemplazo.");
-
                         }
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                         imprimirTmm(tmm);
                         porcentajeDiscoRAM();
+                        tmm[marco_ram_nuevo].puntero=false;
                         refresh();
                     }
                     proceso_actual = NULL;
@@ -698,7 +705,7 @@ int main(){
 
                 if(marco_ram != -1) {
                     pos_fisica = (marco_ram * TAMANO_MARCO) + (desplazamiento * TAMANO_IR);
-                    tmm[marco_ram].usado_recien = 1;
+                    //tmm[marco_ram].usado_recien = 1;
                     memcpy(linea, &RAM[pos_fisica], TAMANO_IR);
                     linea[TAMANO_IR] = '\0';
                 }
@@ -1038,6 +1045,7 @@ int main(){
             }
 
             sacarSuspendidos(suspendidos, listos);
+            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
             if(page_fault){
                 page_fault = false;
             } else if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
@@ -1113,6 +1121,7 @@ int main(){
 
         } else {
             sacarSuspendidos(suspendidos, listos);
+            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
             limpieza = true;
             
         }

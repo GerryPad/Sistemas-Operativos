@@ -10,6 +10,7 @@ typedef struct TablaMarcos{
     int propietario; // 0 = libre, != 0 es el PID asignado
     int num_pagina;
     int usado_recien;
+    bool puntero;
     struct TablaMarcos *siguiente;
 } TablaMarcos; 
 

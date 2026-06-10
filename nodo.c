@@ -62,7 +62,7 @@ void actualizaTMP(struct Nodo *act, TablaMarcos *tms) {
         if(tms[i].propietario == pid) {
             int pag = tms[i].num_pagina;
             
-            //Validación de seguridad para no segmentar memoria
+            //Validacion de seguridad para no segmentar memoria
             if (pag >= 0 && pag < act->num_paginas) {
                 act->tmp[pag].num_marco_disco = i;
             }
