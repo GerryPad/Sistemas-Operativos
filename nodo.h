@@ -5,10 +5,12 @@
 #include <curses.h>
 #include <time.h>
 
-typedef struct {
+typedef struct TablaMarcos{
     int num_marco;
     int propietario; // 0 = libre, != 0 es el PID asignado
     int num_pagina;
+    int usado_recien;
+    struct TablaMarcos *siguiente;
 } TablaMarcos; 
 
 typedef struct {

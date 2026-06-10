@@ -232,6 +232,7 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = 0;
                 tmm[i].num_pagina = -1; 
+                tmm[i].usado_recien = 0;
                 //fread(RAM + (marco_ram * TAMANO_MARCO), 1, TAMANO_MARCO, bin);
                 
                 memset((RAM + TAMANO_MARCO * i) ,0,TAMANO_MARCO);
@@ -295,6 +296,13 @@ void iniciarDiscoYTablas(TablaMarcos *tms, TablaMarcos *tmm, FILE *bin){
         tmm[i].num_marco = i;
         tmm[i].propietario = 0;
         tmm[i].num_pagina = -1;
+        tmm[i].usado_recien = 0;
+        if(i==TOTAL_MARCOS_RAM-1){
+            tmm[i].siguiente = &tmm[0];
+        } else {
+           tmm[i].siguiente = &tmm[i+1]; 
+        }
+
     }
 
     for (int i=0; i<TOTAL_MARCOS_DISCO; i++) {
@@ -318,6 +326,19 @@ void sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *listos){
     }
 }
 
+struct TablaMarcos *algoritmoReloj(TablaMarcos *manecilla){
+    while(manecilla->usado_recien == 1){
+        manecilla->usado_recien = 0;
+        manecilla = manecilla->siguiente;
+    }
+
+    tmm[manecilla->num_marco].propietario = 0;
+    tmm[manecilla->num_marco].num_pagina = -1;
+    memset((RAM + TAMANO_MARCO * manecilla->num_marco) ,0,TAMANO_MARCO);
+
+    return manecilla; //Este es el marco con la pagina a desalojar
+}
+
 int kbhit(void);        
 int main(){
 
@@ -333,6 +354,8 @@ int main(){
     struct Nodo *proceso_a_matar = NULL;
     struct Nodo *proceso_a_copiar  = NULL;
     struct Nodo *proceso_a_suspender  = NULL;
+
+    struct TablaMarcos *manecilla_reloj = &tmm[0];
 
     char archivo[64], linea[TAMANO_IR + 1], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
     int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0;
@@ -450,8 +473,22 @@ int main(){
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
-                                    mvprintw(37,2, "El PID asociado al proceso no existe.");
-                                    mvprintw(27,2, "Ese proceso no existe o ya termino");
+                                    proceso_a_matar = extraerPID(suspendidos, pid_kill);
+                                    if(proceso_a_matar != NULL){
+                                        //strcpy(proceso_a_matar->estado, "terminados**");
+                                        proceso_a_matar->estadoTermino = 2;
+                                        eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos);
+                                        imprimirTmm(tmm);
+                                        imprimirTms(tms);
+                                        imprimirTmp(proceso_a_matar);
+                                        porcentajeDiscoRAM();
+                                        insertarFinal(terminados,proceso_a_matar);
+                                        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                    } else {
+                                        mvprintw(37,2, "El PID asociado al proceso no existe.");
+                                        mvprintw(27,2, "Ese proceso no existe o ya termino");
+                                    }
+                                    
                                 }
                             } 
                         } else if(com == 5){
@@ -632,20 +669,25 @@ int main(){
                 int pos_fisica=0;
                 
                 if (marco_ram == -1) {
+                    manecilla_reloj = algoritmoReloj(manecilla_reloj);
                     page_fault = true;
                     proceso_a_suspender = desencolar(ejecutando);
                     if (proceso_a_suspender != NULL) {
                         insertarFinal(suspendidos, proceso_a_suspender);
                         proceso_a_suspender->hora_entrada = time(NULL);
-                        proceso_a_suspender->tiempo_espera = rand() % (9) + 2;
+                        proceso_a_suspender->tiempo_espera = rand() % (9) + 2; //%(9)+2
 
                         int marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, pag_actual, bin);
                         if (marco_ram_nuevo != -1) {
                             proceso_a_suspender->tmp[pag_actual].num_marco_ram = marco_ram_nuevo;
+                            tmm[marco_ram_nuevo].usado_recien = 1;
                         } else {
-                            mvprintw(36, 2, "No hay marcos libres en RAM. Implementar reemplazo.");
+                            //manecilla_reloj = algoritmoReloj(manecilla_reloj);
+                            //mvprintw(36, 2, "No hay marcos libres en RAM. Implementar reemplazo.");
+
                         }
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                        imprimirTmm(tmm);
                         porcentajeDiscoRAM();
                         refresh();
                     }
@@ -656,6 +698,7 @@ int main(){
 
                 if(marco_ram != -1) {
                     pos_fisica = (marco_ram * TAMANO_MARCO) + (desplazamiento * TAMANO_IR);
+                    tmm[marco_ram].usado_recien = 1;
                     memcpy(linea, &RAM[pos_fisica], TAMANO_IR);
                     linea[TAMANO_IR] = '\0';
                 }
