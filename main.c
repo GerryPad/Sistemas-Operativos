@@ -25,6 +25,8 @@ TablaMarcos tms[TOTAL_MARCOS_DISCO];
 
 char RAM[TOTAL_MARCOS_RAM*TAMANO_MARCO];
 
+char *archivos[] = {"file","file2","file3","file4","file4","file5","file7",NULL};
+
 int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
     FILE *txt = fopen(archivoTexto, "r");
 
@@ -327,15 +329,62 @@ void sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *listos){
     }
 }
 
-struct TablaMarcos *algoritmoReloj(TablaMarcos *manecilla){
+void sacarNuevos(struct Nodo *nuevos, struct Nodo *listos){
+    struct Nodo *aux_n=nuevos->siguiente;
+    struct Nodo *proceso_a_mover=NULL;
+    int libre=0;
+
+    for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
+        if(tms[i].propietario == 0){
+            libre++;
+        }
+    }
+    while(aux_n !=NULL){
+        if(aux_n->num_paginas<=libre){
+            proceso_a_mover=extraerPID(nuevos,aux_n->PID);
+            insertarFinal(listos,proceso_a_mover);
+            guardarTextoABinario(proceso_a_mover->archivo,bin,proceso_a_mover->PID);
+        }
+        aux_n=aux_n->siguiente;
+    }
+
+}
+
+struct TablaMarcos *algoritmoReloj(TablaMarcos *manecilla, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos){
+    struct Nodo *aux_l = listos->siguiente;
+    struct Nodo *aux_e = ejecutando->siguiente;
+    struct Nodo *aux_s = suspendidos->siguiente;
+    
     while(manecilla->usado_recien == 1){
         manecilla->usado_recien = 0;
         manecilla = manecilla->siguiente;
         manecilla->puntero = false;
     }
 
+    while(aux_l != NULL) {
+        if(aux_l->PID == manecilla->propietario) {
+            aux_l->tmp[manecilla->num_pagina].num_marco_ram = -1;
+        }
+        aux_l = aux_l->siguiente;
+    }
+
+    while(aux_e != NULL) {
+        if(aux_e->PID == manecilla->propietario) {
+            aux_e->tmp[manecilla->num_pagina].num_marco_ram = -1;
+        }
+        aux_e = aux_e->siguiente;
+    }
+
+    while(aux_s != NULL) {
+        if(aux_s->PID == manecilla->propietario) {
+            aux_s->tmp[manecilla->num_pagina].num_marco_ram = -1;
+        }
+        aux_s = aux_s->siguiente;
+    }
+
     tmm[manecilla->num_marco].propietario = 0;
     tmm[manecilla->num_marco].num_pagina = -1;
+
     memset((RAM + TAMANO_MARCO * manecilla->num_marco) ,0,TAMANO_MARCO);
 
     return manecilla; //Este es el marco con la pagina a desalojar
@@ -384,6 +433,7 @@ int main(){
         tokEND = false;
 
         sacarSuspendidos(suspendidos, listos);
+        sacarNuevos(nuevos,listos);
         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
         if(ejecutando->siguiente == NULL){ //Cambiar el uso de la bandera pedir archivo
             if(listos->siguiente != NULL || suspendidos->siguiente != NULL){
@@ -399,6 +449,7 @@ int main(){
                 
                 if (proceso_actual != NULL) {
                     sacarSuspendidos(suspendidos, listos);
+                    sacarNuevos(nuevos,listos);
                     pc = restauraPCB(proceso_actual, archivo); 
                 } else {
                     sacarSuspendidos(suspendidos, listos);
@@ -602,28 +653,7 @@ int main(){
                             insertarFinal(listos, nuevo);
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                             refresh();
-                            //continue;
-
-                            /*//Aqui iria la logica de fallo de pagina
-                               int total_paginas = total_marcos_necesarios;
-
-                                for (int p = 0; p < total_paginas; p++) {
-                                    int resultado = cargarARAM(pid, p, bin);
-                                    if (resultado == -1) {
-                                        //Logica para algoritmo de reemplazo
-                                        break; 
-                                    }
-                                }
-                                //Modifciar el abrir/cerrar archivos solo una vez con el bin
-                                nuevo=crearNodo(pid, gid, archivo);
-                                pid++;
-                                gid++;
-                                insertarFinal(suspendidos,nuevo); //Debe quedarse aqui un ratito aleatorio
-                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                usleep(5000000);
-                                nuevo = extraerPID(suspendidos, pid-1);
-                                insertarFinal(listos, nuevo);
-                            */
+                            
                         } else {
                             total_marcos_necesarios = cuentaMarcosNecesarios(archivo);
                             if(total_marcos_necesarios > TOTAL_MARCOS_DISCO) {
@@ -642,12 +672,35 @@ int main(){
                         mvprintw(37, 2, "No hay ningun proceso para matar.");
                     } else if (com == 4){ //comando prueba
                         com_valido = true;
-                        /*nuevo=crearNodo(pid, gid, "file"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file2"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file3"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file4"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);*/
+                            for(int i=0; archivos[i] != NULL; i++){
+                                char *texto=archivos[i];
+                                if(verificarEspacioEnSwap(texto)){
+                                nuevo=crearNodo(pid, gid, texto,cuentaMarcosNecesarios(texto));
+                                total_instrucciones = guardarTextoABinario(archivo, bin, pid);
+                                total_marcos_necesarios = ceil((float)total_instrucciones/INSTRUCCIONES_POR_MARCO); 
+                                actualizaTMP(nuevo, tms);
+                                pid++;
+                                gid++;
+                                insertarFinal(listos, nuevo);
+                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                refresh();
+                                }
+                                else {
+                                total_marcos_necesarios = cuentaMarcosNecesarios(texto);
+                                if(total_marcos_necesarios > TOTAL_MARCOS_DISCO) {
+                                    mvprintw(39, 2, "Este archivo execde la capacidad total del disco.");
+                                } else {
+                                    nuevo = crearNodo(pid, gid, texto, total_marcos_necesarios);
+                                    pid++;
+                                    gid++;
+                                    insertarFinal(nuevos, nuevo);
+                                    imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                    refresh();
+                                }
+                            }
+                         
+                        }
+                        
                     } else if (com == 5){ //comando fork
                         mvprintw(39, 0, "No hay procesos para copiar");
                     }
@@ -696,15 +749,19 @@ int main(){
                 int pos_fisica=0;
                 
                 if (marco_ram == -1) {
-                    manecilla_reloj = algoritmoReloj(manecilla_reloj);
+                    manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos);
                     page_fault = true;
                     proceso_a_suspender = desencolar(ejecutando);
-                    if (proceso_a_suspender != NULL) {
+                   
+                    if (proceso_a_suspender != NULL) {    
                         insertarFinal(suspendidos, proceso_a_suspender);
                         proceso_a_suspender->hora_entrada = time(NULL);
-                        proceso_a_suspender->tiempo_espera = rand() % (9) + 2; //%(9)+2
+                        proceso_a_suspender->tiempo_espera = 1;//rand() % (9) + 2; //%(9)+2
 
                         int marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, pag_actual, bin, manecilla_reloj);
+                        actualizaTMP(proceso_a_suspender, tms);
+                        guardaPCB(proceso_a_suspender,pc,linea_original);
+                    
                         manecilla_reloj->puntero = true;
                         manecilla_reloj = manecilla_reloj->siguiente;
                         if (marco_ram_nuevo != -1) {
@@ -724,9 +781,9 @@ int main(){
 
                 if(marco_ram != -1) {
                     pos_fisica = (marco_ram * TAMANO_MARCO) + (desplazamiento * TAMANO_IR);
-                    if(tmm[marco_ram].usado_recien==1){
-                    tmm[marco_ram].usado_recien = 1;
-                    }
+                    //if(tmm[marco_ram].usado_recien==1){
+                    //tmm[marco_ram].usado_recien = 1;
+                    //}
                     memcpy(linea, &RAM[pos_fisica], TAMANO_IR);
                     linea[TAMANO_IR] = '\0';
                 }
@@ -875,7 +932,7 @@ int main(){
                         }
                     }
                      
-                    usleep(1000000);
+                    //usleep(1000000);
                     if(*ptr_pid != -1){
                         pc++;
                     }
@@ -885,7 +942,7 @@ int main(){
                     aumentaGCPU(listos,proceso_actual->GID);
                     aumentaGCPU(suspendidos,proceso_actual->GID);
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                    usleep(500000);
+                    //usleep(500000);
                     if(tokEND){
                         continue;
                     }
