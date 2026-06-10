@@ -396,7 +396,7 @@ bool instDEC(char *args){
     return true;
 }
 
-int instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
+int instJNZ(char *args, struct Nodo *nodo, int pc){
     char op1[32], basura[32];
     int n, leidos = 0;
     
@@ -411,28 +411,26 @@ int instJNZ(char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
         move(36,10);
         clrtoeol();
         mvprintw(36, 10,"Demasiados argumentos.");
-        return false;
+        return -1;
     }
    
     if (esInt(op1)){
         n = atoi(op1);
         if(n>=0 && registros[2].valor != 0) {
-            *ptr_pc = n;
-            *ptr_pid = -1;
-            return 1; 
+            return n; 
         }else if(registros[2].valor==0){
-            return 2;
+            return pc+1;
         }else { 
             mvprintw(36, 10,"El operando de JNZ es negativo.");
-            return 3;
+            return -1;
         }
     } else {
         move(36,10);
         clrtoeol();
         mvprintw(36, 10,"El operando de JNZ no es un numero.");
-        return false;
+        return -1;
     }
-    return true;
+    return -1;
 }
 
 bool instEND(){

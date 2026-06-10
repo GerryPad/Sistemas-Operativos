@@ -38,10 +38,17 @@ void imprimirTms(TablaMarcos *tms){
 
 void imprimirTmm(TablaMarcos *tmm){
     mvprintw(6, 168, "TMM");
-    mvprintw(8, 168,"%-8s %-8s %-8s", "Marco", "PID", "#Pagina" );
+    mvprintw(8, 168,"%-8s %-8s %-8s %-8s", "Marco", "PID", "#Pagina", "Usado?" );
+    char *estado_puntero;
+
     int marco=0;
     for(int i=9; i<25; i++){
-        mvprintw(i,168, "%-8d %-8d %-8d", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].num_pagina);
+        if((tmm[marco].puntero == true)) {
+            estado_puntero = "*";
+        } else {
+            estado_puntero = " ";
+        }
+        mvprintw(i,168, "%-8d %-8d %-8d %-8d %-3s", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].num_pagina, tmm[marco].usado_recien, estado_puntero);
     marco++;
     }
 }

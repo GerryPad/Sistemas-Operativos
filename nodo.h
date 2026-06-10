@@ -3,11 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <curses.h>
+#include <time.h>
 
-typedef struct {
+typedef struct TablaMarcos{
     int num_marco;
     int propietario; // 0 = libre, != 0 es el PID asignado
     int num_pagina;
+    int usado_recien;
+    bool puntero;
+    struct TablaMarcos *siguiente;
 } TablaMarcos; 
 
 typedef struct {
@@ -31,6 +35,8 @@ struct Nodo{
     struct Nodo *siguiente;
     TMP *tmp; //Ver si esto no genera conflicto
     int num_paginas;
+    time_t hora_entrada;
+    int tiempo_espera;
 };
 
 //Prototipos de funcion en ncurses.c

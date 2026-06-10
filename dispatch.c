@@ -63,13 +63,15 @@ void actualizaCGPU(struct Nodo *aux){
     }
 }
 
-void calculoPrioridades(struct Nodo *listos, int grupos) {
+void calculoPrioridades(struct Nodo *listos, struct Nodo *suspendidos, int grupos) {
     struct Nodo *aux = listos->siguiente;
     struct Nodo *aux2 = listos->siguiente;
+    struct Nodo *aux3 = suspendidos->siguiente;
     int p_base = 60; //Cambiamos la prioridad base a 60 
     //float wk=1.0/grupos;
 
     actualizaCGPU(aux2);
+    actualizaCGPU(aux3);
     
     while(aux!= NULL){
         //aux->CPU = aux->CPU/2;
