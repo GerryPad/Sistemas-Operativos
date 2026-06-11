@@ -2,6 +2,9 @@
 #include <curses.h>
 #include "ncurses.h"
 
+#define TOTAL_MARCOS_RAM 16
+#define TOTAL_MARCOS_DISCO 32768
+
 void imprimir_registros(int renglon, char *instruccion){
     mvprintw(3, 2, "%-8s %-15s %-20s %-20s %-20s %-20s", 
         "PC", "IR", "EAX", "EBX", "ECX", "EDX");
@@ -219,4 +222,30 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         i++;
     }
     refresh();
+}
+
+void porcentajeDiscoRAM(TablaMarcos *tmm, TablaMarcos *tms){
+    int ocupado_disco = 0;
+    int ocupado_ram = 0;
+
+    for (int i=0; i<TOTAL_MARCOS_RAM; i++){
+        if(tmm[i].propietario != 0){
+            ocupado_ram++;
+        }
+    }
+
+    for (int i=0; i<TOTAL_MARCOS_DISCO; i++){
+        if(tms[i].propietario != 0){
+            ocupado_disco++;
+        }
+    }
+
+    float porcentajeRAM = 0;
+    float porcentajeDISCO = 0;
+
+    porcentajeRAM = (ocupado_ram * 100.0) * (0.0625);
+    porcentajeDISCO = (ocupado_disco * 100) * (0.0000305176);
+    mvprintw(28, 173, "Uso RAM: %.2f%%", porcentajeRAM);
+    mvprintw(29, 173, "Uso DISCO: %.2f%%", porcentajeDISCO);
+
 }

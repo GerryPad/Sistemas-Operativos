@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "dispatch.h"
+#include "swap.h"
 
 void guardaPCB(struct Nodo *PCB, int pc, char *linea){
     PCB->PC = pc; //Sera que tenemos que guardar la siguiente instruccion o donde se quedo?
@@ -100,4 +102,38 @@ struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
     proceso_prioritario->estadoTermino = 0;
     insertarFinal(ejecutando, proceso);
     return proceso;
+}
+
+void sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *listos){
+    struct Nodo *aux_s = suspendidos->siguiente;
+    struct Nodo *proceso_a_mover = NULL;
+
+    while(aux_s != NULL){
+        if(difftime(time(NULL), aux_s->hora_entrada) >= aux_s->tiempo_espera) {
+            proceso_a_mover = extraerPID(suspendidos, aux_s->PID);
+            insertarFinal(listos, proceso_a_mover);
+        }
+        aux_s = aux_s->siguiente;
+    }
+}
+
+void sacarNuevos(struct Nodo *nuevos, struct Nodo *listos, TablaMarcos *tms, FILE *bin){
+    struct Nodo *aux_n=nuevos->siguiente;
+    struct Nodo *proceso_a_mover=NULL;
+    int libre=0;
+
+    for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
+        if(tms[i].propietario == 0){
+            libre++;
+        }
+    }
+    while(aux_n !=NULL){
+        if(aux_n->num_paginas<=libre){
+            proceso_a_mover=extraerPID(nuevos,aux_n->PID);
+            insertarFinal(listos,proceso_a_mover);
+            guardarTextoABinario(proceso_a_mover->archivo, bin, proceso_a_mover->PID, proceso_a_mover->GID, tms);
+        }
+        aux_n=aux_n->siguiente;
+    }
+
 }

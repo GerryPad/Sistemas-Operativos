@@ -11,4 +11,5 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
 void imprimirTms(TablaMarcos *tms);
 void imprimirTmp(struct Nodo *proceso);
 void imprimirTmm(TablaMarcos *tmm);
+void porcentajeDiscoRAM(TablaMarcos *tmm, TablaMarcos *tms);
 #endif

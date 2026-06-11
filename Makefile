@@ -8,7 +8,7 @@ CC = gcc
 CFLAGS = -Wall -g
 LDFLAGS = -lncurses -lm
 
-SRCS = main.c instrucciones.c ncurses.c nodo.c dispatch.c
+SRCS = main.c instrucciones.c ncurses.c nodo.c dispatch.c swap.c ram.c
 OBJS = $(SRCS:.c=.o)
 
 all: $(TARGET)
@@ -16,7 +16,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
-%.o: %.c instrucciones.h ncurses.h dispatch.h nodo.h
+%.o: %.c instrucciones.h ncurses.h dispatch.h nodo.h swap.h ram.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
