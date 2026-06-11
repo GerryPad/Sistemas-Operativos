@@ -37,8 +37,8 @@ void imprimirTms(TablaMarcos *tms){
 }
 
 void imprimirTmm(TablaMarcos *tmm){
-    mvprintw(6, 168, "TMM");
-    mvprintw(8, 168,"%-8s %-8s %-8s %-8s", "Marco", "PID", "#Pagina", "Usado?" );
+    mvprintw(6, 173, "TMM");
+    mvprintw(8, 173,"%-8s %-8s %-8s %-8s", "Marco", "PID", "#Pagina", "Usado?" );
     char *estado_puntero;
 
     int marco=0;
@@ -48,7 +48,7 @@ void imprimirTmm(TablaMarcos *tmm){
         } else {
             estado_puntero = " ";
         }
-        mvprintw(i,168, "%-8d %-8d %-8d %-8d %-3s", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].num_pagina, tmm[marco].usado_recien, estado_puntero);
+        mvprintw(i,173, "%-8d %-8d %-8d %-8d %-3s", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].num_pagina, tmm[marco].usado_recien, estado_puntero);
     marco++;
     }
 }

@@ -25,7 +25,7 @@ TablaMarcos tms[TOTAL_MARCOS_DISCO];
 
 char RAM[TOTAL_MARCOS_RAM*TAMANO_MARCO];
 
-int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
+int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid, int gid) {
     FILE *txt = fopen(archivoTexto, "r");
 
     if (!txt || !bin) {
@@ -61,6 +61,7 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
 
             if (contador_lineas>0){
                 tms[i].propietario = pid;
+                tms[i].grupo = gid;
                 tms[i].num_pagina = num_pagina;
                 num_pagina++;
                 //tms[i].valida=1 averiguar para que es esto
@@ -77,6 +78,7 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid) {
     fclose(txt);
     return num_instrucciones; 
 }
+
 
 int cuentaMarcosNecesarios(const char *nombre_archivo){
     FILE *txt = fopen(nombre_archivo, "r");
@@ -133,13 +135,17 @@ bool verificarEspacioEnSwap(const char *nombre_archivo) {
     return true;
 }
 
-int cargarARAM(int pid, int num_pagina, FILE *bin, struct TablaMarcos *manecilla) {
+int cargarARAM(int pid, int gid, int num_pagina, FILE *bin, struct TablaMarcos *manecilla, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos) {
     int marco_disco = -1;
     int contador_paginas = 0;
 
+    struct Nodo *aux_l = listos->siguiente;
+    struct Nodo *aux_e = ejecutando->siguiente;
+    struct Nodo *aux_s = suspendidos->siguiente;
+
     //Buscar en la TMS la ubicacion fisica de la pagina
     for (int i = 0; i < TOTAL_MARCOS_DISCO; i++) {
-        if (tms[i].propietario == pid) {
+        if (tms[i].grupo == gid) {
             if (contador_paginas == num_pagina) {
                 marco_disco = i;
                 break;
@@ -164,10 +170,35 @@ int cargarARAM(int pid, int num_pagina, FILE *bin, struct TablaMarcos *manecilla
             //Actualizar TMM 
             tmm[marco_ram].propietario = pid;
             tmm[marco_ram].num_pagina = num_pagina;
+            tmm[marco_ram].grupo = gid;
             mvprintw(39, 2, "Pagina %d del PID %d cargada en Marco RAM %d", num_pagina, pid, marco_ram);
+
+            //Actualizar tmp's del mismo grupo
+            while(aux_l != NULL) {
+                if(aux_l->GID == gid && aux_l->PID != pid){
+                    aux_l->tmp[num_pagina].num_marco_ram = marco_ram;
+                } 
+                aux_l = aux_l->siguiente;
+            }
+
+            while(aux_e != NULL) {
+                if(aux_e->GID == gid && aux_e->PID != pid){
+                    aux_e->tmp[num_pagina].num_marco_ram = marco_ram;
+                } 
+                aux_e = aux_e->siguiente;
+            }
+
+            while(aux_s != NULL) {
+                if(aux_s->GID == gid && aux_s->PID != pid){
+                    aux_s->tmp[num_pagina].num_marco_ram = marco_ram;
+                } 
+                aux_s = aux_s->siguiente;
+            }
+
             return marco_ram; 
         }
     }
+
 
     mvprintw(38, 2, "Fallo de pagina: No hay marcos libres en RAM");
     return -1;
@@ -217,6 +248,7 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
         for (int i=0; i<TOTAL_MARCOS_RAM; i++){
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = heredero->PID;
+                heredero->tmp[tmm[i].num_pagina].num_marco_ram = tmm[i].num_marco;
                 //tmm[i].num_pagina = -1; 
             }
         }
@@ -224,6 +256,7 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
         for (int i=0; i<TOTAL_MARCOS_DISCO; i++){
             if(tms[i].propietario == pid_busqueda){
                 tms[i].propietario = heredero->PID;
+                heredero->tmp[tms[i].num_pagina].num_marco_disco = tms[i].num_marco;
                 //tms[i].num_pagina = -1;
             }
         }
@@ -231,6 +264,7 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
         for (int i=0; i<TOTAL_MARCOS_RAM; i++){
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = 0;
+                tmm[i].grupo = 0;
                 tmm[i].num_pagina = -1; 
                 tmm[i].usado_recien = 0;
                 //fread(RAM + (marco_ram * TAMANO_MARCO), 1, TAMANO_MARCO, bin);
@@ -244,6 +278,7 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
         for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
             if(tms[i].propietario == pid_busqueda){ // 0 1 2 3
                 tms[i].propietario = 0;
+                tms[i].grupo = 0;
                 tms[i].num_pagina = -1;
                 fseek(bin,TAMANO_MARCO*i,SEEK_SET); //en el binario a partir del 0 256*3 = 768
                 fwrite(buffer, sizeof(char), TAMANO_MARCO, bin);
@@ -280,8 +315,8 @@ void porcentajeDiscoRAM(){
 
     porcentajeRAM = (ocupado_ram * 100.0) * (0.0625);
     porcentajeDISCO = (ocupado_disco * 100) * (0.0000305176);
-    mvprintw(28, 162, "Uso RAM: %.2f%%", porcentajeRAM);
-    mvprintw(29, 162, "Uso DISCO: %.2f%%", porcentajeDISCO);
+    mvprintw(28, 173, "Uso RAM: %.2f%%", porcentajeRAM);
+    mvprintw(29, 173, "Uso DISCO: %.2f%%", porcentajeDISCO);
 
 }
 
@@ -298,6 +333,7 @@ void iniciarDiscoYTablas(TablaMarcos *tms, TablaMarcos *tmm, FILE *bin){
         tmm[i].num_pagina = -1;
         tmm[i].usado_recien = 0;
         tmm[i].puntero = false;
+        tmm[i].grupo = 0;
         if(i==TOTAL_MARCOS_RAM-1){
             tmm[i].siguiente = &tmm[0];
         } else {
@@ -310,6 +346,7 @@ void iniciarDiscoYTablas(TablaMarcos *tms, TablaMarcos *tmm, FILE *bin){
         tms[i].num_marco = i;
         tms[i].propietario = 0;
         tms[i].num_pagina = -1;
+        tms[i].grupo = 0;
     }
     fseek(bin, 0, SEEK_SET);
 }
@@ -327,15 +364,63 @@ void sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *listos){
     }
 }
 
-struct TablaMarcos *algoritmoReloj(TablaMarcos *manecilla){
+void sacarNuevos(struct Nodo *nuevos, struct Nodo *listos){
+    struct Nodo *aux_n=nuevos->siguiente;
+    struct Nodo *proceso_a_mover=NULL;
+    int libre=0;
+
+    for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
+        if(tms[i].propietario == 0){
+            libre++;
+        }
+    }
+    while(aux_n !=NULL){
+        if(aux_n->num_paginas<=libre){
+            proceso_a_mover=extraerPID(nuevos,aux_n->PID);
+            insertarFinal(listos,proceso_a_mover);
+            guardarTextoABinario(proceso_a_mover->archivo,bin,proceso_a_mover->PID, proceso_a_mover->GID);
+        }
+        aux_n=aux_n->siguiente;
+    }
+
+}
+
+struct TablaMarcos *algoritmoReloj(TablaMarcos *manecilla, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos){
+    struct Nodo *aux_l = listos->siguiente;
+    struct Nodo *aux_e = ejecutando->siguiente;
+    struct Nodo *aux_s = suspendidos->siguiente;
+    
     while(manecilla->usado_recien == 1){
         manecilla->usado_recien = 0;
         manecilla = manecilla->siguiente;
         manecilla->puntero = false;
     }
 
+    while(aux_l != NULL) {
+        if(aux_l->GID == manecilla->grupo) {
+            aux_l->tmp[manecilla->num_pagina].num_marco_ram = -1;
+        }
+        aux_l = aux_l->siguiente;
+    }
+
+    while(aux_e != NULL) {
+        if(aux_e->GID == manecilla->grupo) {
+            aux_e->tmp[manecilla->num_pagina].num_marco_ram = -1;
+        }
+        aux_e = aux_e->siguiente;
+    }
+
+    while(aux_s != NULL) {
+        if(aux_s->GID == manecilla->grupo) {
+            aux_s->tmp[manecilla->num_pagina].num_marco_ram = -1;
+        }
+        aux_s = aux_s->siguiente;
+    }
+
     tmm[manecilla->num_marco].propietario = 0;
     tmm[manecilla->num_marco].num_pagina = -1;
+    tmm[manecilla->num_marco].grupo = 0;
+
     memset((RAM + TAMANO_MARCO * manecilla->num_marco) ,0,TAMANO_MARCO);
 
     return manecilla; //Este es el marco con la pagina a desalojar
@@ -384,17 +469,23 @@ int main(){
         tokEND = false;
 
         sacarSuspendidos(suspendidos, listos);
+        sacarNuevos(nuevos,listos);
         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
         if(ejecutando->siguiente == NULL){ //Cambiar el uso de la bandera pedir archivo
             if(listos->siguiente != NULL || suspendidos->siguiente != NULL){
-                calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
+                
+                if(listos->siguiente !=NULL){
+                calculoPrioridades(listos,suspendidos,contarGrupos(listos,ejecutando,gid));
                 actualizaCGPU(suspendidos->siguiente);
+                proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
+                
+                }
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 //usleep(3000000);
                 
-                proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
-
                 if (proceso_actual != NULL) {
+                    sacarSuspendidos(suspendidos, listos);
+                    sacarNuevos(nuevos,listos);
                     pc = restauraPCB(proceso_actual, archivo); 
                 } else {
                     sacarSuspendidos(suspendidos, listos);
@@ -422,7 +513,7 @@ int main(){
                         } else if (com == 2){
                             if (access(archivo, F_OK) == 0){
                                 if(verificarEspacioEnSwap(archivo)){
-                                    total_instrucciones = guardarTextoABinario(archivo, bin, pid);
+                                    total_instrucciones = guardarTextoABinario(archivo, bin, pid, gid);
                                     total_marcos_necesarios = ceil((float)total_instrucciones/INSTRUCCIONES_POR_MARCO);
                                     nuevo=crearNodo(pid, gid, archivo, total_marcos_necesarios);
                                     actualizaTMP(nuevo, tms);
@@ -499,45 +590,51 @@ int main(){
                         } else if(com == 5){
                             proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
-                                if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                
                                     //IMPORTANTE /Tener una funcion que ligue todos los procesos con el mismo GID, avisando que tambien es participe del grupo por lo que no es necesario borrar las paginas
                                     nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, proceso_a_copiar->num_paginas);
-                                    actualizaTMP(nuevo, tms);
-                                    imprimirTms(tms);
+                                    for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                        nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                        nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                    }
                                     pid++;
                                     nuevo->PC = num_inst;
                                     nuevo->GCPU = proceso_a_copiar->GCPU;
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                } //creo que aqui falta mandarlo a nuevos 
+                                 //creo que aqui falta mandarlo a nuevos 
                               
                             } else { 
                                 proceso_a_copiar = buscaPID(listos, pid_kill);
                                 if(proceso_a_copiar != NULL) {
-                                    if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                    
                                         nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, proceso_a_copiar->num_paginas);
-                                        actualizaTMP(nuevo, tms);
-                                        imprimirTms(tms);
+                                        for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                            nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                            nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                        }
                                         pid++;
                                         nuevo->PC = num_inst;
                                         nuevo->GCPU = proceso_a_copiar->GCPU;
                                         insertarFinal(listos, nuevo);
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                    }
+                                    
                                 } else {
                                     proceso_a_copiar = buscaPID(suspendidos, pid_kill);
                                     if(proceso_a_copiar != NULL){
-                                        if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                        
                                             nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
                                             //CONTINUACION IMPORTANTE// ya no necesita hacer la actualizacion de la TMP
-                                            actualizaTMP(nuevo,tms);
-                                            imprimirTms(tms);
+                                           for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                                nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                                nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                            }
                                             pid++;
                                             nuevo->PC = num_inst;
                                             nuevo->GCPU = proceso_a_copiar->GCPU;
                                             insertarFinal(listos,nuevo);
                                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                        }
+                                        
                                     }else{
 
                                     mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
@@ -589,7 +686,7 @@ int main(){
                     } else if (com == 2){ //comando ejecuta
                         com_valido = true;
                         if(verificarEspacioEnSwap(archivo)){
-                            total_instrucciones = guardarTextoABinario(archivo, bin, pid);
+                            total_instrucciones = guardarTextoABinario(archivo, bin, pid, gid);
                             total_marcos_necesarios = ceil((float)total_instrucciones/INSTRUCCIONES_POR_MARCO); 
                             nuevo=crearNodo(pid,gid,archivo, total_marcos_necesarios);
                             actualizaTMP(nuevo, tms);
@@ -598,28 +695,7 @@ int main(){
                             insertarFinal(listos, nuevo);
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                             refresh();
-                            //continue;
-
-                            /*//Aqui iria la logica de fallo de pagina
-                               int total_paginas = total_marcos_necesarios;
-
-                                for (int p = 0; p < total_paginas; p++) {
-                                    int resultado = cargarARAM(pid, p, bin);
-                                    if (resultado == -1) {
-                                        //Logica para algoritmo de reemplazo
-                                        break; 
-                                    }
-                                }
-                                //Modifciar el abrir/cerrar archivos solo una vez con el bin
-                                nuevo=crearNodo(pid, gid, archivo);
-                                pid++;
-                                gid++;
-                                insertarFinal(suspendidos,nuevo); //Debe quedarse aqui un ratito aleatorio
-                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                usleep(5000000);
-                                nuevo = extraerPID(suspendidos, pid-1);
-                                insertarFinal(listos, nuevo);
-                            */
+                            
                         } else {
                             total_marcos_necesarios = cuentaMarcosNecesarios(archivo);
                             if(total_marcos_necesarios > TOTAL_MARCOS_DISCO) {
@@ -638,12 +714,6 @@ int main(){
                         mvprintw(37, 2, "No hay ningun proceso para matar.");
                     } else if (com == 4){ //comando prueba
                         com_valido = true;
-                        /*nuevo=crearNodo(pid, gid, "file"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file2"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file3"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file4"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file5"); pid++; gid++; insertarFinal(listos,nuevo);
-                        nuevo=crearNodo(pid, gid, "file6"); pid++; gid++; insertarFinal(listos,nuevo);*/
                     } else if (com == 5){ //comando fork
                         mvprintw(39, 0, "No hay procesos para copiar");
                     }
@@ -692,15 +762,19 @@ int main(){
                 int pos_fisica=0;
                 
                 if (marco_ram == -1) {
-                    manecilla_reloj = algoritmoReloj(manecilla_reloj);
+                    manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos);
                     page_fault = true;
                     proceso_a_suspender = desencolar(ejecutando);
-                    if (proceso_a_suspender != NULL) {
+                   
+                    if (proceso_a_suspender != NULL) {    
                         insertarFinal(suspendidos, proceso_a_suspender);
                         proceso_a_suspender->hora_entrada = time(NULL);
-                        proceso_a_suspender->tiempo_espera = 1;//rand() % (2) + 2; //%(9)+2
+                        proceso_a_suspender->tiempo_espera = 1;//rand() % (9) + 2; //%(9)+2
 
-                        int marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, pag_actual, bin, manecilla_reloj);
+                        int marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, proceso_a_suspender->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos);
+                        actualizaTMP(proceso_a_suspender, tms);
+                        guardaPCB(proceso_a_suspender,pc,linea_original);
+                    
                         manecilla_reloj->puntero = true;
                         manecilla_reloj = manecilla_reloj->siguiente;
                         if (marco_ram_nuevo != -1) {
@@ -720,7 +794,9 @@ int main(){
 
                 if(marco_ram != -1) {
                     pos_fisica = (marco_ram * TAMANO_MARCO) + (desplazamiento * TAMANO_IR);
-                    //tmm[marco_ram].usado_recien = 1;
+                    //if(tmm[marco_ram].usado_recien==1){
+                    tmm[marco_ram].usado_recien = 1;
+                    //}
                     memcpy(linea, &RAM[pos_fisica], TAMANO_IR);
                     linea[TAMANO_IR] = '\0';
                 }
@@ -744,11 +820,6 @@ int main(){
                 while (*ptr == ' ' || *ptr == '\t') ptr++; 
                 token = strtok(ptr, " \r\n\t");
 
-/*                    mvprintw(0, 0, "DEBUG -> PC: %d | Linea cruda: [%s] | Token extraido: [%s]    ", 
-                            pc, linea_original, token != NULL ? token : "NULO");
-                    refresh();
-                    usleep(500000);
-*/
                 if (tokEND){ //Si hayamos un END...
                     if (token != NULL) { //Pero hay mas cosas despues
                         mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
@@ -872,8 +943,9 @@ int main(){
                             limpieza = true;
                             break; 
                         }
-                    } 
-                    //usleep(2000000);
+                    }
+                     
+                    //usleep(1000000);
                     if(*ptr_pid != -1){
                         pc++;
                     }
@@ -881,6 +953,9 @@ int main(){
                     proceso_actual->CPU = proceso_actual->CPU + 20;
                     proceso_actual->GCPU=proceso_actual->GCPU + 20;
                     aumentaGCPU(listos,proceso_actual->GID);
+                    aumentaGCPU(suspendidos,proceso_actual->GID);
+                    imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                    //usleep(500000);
                     if(tokEND){
                         continue;
                     }
@@ -928,7 +1003,7 @@ int main(){
                         } else if (com == 2){
                             if (access(archivo, F_OK) == 0){
                                 if(verificarEspacioEnSwap(archivo)){
-                                    total_instrucciones = guardarTextoABinario(archivo, bin, pid);
+                                    total_instrucciones = guardarTextoABinario(archivo, bin, pid, gid);
                                     total_marcos_necesarios = ceil((float)total_instrucciones/INSTRUCCIONES_POR_MARCO);
                                     nuevo=crearNodo(pid, gid, archivo, total_marcos_necesarios);
                                     actualizaTMP(nuevo, tms);
@@ -991,45 +1066,51 @@ int main(){
                         } else if(com == 5){
                             proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
-                                if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                
                                     nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
-                                    actualizaTMP(nuevo, tms);
-                                    imprimirTms(tms);
+                                    for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                        nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                        nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                    }
                                     pid++;
                                     nuevo->PC = num_inst;
                                     nuevo->GCPU = proceso_a_copiar->GCPU;
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                } //creo que aqui falta mandarlo a nuevos 
+                                 //creo que aqui falta mandarlo a nuevos 
                               
                             } else { 
                                 proceso_a_copiar = buscaPID(listos, pid_kill);
                                 if(proceso_a_copiar != NULL) {
-                                    if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
-                                            nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
+                                    
+                                        nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
                                         nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
-                                        actualizaTMP(nuevo, tms);
-                                        imprimirTms(tms);
+                                        for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                            nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                            nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                        }
                                         pid++;
                                         nuevo->PC = num_inst;
                                         nuevo->GCPU = proceso_a_copiar->GCPU;
                                         insertarFinal(listos, nuevo);
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                    }
+                                    
                                 } else {
                                     proceso_a_copiar = buscaPID(suspendidos, pid_kill);
                                     if(proceso_a_copiar != NULL){
-                                        if(verificarEspacioEnSwap(proceso_a_copiar->archivo)){
+                                        
                                             nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
                                             //CONTINUACION IMPORTANTE// ya no necesita hacer la actualizacion de la TMP
-                                            actualizaTMP(nuevo,tms);
-                                            imprimirTms(tms);
+                                            for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                                nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                                nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                            }
                                             pid++;
                                             nuevo->PC = num_inst;
                                             nuevo->GCPU = proceso_a_copiar->GCPU;
                                             insertarFinal(listos,nuevo);
                                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                        }
+                                        
                                     }else{
                                         mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
                                     }

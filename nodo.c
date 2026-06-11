@@ -56,10 +56,10 @@ struct Nodo* crearNodo(int n, int m, char *archivo, int n_paginas){
 }
 
 void actualizaTMP(struct Nodo *act, TablaMarcos *tms) {
-    int pid = act->PID;
+    int gid = act->GID;
 
     for(int i = 0; i < TOTAL_MARCOS_DISCO; i++) {
-        if(tms[i].propietario == pid) {
+        if(tms[i].grupo == gid) {
             int pag = tms[i].num_pagina;
             
             //Validacion de seguridad para no segmentar memoria

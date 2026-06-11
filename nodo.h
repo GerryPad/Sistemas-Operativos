@@ -8,6 +8,7 @@
 typedef struct TablaMarcos{
     int num_marco;
     int propietario; // 0 = libre, != 0 es el PID asignado
+    int grupo;
     int num_pagina;
     int usado_recien;
     bool puntero;
