@@ -135,6 +135,7 @@ void sacarNuevos(struct Nodo *nuevos, struct Nodo *listos, TablaMarcos *tms, FIL
             proceso_a_mover=extraerPID(nuevos,aux_n->PID);
             insertarFinal(listos,proceso_a_mover);
             guardarTextoABinario(proceso_a_mover->archivo, bin, proceso_a_mover->PID, proceso_a_mover->GID, tms);
+            libre = libre - proceso_a_mover->num_paginas;
         }
         aux_n=aux_n->siguiente;
     }

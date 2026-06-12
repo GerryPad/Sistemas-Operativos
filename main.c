@@ -84,9 +84,14 @@ int main(){
                 //Si hay al menos uno en listos -> planifica
                 if(listos->siguiente !=NULL){
                     calculoPrioridades(listos, suspendidos, contarGrupos(listos, ejecutando, suspendidos, gid));
-                    //actualizaCGPU(suspendidos->siguiente);
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                    if(!speed) usleep(3000000);
+                    //if(!speed) usleep(3000000);
+                    if(!speed) {
+                        for(int i = 0; i < 60; i++) {
+                            if(kbhit()) break; // Si tocas una tecla, rompe la pausa
+                            usleep(50000);
+                        }
+                    }
                     proceso_actual = planificador(listos, ejecutando); 
                 }
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
@@ -98,6 +103,7 @@ int main(){
                 } else { //Si todos los procesos estan suspendidos, hay que revisarlos constantemente
                     sacarSuspendidos(suspendidos, listos);
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                    usleep(50000);
                     if(kbhit()){ 
                         if(limpieza){ 
                             limpia_lineas();
@@ -538,8 +544,15 @@ int main(){
                     aumentaGCPU(suspendidos,proceso_actual->GID);
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                    
-                    if(!speed){
+                    /*if(!speed){
                         usleep(500000);
+                    }*/
+                   
+                    if(!speed) {
+                        for(int i = 0; i < 10; i++) {
+                            if(kbhit()) break; // Si tocas una tecla, despierta
+                            usleep(50000);
+                        }
                     }
 
                     if(tokEND){

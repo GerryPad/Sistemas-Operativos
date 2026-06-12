@@ -249,7 +249,7 @@ void porcentajeDiscoRAM(TablaMarcos *tmm, TablaMarcos *tms){
 
     porcentajeRAM = (ocupado_ram * 100.0) * (0.0625);
     porcentajeDISCO = (ocupado_disco * 100) * (0.0000305176);
-    mvprintw(28, 173, "Uso RAM: %.2f%%", porcentajeRAM);
-    mvprintw(29, 173, "Uso DISCO: %.2f%%", porcentajeDISCO);
+    mvprintw(28, 173, "Uso RAM: %.4f%%", porcentajeRAM);
+    mvprintw(29, 173, "Uso DISCO: %.4f%%", porcentajeDISCO);
 
 }
