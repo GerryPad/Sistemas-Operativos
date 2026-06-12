@@ -3,12 +3,14 @@
 
 #define TOTAL_MARCOS_DISCO 32768
 
+//Crea la cabecera de la lista, sirve para cuando no hay procesos en dicha lista
 struct Nodo* crearCabecera(){
     struct Nodo *cabecera = malloc(sizeof(struct Nodo));
     cabecera->siguiente = NULL;
     return cabecera;
 }
 
+//Se reserva espacio de memoria para un proceso y se inicializan sus valores
 struct Nodo* crearNodo(int n, int m, char *archivo, int n_paginas){
     struct Nodo *nuevo = malloc(sizeof(struct Nodo));
     if (nuevo == NULL){
@@ -21,18 +23,17 @@ struct Nodo* crearNodo(int n, int m, char *archivo, int n_paginas){
         nuevo->tmp = (TMP *)malloc(n_paginas * sizeof(TMP));
         if (nuevo->tmp == NULL) {
             mvprintw(39,2, "No se reservo memoria para la TMP");
-            //free(nuevo); // Limpiamos el nodo si falló la TMP
             return NULL;
         }
         
-        //Inicializamos las páginas con valores por defecto (ej. -1 significa no asignado)
+        //Inicializamos las paginas con valores por defecto (ej. -1 significa no asignado)
         for(int i = 0; i < n_paginas; i++) {
             nuevo->tmp[i].num_pagina = i;
             nuevo->tmp[i].num_marco_ram = -1; 
             nuevo->tmp[i].num_marco_disco = -1;
         }
     } else {
-        nuevo->tmp = NULL; // El proceso no requiere páginas inicialmente
+        nuevo->tmp = NULL; // El proceso no requiere paginas inicialmente
     }
 
     nuevo->PID = n;
@@ -44,17 +45,16 @@ struct Nodo* crearNodo(int n, int m, char *archivo, int n_paginas){
     strcpy(nuevo->archivo, archivo);
     strcpy(nuevo->IR, "---");
     nuevo->siguiente = NULL;
-    //strcpy(nuevo->estado, "listos");
     nuevo->estadoTermino = 0;
     nuevo->CPU = 0;
     nuevo->GCPU = 0;
-    nuevo->prioridad = 0; //Si deberia empezar en 20 o en 0?
+    nuevo->prioridad = 0; 
     nuevo->hora_entrada = 0;
     nuevo->tiempo_espera = 0;
-    //nuevo -> tmp = NULL;
     return nuevo;
 }
 
+//Consulta la TMS para saber en que marcos del disco estan sus paginas
 void actualizaTMP(struct Nodo *act, TablaMarcos *tms) {
     int gid = act->GID;
 
@@ -70,6 +70,7 @@ void actualizaTMP(struct Nodo *act, TablaMarcos *tms) {
     }
 }
 
+//Poner un proceso al final de una lista
 void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo){
     struct Nodo *aux = cabecera;
 
@@ -79,6 +80,7 @@ void insertarFinal(struct Nodo *cabecera, struct Nodo *nuevo){
     aux->siguiente = nuevo;
 }
 
+//Sacar un proceso de caulquier lugar de la lista
 struct Nodo *extraerPID(struct Nodo *lista, int PID){
     struct Nodo * aux = lista->siguiente;
     struct Nodo * aux2 = lista;
@@ -98,7 +100,8 @@ struct Nodo *extraerPID(struct Nodo *lista, int PID){
     return aux;
 }
 
-struct Nodo * desencolar(struct Nodo *lista){
+//Regresa el primer proceso de una lista
+struct Nodo *desencolar(struct Nodo *lista){
     struct Nodo *aux=lista->siguiente;
     if(aux==NULL){
         
@@ -111,12 +114,12 @@ struct Nodo * desencolar(struct Nodo *lista){
     return(aux);
 } 
 
-struct Nodo *buscaPID(struct Nodo *lista, int pid){ //mover a nodo.c
+//Busca un proceso por PID y lo regresa  
+struct Nodo *buscaPID(struct Nodo *lista, int pid){ 
     struct Nodo * aux = lista->siguiente;
 
     while(aux != NULL && aux->PID != pid){
         aux = aux->siguiente;
-    
     }
 
     if(aux==NULL){
@@ -125,7 +128,8 @@ struct Nodo *buscaPID(struct Nodo *lista, int pid){ //mover a nodo.c
     return aux;
 }
 
-struct Nodo *buscaGID(struct Nodo *lista, int gid) { //mover a nodo.c
+//Busca por gid y devuelve el primer proceso que encuentre
+struct Nodo *buscaGID(struct Nodo *lista, int gid) { 
     struct Nodo *aux = lista->siguiente;
 
     while (aux != NULL && aux->GID != gid) {

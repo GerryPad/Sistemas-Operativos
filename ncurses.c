@@ -5,6 +5,7 @@
 #define TOTAL_MARCOS_RAM 16
 #define TOTAL_MARCOS_DISCO 32768
 
+//Muestra el proceso en ejecucion
 void imprimir_registros(int renglon, char *instruccion){
     mvprintw(3, 2, "%-8s %-15s %-20s %-20s %-20s %-20s", 
         "PC", "IR", "EAX", "EBX", "ECX", "EDX");
@@ -21,6 +22,7 @@ void imprimir_registros(int renglon, char *instruccion){
     refresh();
 }
 
+//Limpieza de avisos de errores
 void limpia_lineas() {
     for(int j = 34; j<=40; j++){
         mvprintw(j, 2, "%-100s", "");
@@ -39,6 +41,7 @@ void imprimirTms(TablaMarcos *tms){
     }
 }
 
+//Muestra lo que hay en cada marco de la RAM
 void imprimirTmm(TablaMarcos *tmm){
     mvprintw(6, 173, "TMM");
     mvprintw(8, 173,"%-8s %-8s %-8s %-8s", "Marco", "PID", "#Pagina", "Usado?" );
@@ -56,6 +59,7 @@ void imprimirTmm(TablaMarcos *tmm){
     }
 }
 
+//Muestra la TMP del proceso actual
 void imprimirTmp(struct Nodo *proceso){
     for(int j=6; j<25; j++){
         mvprintw(j, 140, "%-28s", ""); 
@@ -71,7 +75,7 @@ void imprimirTmp(struct Nodo *proceso){
     }
 }
 
-//Imprimir primero el ejecutando, despues los listos en el orden que estan en listos y finalmente los terminados en su orden
+//Imprimir todas las listas
 void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_listos, struct Nodo *cabecera_terminados, struct Nodo *cabecera_suspendidos, struct Nodo *cabecera_nuevos){
     struct Nodo *aux_e = cabecera_ejecutando->siguiente;
     struct Nodo *aux_l = cabecera_listos->siguiente;
@@ -86,9 +90,9 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
     for(int j = 7; j<34; j++){
         mvprintw(j, 2, "%-100s", "");
     } 
- //Esta es la lista de ejecutando
- //La impresion ahora es mas bonita 
+
    int i = 7;
+   //Lista ejecutando
     if(aux_e != NULL){
         mvprintw(i, 2,"%-4d %-4d %-7s %-13s %-6s %-12s %-11s %-11s %-11s %-11s %-8d %-8d %-8d", 
         aux_e->PID,
@@ -135,7 +139,6 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
     }
 
     //Lista de nuevos
-    //int i=9;
     while(aux_n != NULL){
         if(i>=34 || aux_n == NULL){
             break;
@@ -206,7 +209,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
         aux_te->PID,
         aux_te->GID,
         aux_te->archivo,
-        estado_termino,       // <--- Aquí entra el texto dinámico perfectamente alineado a 14 caracteres
+        estado_termino,
         aux_te->PC,
         aux_te->IR,
         aux_te->registros[0],
@@ -224,6 +227,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
     refresh();
 }
 
+//Imprime el porcentaje de uso en RAM y en disco
 void porcentajeDiscoRAM(TablaMarcos *tmm, TablaMarcos *tms){
     int ocupado_disco = 0;
     int ocupado_ram = 0;

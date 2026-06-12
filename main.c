@@ -14,49 +14,55 @@
 #include "swap.h"
 #include "ram.h"
 
-#define TAMANO_IR 64 
+#define TAMANO_IR 64 //El tamaño de instruccion
 #define INSTRUCCIONES_POR_MARCO 4
-#define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) 
+#define TAMANO_MARCO (TAMANO_IR * INSTRUCCIONES_POR_MARCO) //256 bytes
 #define TOTAL_MARCOS_RAM 16
-#define TOTAL_MARCOS_DISCO 32768
+#define TOTAL_MARCOS_DISCO 32768 //2ˆ15
 
 FILE *bin;
 
 TablaMarcos tmm[TOTAL_MARCOS_RAM];
 TablaMarcos tms[TOTAL_MARCOS_DISCO];
 
-char RAM[TOTAL_MARCOS_RAM*TAMANO_MARCO];
+char RAM[TOTAL_MARCOS_RAM*TAMANO_MARCO]; //64 intrucciones = 4096 bytes
 
 int kbhit(void);        
 int main(){
 
-    //Creando nodo de prueba para impresion
+    //Cabeceras de las listas para los 5 estados posibles de procesos
     struct Nodo *nuevos = crearCabecera();
     struct Nodo *listos = crearCabecera();
     struct Nodo *terminados = crearCabecera();
     struct Nodo *ejecutando = crearCabecera();
     struct Nodo *suspendidos = crearCabecera();
-    struct Nodo *nuevo;
+
+    //Nodos auxiliares que apuntan a los diferentes procesos a crear, ejecutar, terminar, etc
+    struct Nodo *nuevo = NULL;
     struct Nodo *proceso_actual = NULL; //El que se esta ejecutando
     struct Nodo *proceso_a_terminar = NULL;
     struct Nodo *proceso_a_matar = NULL;
     struct Nodo *proceso_a_copiar  = NULL;
     struct Nodo *proceso_a_suspender  = NULL;
 
+    //Puntero (manecilla) que apunta incialmente al inicio de la TMM
     struct TablaMarcos *manecilla_reloj = &tmm[0];
-    manecilla_reloj->puntero = true;
+    manecilla_reloj->puntero = true; //bandera para impresion de manecilla (*)
 
-    char archivo[64], linea[TAMANO_IR + 1], comando[256], linea_original[128];//, com_mata[256]; //Buffers para leer nombre y linea del archivo.
-    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0;
-    int *ptr_pid = &pid_kill, *ptr_inst = &num_inst, *ptr_pc=&pc; //com es para hacer un "switch" 
-    int total_instrucciones, total_marcos_necesarios;// cnt_marcos_libres;
-    char *token, *ptr, *argumentos;
-    bool tokEND, com_valido, interrumpido; //com_valido es para comprobar la existencia del comando
+    //Buffers para nombre de archivo, tokenizacion de comandos e impresion a pantalla
+    char archivo[64], linea[TAMANO_IR], comando[256], linea_original[128];
+    int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0; //num_inst actualiza el PC de un proceso hecho con fork
+    int *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //para modificar variables para comandos de 1 argumento o mas
+    int total_instrucciones, total_marcos_necesarios, aux;
+    int pag_actual, desplazamiento, marco_ram, pos_fisica, marco_ram_nuevo;
+    char *token, *ptr, *argumentos; //token almacena el nemonico, ptr quita los espacios y tabulaciones al inicio 
+    bool tokEND, com_valido, interrumpido;
     bool fin_quantum, limpieza = false; 
-    bool page_fault = false;
+    bool page_fault = false, speed = true;
 
-    srand(time(NULL));
+    srand(time(NULL)); //Semilla para el tiempo de espera aletorio
 
+    //Abrir/crear archivo binario en lectura y escritura
     bin = fopen("disco_virtual.bin", "wb+");
     if (!bin) {
         perror("fopen");
@@ -64,35 +70,36 @@ int main(){
 
     iniciarDiscoYTablas(tms, tmm, bin);
    
-    
     initscr();
     do{
         tokEND = false;
-
         sacarSuspendidos(suspendidos, listos);
         sacarNuevos(nuevos,listos, tms, bin);
         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-        if(ejecutando->siguiente == NULL){ //Cambiar el uso de la bandera pedir archivo
+        
+        //Si no estamos ejecutando nada...
+        if(ejecutando->siguiente == NULL){ 
+            //Si las listas de listos O suspendidos tienen algo...
             if(listos->siguiente != NULL || suspendidos->siguiente != NULL){
-                
+                //Si hay al menos uno en listos -> planifica
                 if(listos->siguiente !=NULL){
-                calculoPrioridades(listos,suspendidos,contarGrupos(listos,ejecutando,gid));
-                actualizaCGPU(suspendidos->siguiente);
-                proceso_actual = planificador(listos, ejecutando); //Hacer que el planificador te de el primero de listos
-                
+                    calculoPrioridades(listos, suspendidos, contarGrupos(listos, ejecutando, suspendidos, gid));
+                    //actualizaCGPU(suspendidos->siguiente);
+                    imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                    if(!speed) usleep(3000000);
+                    proceso_actual = planificador(listos, ejecutando); 
                 }
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                //usleep(3000000);
-                
+                 
                 if (proceso_actual != NULL) {
                     sacarSuspendidos(suspendidos, listos);
                     sacarNuevos(nuevos,listos, tms, bin);
-                    pc = restauraPCB(proceso_actual, archivo); 
-                } else {
+                    pc = restauraPCB(proceso_actual, archivo); //Cargar contexto solo si se logro planificar
+                } else { //Si todos los procesos estan suspendidos, hay que revisarlos constantemente
                     sacarSuspendidos(suspendidos, listos);
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                    if(kbhit()){ //Cuando haya un teclazo
-                        if(limpieza){ //tambien puede que no sea correco guardarlo asi
+                    if(kbhit()){ 
+                        if(limpieza){ 
                             limpia_lineas();
                         }
 
@@ -101,7 +108,7 @@ int main(){
                         mvprintw(40, 2, "%-28s", ""); 
                         mvprintw(40, 2, ">");
                         echo();
-                        comando[0] = '\0';
+                        memset(comando, 0, sizeof(comando));
                         mvscanw(40,3,"%255[^\n]",comando);
                         noecho();
                         limpieza = true;
@@ -123,11 +130,11 @@ int main(){
                                     gid++;
                                     insertarFinal(listos,nuevo);
                                     interrumpido = false;
-                                    continue; //Para seguir con el proceso actual y que no se cambie por el nuevo
+                                    continue;
                                 } else{
                                         total_marcos_necesarios = cuentaMarcosNecesarios(archivo);
                                         if(total_marcos_necesarios > TOTAL_MARCOS_DISCO) {
-                                            mvprintw(39, 2, "Este archivo execde la capacidad total del disco.");
+                                            mvprintw(39, 2, "Este archivo excede la capacidad total del disco.");
                                         } else {
                                             nuevo = crearNodo(pid, gid, archivo, total_marcos_necesarios);
                                             pid++;
@@ -147,7 +154,6 @@ int main(){
                         } else if(com == 3){
                             proceso_a_matar = extraerPID(ejecutando, pid_kill);
                             if(proceso_a_matar != NULL){
-                                //strcpy(proceso_a_matar->estado, "terminados**");
                                 proceso_a_matar->estadoTermino = 2;
                                 eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                                 imprimirTmm(tmm);
@@ -156,11 +162,9 @@ int main(){
                                 porcentajeDiscoRAM(tmm, tms);
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                break; 
                             } else{
                                 proceso_a_matar = extraerPID(listos, pid_kill);
                                 if(proceso_a_matar != NULL){
-                                    //strcpy(proceso_a_matar->estado, "terminados**");
                                     proceso_a_matar->estadoTermino = 2;
                                     eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                                     imprimirTmm(tmm);
@@ -172,7 +176,6 @@ int main(){
                                 } else {
                                     proceso_a_matar = extraerPID(suspendidos, pid_kill);
                                     if(proceso_a_matar != NULL){
-                                        //strcpy(proceso_a_matar->estado, "terminados**");
                                         proceso_a_matar->estadoTermino = 2;
                                         eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                                         imprimirTmm(tmm);
@@ -188,11 +191,25 @@ int main(){
                                     
                                 }
                             } 
+                        } else if(com ==4){
+                            speed = !speed;
                         } else if(com == 5){
                             proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
-                                
-                                    //IMPORTANTE /Tener una funcion que ligue todos los procesos con el mismo GID, avisando que tambien es participe del grupo por lo que no es necesario borrar las paginas
+                                nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, proceso_a_copiar->num_paginas);
+                                //Copiar la TMP del padre al hijo
+                                for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                    nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                    nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                }
+                                pid++;
+                                nuevo->PC = num_inst;
+                                nuevo->GCPU = proceso_a_copiar->GCPU;
+                                insertarFinal(listos, nuevo);
+                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                            } else { 
+                                proceso_a_copiar = buscaPID(listos, pid_kill);
+                                if(proceso_a_copiar != NULL) {
                                     nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, proceso_a_copiar->num_paginas);
                                     for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
                                         nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
@@ -203,52 +220,26 @@ int main(){
                                     nuevo->GCPU = proceso_a_copiar->GCPU;
                                     insertarFinal(listos, nuevo);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                 //creo que aqui falta mandarlo a nuevos 
-                              
-                            } else { 
-                                proceso_a_copiar = buscaPID(listos, pid_kill);
-                                if(proceso_a_copiar != NULL) {
                                     
-                                        nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, proceso_a_copiar->num_paginas);
-                                        for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                } else {
+                                    proceso_a_copiar = buscaPID(suspendidos, pid_kill);
+                                    if(proceso_a_copiar != NULL){    
+                                        nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
+                                       for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
                                             nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
                                             nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
                                         }
                                         pid++;
                                         nuevo->PC = num_inst;
                                         nuevo->GCPU = proceso_a_copiar->GCPU;
-                                        insertarFinal(listos, nuevo);
+                                        insertarFinal(listos,nuevo);
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                    
-                                } else {
-                                    proceso_a_copiar = buscaPID(suspendidos, pid_kill);
-                                    if(proceso_a_copiar != NULL){
-                                        
-                                            nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
-                                            //CONTINUACION IMPORTANTE// ya no necesita hacer la actualizacion de la TMP
-                                           for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
-                                                nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
-                                                nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
-                                            }
-                                            pid++;
-                                            nuevo->PC = num_inst;
-                                            nuevo->GCPU = proceso_a_copiar->GCPU;
-                                            insertarFinal(listos,nuevo);
-                                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                                        
                                     }else{
-
-                                    mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
-
+                                        mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
                                     }
                                 }
-                                
-                                
                             }
-
-                        }
-                        
-                        else {
+                        } else {
                             if (com == -1) {
                                 mvprintw(37,2, "Error: Falta nombre de archivo.");
                                 limpieza = true;
@@ -260,19 +251,19 @@ int main(){
                             }
                             refresh();
                             break;
-                        }
-                         
+                        }  
                     }
                 }
-            } else {
-                com_valido = false; //Suponemos de entrada que el comando no es valido
+            } else { //Peticion de comandos cuando no hay procesos activos
+                com_valido = false;
 
-                while (!com_valido){ //Solicitamos comando hasta que haya uno valido
+                //Solicitamos comando hasta que haya uno valido
+                while (!com_valido){ 
                     mvprintw(40, 2, "%-28s", ""); 
                     mvprintw(40,2, ">");
                     echo();
-                    comando[0] = '\0';
-                    getstr(comando);
+                    memset(comando, 0, sizeof(comando));
+                    mvscanw(40,3,"%255[^\n]",comando);
                     noecho();
                     mvprintw(40, 2, "%-28s", ""); 
                     refresh();
@@ -280,11 +271,11 @@ int main(){
                     com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst); 
                     limpieza = true;
 
-                    if (com == 1){ //comando salir
+                    if (com == 1){ 
                         endwin();
                         fclose(bin);
                         return 0;
-                    } else if (com == 2){ //comando ejecuta
+                    } else if (com == 2){ 
                         com_valido = true;
                         if(verificarEspacioEnSwap(archivo, tms)){
                             total_instrucciones = guardarTextoABinario(archivo, bin, pid, gid, tms);
@@ -311,27 +302,24 @@ int main(){
                             }
                         }
 
-                    } else if(com == 3){ //comando mata
+                    } else if(com == 3){ 
                         mvprintw(37, 2, "No hay ningun proceso para matar.");
-                    } else if (com == 4){ //comando prueba
+                    } else if (com == 4){ 
                         com_valido = true;
-                    } else if (com == 5){ //comando fork
+                        speed = !speed;
+                    } else if (com == 5){ 
                         mvprintw(39, 0, "No hay procesos para copiar");
-                    }
-                    
-                    else { //error al ingresar comando
+                    } else { 
                         if (com == -1) {
                             mvprintw(37,2, "Error: Comando incompleto.");
                         } else {
                             mvprintw(37,2,"Error: Comando invalido");
-                            
                         }
                         refresh();
                     }
                 }
                 continue;
             }
-
         }
 
         if(limpieza){
@@ -339,29 +327,31 @@ int main(){
             limpieza = false;
         }
 
-        if (proceso_actual != NULL) { //Cambiar condicional por proceso_actual != NULL?
+        //Ciclo de ejecucion
+        if (proceso_actual != NULL) {
             quantum = 0;
-            fin_quantum = false; //para saber porque motivo cerramos proceso
-            contarGrupos(listos, ejecutando, gid);
-           
-            interrumpido=false; //Bandera para cada archivo
+            fin_quantum = false; 
+            contarGrupos(listos, ejecutando, suspendidos, gid);
+            interrumpido=false; 
             strcpy(linea_original, "---");
             sacarSuspendidos(suspendidos, listos);
             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+            //En vez de while(fgets), iteramos el tiempo de quantum
             while (quantum < 3) {
                 memset(linea, 0, TAMANO_IR);
-                int pag_actual = pc / INSTRUCCIONES_POR_MARCO;
+                pag_actual = pc / INSTRUCCIONES_POR_MARCO;
                 if (pag_actual >= proceso_actual->num_paginas) {
-                    mvprintw(36, 10, "Error: Se alcanzo el fin de memoria sin encontrar END.");
-                    tokEND = false;  // Marcamos que fue un error
+                    mvprintw(36, 10, "Error: Se alcanzo el fin de memoria sin encontrar END o se intenta acceder a otra zona de memoria no permitida.");
+                    tokEND = false; 
                     limpieza = true;
-                    break;           // Rompemos el ciclo inmediatamente
+                    break;
                 }
                 
-                int desplazamiento = pc % INSTRUCCIONES_POR_MARCO;
-                int marco_ram = proceso_actual->tmp[pag_actual].num_marco_ram;
-                int pos_fisica=0;
+                desplazamiento = pc % INSTRUCCIONES_POR_MARCO;
+                marco_ram = proceso_actual->tmp[pag_actual].num_marco_ram;
+                pos_fisica = 0;
                 
+                //Fallo de pagina
                 if (marco_ram == -1) {
                     manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos, tmm, RAM);
                     page_fault = true;
@@ -369,15 +359,18 @@ int main(){
                    
                     if (proceso_a_suspender != NULL) {    
                         insertarFinal(suspendidos, proceso_a_suspender);
+
+                        //Asignacion de tiempo de espera aleatorio
                         proceso_a_suspender->hora_entrada = time(NULL);
                         proceso_a_suspender->tiempo_espera = rand() % (9) + 2; //%(9)+2
 
-                        int marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, proceso_a_suspender->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos, tms, tmm, RAM);
+                        marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, proceso_a_suspender->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos, tms, tmm, RAM);
                         actualizaTMP(proceso_a_suspender, tms);
                         guardaPCB(proceso_a_suspender,pc,linea_original);
                     
                         manecilla_reloj->puntero = true;
-                        manecilla_reloj = manecilla_reloj->siguiente;
+                        manecilla_reloj = manecilla_reloj->siguiente; //Nos movemos al siguiente marco del que acabamos de desalojar
+                        //Actualizamos TMP del proceso para indicar que su pagina ya esta cargada en el marco n
                         if (marco_ram_nuevo != -1) {
                             proceso_a_suspender->tmp[pag_actual].num_marco_ram = marco_ram_nuevo;
                             tmm[marco_ram_nuevo].usado_recien = 1;
@@ -390,33 +383,27 @@ int main(){
                     }
                     proceso_actual = NULL;
                     limpieza = true;
-                    break;  // Sale del while de quantum
+                    break;  //Sale del while de quantum
                 }
 
+                //Page hit
                 if(marco_ram != -1) {
+                    //Traduccion de direcciones
                     pos_fisica = (marco_ram * TAMANO_MARCO) + (desplazamiento * TAMANO_IR);
-                    //if(tmm[marco_ram].usado_recien==1){
                     tmm[marco_ram].usado_recien = 1;
-                    //}
-                    memcpy(linea, &RAM[pos_fisica], TAMANO_IR);
+                    memcpy(linea, &RAM[pos_fisica], TAMANO_IR); //Lectura desde RAM
                     linea[TAMANO_IR] = '\0';
                 }
-                //
-                strcpy(linea_original, linea);//Para imprimir la linea original en PCB
-                //usleep(1000000);
 
-
-                
+                strcpy(linea_original, linea); //Para imprimir la linea original en PCB 
                 imprimir_registros(pc, linea);
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 imprimirTmm(tmm);
                 imprimirTmp(proceso_actual);
                 imprimirTms(tms);
-
-                //break;
                 refresh();
+
                 *ptr_pid = 0;
-                
                 ptr = linea;
                 while (*ptr == ' ' || *ptr == '\t') ptr++; 
                 token = strtok(ptr, " \r\n\t");
@@ -427,7 +414,6 @@ int main(){
                         proceso_a_terminar = desencolar(ejecutando); //Siguiendo la logica de Pedro
 
                         if (proceso_a_terminar != NULL) {
-                            //strcpy(proceso_a_terminar->estado, "terminado*");
                             proceso_a_terminar->estadoTermino = 1;
                             eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                             imprimirTmm(tmm);
@@ -458,7 +444,7 @@ int main(){
                         char *extra = strtok(NULL, " \r\n\t"); 
                         
                         if (extra != NULL) {
-                            //CASO 1: Hay basura después del END
+                            //CASO 1: Hay basura despues del END
                             mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
                             tokEND = false; 
                             limpieza = true;
@@ -468,7 +454,7 @@ int main(){
                             if (instEND()) {
                                 tokEND = true; 
                                 limpieza = true;
-                                break; // Salimos y el código de afuera lo manda a estadoTermino = 0
+                                break; // Salimos y el codigo de afuera lo manda a estadoTermino = 0
                             } else {
                                 tokEND = false;
                                 limpieza = true;
@@ -476,19 +462,19 @@ int main(){
                             }
                         }
                     } else if(strcmp(token, "JNZ") == 0){
-                        int aux = instJNZ(argumentos,proceso_actual, pc);
+                        aux = instJNZ(argumentos,proceso_actual, pc);
                         if(aux != -1){
                             pc = aux;
                             quantum++;
                             proceso_actual->CPU = proceso_actual->CPU + 20;
                             proceso_actual->GCPU=proceso_actual->GCPU + 20;
-                            aumentaGCPU(listos,proceso_actual->GID);
+                            aumentaGCPU(listos, proceso_actual->GID);
+                            aumentaGCPU(suspendidos, proceso_actual->GID);
 
                             if (quantum == 3) {
                                 guardaPCB(proceso_actual, pc, linea_original);
                                 proceso_a_terminar = desencolar(ejecutando);
                                 if (proceso_a_terminar!= NULL) {
-                                    //strcpy(proceso_a_terminar->estado, "listos");
                                     proceso_a_terminar->estadoTermino = 0;
                                     insertarFinal(listos, proceso_a_terminar);
                                 }
@@ -497,7 +483,6 @@ int main(){
                                 limpieza = true;
                                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 refresh();
-                                
                                 break; 
                             }
                             continue;
@@ -505,10 +490,8 @@ int main(){
                             guardaPCB(proceso_actual,pc,linea_original);
                             mvprintw(34, 2, "ABORTADO: Error en renglon %d", pc);
                             mvprintw(36,2, "Motivo:");
-                            //Mover los procesos fallidos a terminados
                             proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
-                                //strcpy(proceso_a_terminar->estado, "terminado*");
                                 proceso_a_terminar->estadoTermino = 1;
                                 eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                                 imprimirTmm(tmm);
@@ -523,14 +506,13 @@ int main(){
                             break; 
                         }
                     } else {
-                        if (!ejecOperacion(token, argumentos, proceso_actual, ptr_pc, ptr_pid)) {
+                        if (!ejecOperacion(token, argumentos, proceso_actual, ptr_pid)) {
                             guardaPCB(proceso_actual,pc,linea_original);
                             mvprintw(34, 2, "ABORTADO: Error en renglon %d", pc);
                             mvprintw(36,2, "Motivo:");
                             //Mover los procesos fallidos a terminados
                             proceso_a_terminar = desencolar(ejecutando);
                             if (proceso_a_terminar != NULL) {
-                                //strcpy(proceso_a_terminar->estado, "terminado*");
                                 proceso_a_terminar->estadoTermino = 1;
                                 eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                                 imprimirTmm(tmm);
@@ -540,23 +522,26 @@ int main(){
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-
                             limpieza = true;
                             break; 
                         }
                     }
-                     
-                    //usleep(1000000);
+                    
                     if(*ptr_pid != -1){
                         pc++;
                     }
+
                     quantum++;
                     proceso_actual->CPU = proceso_actual->CPU + 20;
                     proceso_actual->GCPU=proceso_actual->GCPU + 20;
                     aumentaGCPU(listos,proceso_actual->GID);
                     aumentaGCPU(suspendidos,proceso_actual->GID);
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                    usleep(500000);
+                   
+                    if(!speed){
+                        usleep(500000);
+                    }
+
                     if(tokEND){
                         continue;
                     }
@@ -565,7 +550,6 @@ int main(){
                         guardaPCB(proceso_actual, pc, linea_original);
                         proceso_a_terminar = desencolar(ejecutando);
                         if (proceso_a_terminar!= NULL) {
-                            //strcpy(proceso_a_terminar->estado, "listos");
                             proceso_a_terminar->estadoTermino = 0;
                             insertarFinal(listos, proceso_a_terminar);
                         }
@@ -573,25 +557,20 @@ int main(){
                         fin_quantum = true;
                         limpieza = true;
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-                        refresh();
-                        
+                        refresh();  
                         break; 
                     }
 
-                    //Movi el kbhit despues para que no haga falta aumentar pc dentro de kbhit
-                    if(kbhit()){ //Cuando haya un teclazo
-                        if(limpieza){ //tambien puede que no sea correco guardarlo asi
+                    if(kbhit()){ 
+                        if(limpieza){ 
                             limpia_lineas();
                         }
                         interrumpido=true;
-                        //Basto comentar el getch(), ahora ya no se ocupa dar enter y luego comando
-                        //getch();
-
                         refresh();
                         mvprintw(40, 2, "%-28s", ""); 
                         mvprintw(40, 2, ">");
                         echo();
-                        comando[0] = '\0';
+                        memset(comando, 0, sizeof(comando));
                         mvscanw(40,3,"%255[^\n]",comando);
                         noecho();
                         limpieza = true;
@@ -637,7 +616,6 @@ int main(){
                         } else if(com == 3){
                             proceso_a_matar = extraerPID(ejecutando, pid_kill);
                             if(proceso_a_matar != NULL){
-                                //strcpy(proceso_a_matar->estado, "terminados**");
                                 proceso_a_matar->estadoTermino = 2;
                                 eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                                 imprimirTmm(tmm);
@@ -650,7 +628,6 @@ int main(){
                             } else{
                                 proceso_a_matar = extraerPID(listos, pid_kill);
                                 if(proceso_a_matar != NULL){
-                                    //strcpy(proceso_a_matar->estado, "terminados**");
                                     proceso_a_matar->estadoTermino = 2;
                                     eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                                     imprimirTmm(tmm);
@@ -660,24 +637,38 @@ int main(){
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
-                                    mvprintw(37,2, "El PID asociado al proceso no existe.");
-                                    mvprintw(27,2, "Ese proceso no existe o ya termino");
+                                    proceso_a_matar = extraerPID(suspendidos, pid_kill);
+                                    if(proceso_a_matar != NULL){
+                                        proceso_a_matar->estadoTermino = 2;
+                                        eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
+                                        imprimirTmm(tmm);
+                                        imprimirTms(tms);
+                                        imprimirTmp(proceso_a_matar);
+                                        porcentajeDiscoRAM(tmm, tms);
+                                        insertarFinal(terminados,proceso_a_matar);
+                                        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                    } else {
+                                        mvprintw(37,2, "El PID asociado al proceso no existe.");
+                                        mvprintw(27,2, "Ese proceso no existe o ya termino");
+                                    }
                                 }
                             } 
+                        } else if(com == 4){ //Ahora es la logica del comando fast
+                            speed = !speed;
                         } else if(com == 5){
                             proceso_a_copiar = buscaPID(ejecutando, pid_kill);
                             if(proceso_a_copiar != NULL){
                                 
-                                    nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
-                                    for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
-                                        nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
-                                        nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
-                                    }
-                                    pid++;
-                                    nuevo->PC = num_inst;
-                                    nuevo->GCPU = proceso_a_copiar->GCPU;
-                                    insertarFinal(listos, nuevo);
-                                    imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
+                                for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                    nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                    nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                }
+                                pid++;
+                                nuevo->PC = num_inst;
+                                nuevo->GCPU = proceso_a_copiar->GCPU;
+                                insertarFinal(listos, nuevo);
+                                imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                  //creo que aqui falta mandarlo a nuevos 
                               
                             } else { 
@@ -699,29 +690,23 @@ int main(){
                                 } else {
                                     proceso_a_copiar = buscaPID(suspendidos, pid_kill);
                                     if(proceso_a_copiar != NULL){
-                                        
-                                            nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
-                                            //CONTINUACION IMPORTANTE// ya no necesita hacer la actualizacion de la TMP
-                                            for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
-                                                nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
-                                                nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
-                                            }
-                                            pid++;
-                                            nuevo->PC = num_inst;
-                                            nuevo->GCPU = proceso_a_copiar->GCPU;
-                                            insertarFinal(listos,nuevo);
-                                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                        nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
+                                        for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
+                                            nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
+                                            nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
+                                        }
+                                        pid++;
+                                        nuevo->PC = num_inst;
+                                        nuevo->GCPU = proceso_a_copiar->GCPU;
+                                        insertarFinal(listos,nuevo);
+                                        imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                         
                                     }else{
                                         mvprintw(39,2,"No existe el proceso asociado al PID o el proceso ya termino.");
                                     }
                                 }
-                                
                             }
-
-                        }
-                        
-                        else {
+                        } else {
                             if (com == -1) {
                                 mvprintw(37,2, "Error: Falta nombre de archivo.");
                                 limpieza = true;
@@ -733,15 +718,12 @@ int main(){
                             }
                             refresh();
                             break;
-                        }
-                         
+                        }   
                     }
-
                 } else {
                     mvprintw(36, 2, "Token no valido: [%s]", token);
                     proceso_a_terminar = desencolar(ejecutando);
                     if (proceso_a_terminar != NULL) {
-                        //strcpy(proceso_a_terminar->estado, "terminado*");
                         proceso_a_terminar->estadoTermino = 1;
                         eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                         imprimirTmm(tmm);
@@ -761,7 +743,6 @@ int main(){
                 page_fault = false;
             } else if(fin_quantum){ //esta bandera evita el doble cierre de archivos y el core dumpesd
                 mvprintw(35, 2, "Quantum = 3. Cambio de proceso");
-                //calculoPrioridades(listos,contarGrupos(listos,ejecutando,gid));
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 refresh();
             } else if(!interrumpido){ //Cuando el quantum no termina, osea no es multiplo de 3 el numero de instrucciones
@@ -770,9 +751,7 @@ int main(){
                     if(proceso_actual!=NULL) {
                         guardaPCB(proceso_actual,pc,linea_original);
                         proceso_a_terminar = desencolar(ejecutando);
-
                         if (proceso_a_terminar != NULL) {
-                            //strcpy(proceso_a_terminar->estado, "terminado");
                             proceso_a_terminar->estadoTermino = 0;
                             eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                             imprimirTmm(tmm);
@@ -782,8 +761,6 @@ int main(){
                             insertarFinal(terminados, proceso_a_terminar);
                         }
                     }
-                    
-
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                 } else {
                     mvprintw(35, 2, "Estado: Error - Falto END o abortado.");
@@ -791,9 +768,7 @@ int main(){
                     if(proceso_actual!=NULL) {
                         guardaPCB(proceso_actual,pc,linea_original);
                         proceso_a_terminar = desencolar(ejecutando);
-
                         if (proceso_a_terminar != NULL) {
-                            //strcpy(proceso_a_terminar->estado, "terminado*");
                             proceso_a_terminar->estadoTermino = 1;
                             eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                             imprimirTmm(tmm);
@@ -803,7 +778,6 @@ int main(){
                             insertarFinal(terminados, proceso_a_terminar);
                         }
                     }
-                    
                     proceso_actual = NULL;
                 }
                 proceso_actual = NULL;
@@ -812,11 +786,8 @@ int main(){
             } else { //este era el else de cuando se ejecutaba el archivo hasta el final
                 if(proceso_actual!=NULL){
                     guardaPCB(proceso_actual,pc,linea_original);
-                
-
                     proceso_a_terminar = desencolar(ejecutando);
                     if (proceso_a_terminar != NULL) {
-                        //strcpy(proceso_a_terminar->estado, "terminado");
                         proceso_a_terminar->estadoTermino = 0;
                         eliminarPaginas(proceso_a_terminar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
                         imprimirTmm(tmm);
@@ -826,15 +797,12 @@ int main(){
                         insertarFinal(terminados, proceso_a_terminar);
                     }
                 }
-                //Si el proceso actual termino, ya no estamos ejecutando nada
                 proceso_actual = NULL;
             }
-
         } else {
             sacarSuspendidos(suspendidos, listos);
             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
-            limpieza = true;
-            
+            limpieza = true;   
         }
     } while(1);
     endwin();

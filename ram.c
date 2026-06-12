@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <curses.h>
-#include <math.h>
-#include <time.h>
 #include "nodo.h"
 #include "ram.h"
 
+//Carga una pagina especifica en una posicion de la RAM
+//Actualiza los valores de la TMP
+//Notifica a las de mas TMP's del mismo grupo
 int cargarARAM(int pid, int gid, int num_pagina, FILE *bin, struct TablaMarcos *manecilla,
      struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos, TablaMarcos *tms, TablaMarcos *tmm, char *RAM) {
     int marco_disco = -1;
@@ -29,11 +29,6 @@ int cargarARAM(int pid, int gid, int num_pagina, FILE *bin, struct TablaMarcos *
         }
     }
 
-    if (marco_disco == -1) {
-        mvprintw(36, 2, "Error: La pagina %d del PID %d no existe en SWAP.", num_pagina, pid);
-        return -1;
-    }
-
     //Buscar un marco libre en la TMM 
     for (int marco_ram = 0; marco_ram < TOTAL_MARCOS_RAM; marco_ram++) {
         if (tmm[marco_ram].num_marco == manecilla->num_marco) {
@@ -43,12 +38,12 @@ int cargarARAM(int pid, int gid, int num_pagina, FILE *bin, struct TablaMarcos *
             fread(RAM + (marco_ram * TAMANO_MARCO), 1, TAMANO_MARCO, bin);
             
             //Actualizar TMM 
-            tmm[marco_ram].propietario = pid;
+            tmm[marco_ram].propietario = pid; //proceso que se fue a suspendidos
             tmm[marco_ram].num_pagina = num_pagina;
             tmm[marco_ram].grupo = gid;
             mvprintw(39, 2, "Pagina %d del PID %d cargada en Marco RAM %d", num_pagina, pid, marco_ram);
 
-            //Actualizar tmp's del mismo grupo
+            //Actualizar tmp's del mismo grupo                          
             while(aux_l != NULL) {
                 if(aux_l->GID == gid && aux_l->PID != pid){
                     aux_l->tmp[num_pagina].num_marco_ram = marco_ram;
@@ -74,29 +69,22 @@ int cargarARAM(int pid, int gid, int num_pagina, FILE *bin, struct TablaMarcos *
         }
     }
 
-
-    mvprintw(38, 2, "Fallo de pagina: No hay marcos libres en RAM");
     return -1;
 }
 
-//Funcion que borraria paginas de la TMS y TMM, aun no las borra de RAM ni de disco
-//Aun no consideramos que pasa si otro proceso creado con fork las necesita
+//Elimina todas las paginas de un proceso que termino a menos que existan mas procesos
+// en el mismo grupo, en dado caso hereda la propiedad
 void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos, FILE *bin, char *RAM){
-    int pid_busqueda = proceso->PID;
+    int pid_busqueda = proceso->PID; //el que se va a desalojar
     struct Nodo *heredero = buscarHerederoGID(listos, ejecutando, suspendidos, proceso->GID, pid_busqueda);
     char buffer[TAMANO_MARCO];
     memset(buffer,0,sizeof(buffer));
-    //int procesos_mismo_gid = cuentaPorGID(listos, ejecutando, suspendidos, proceso->GID, proceso->PID);
     
-    //No la esta eliminando cuadno ya es el ultimo proceso y acaba
     if(heredero != NULL) { //Hay mas de un proceso con el mismo GID
-        //tal vez crear funcion que cuente cuantos procesos tienen el mismo GID?
- 
         for (int i=0; i<TOTAL_MARCOS_RAM; i++){
             if(tmm[i].propietario == pid_busqueda){
                 tmm[i].propietario = heredero->PID;
                 heredero->tmp[tmm[i].num_pagina].num_marco_ram = tmm[i].num_marco;
-                //tmm[i].num_pagina = -1; 
             }
         }
 
@@ -104,7 +92,6 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
             if(tms[i].propietario == pid_busqueda){
                 tms[i].propietario = heredero->PID;
                 heredero->tmp[tms[i].num_pagina].num_marco_disco = tms[i].num_marco;
-                //tms[i].num_pagina = -1;
             }
         }
     } else { //No hay mas procesos con el mismo GID
@@ -114,33 +101,30 @@ void eliminarPaginas(struct Nodo *proceso, TablaMarcos *tms, TablaMarcos *tmm, s
                 tmm[i].grupo = 0;
                 tmm[i].num_pagina = -1; 
                 tmm[i].usado_recien = 0;
-                //fread(RAM + (marco_ram * TAMANO_MARCO), 1, TAMANO_MARCO, bin);
-                
                 memset((RAM + TAMANO_MARCO * i) ,0,TAMANO_MARCO);
-                
             }
-
         }
 
         for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
-            if(tms[i].propietario == pid_busqueda){ // 0 1 2 3
+            if(tms[i].propietario == pid_busqueda){ 
                 tms[i].propietario = 0;
                 tms[i].grupo = 0;
                 tms[i].num_pagina = -1;
-                fseek(bin,TAMANO_MARCO*i,SEEK_SET); //en el binario a partir del 0 256*3 = 768
+                fseek(bin,TAMANO_MARCO*i,SEEK_SET); 
                 fwrite(buffer, sizeof(char), TAMANO_MARCO, bin);
             }
         }
-        fflush(bin); //vacía el búfer hacia el archivo físico
+        fflush(bin); //vacia el bufer hacia el archivo fisico
     }
 
+    //Dejamos la TMP del proceso que acabo limpia (aunque no hace falta)
     for (int i=0; i<proceso->num_paginas; i++){
         proceso->tmp[i].num_marco_disco = -1;
         proceso->tmp[i].num_marco_ram = -1;
     }
-    //Si hago 2 forks a un proceso y quiero matar al segundo fork no se deberian asignar sus valores a nadie y su TMP se iria a -1
 }
 
+//Devuelve el primer proceso que encuentre perteneciente al mismo grupo de otro
 struct Nodo* buscarHerederoGID(struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos, int gid, int pid_actual) {
     struct Nodo *aux_l = listos->siguiente;
     struct Nodo *aux_e = ejecutando->siguiente;
@@ -169,6 +153,8 @@ struct Nodo* buscarHerederoGID(struct Nodo *listos, struct Nodo *ejecutando, str
     return NULL; //No hay nadie mas en el grupo
 }
 
+//Busca un 0 de recien usado, desaloja el marco y devuelve ese marco
+//Notifica a las TMp's de los procesos del mismo grupo que ya no tienen esa pagina 
 struct TablaMarcos *algoritmoReloj(TablaMarcos *manecilla, struct Nodo *listos, struct Nodo *ejecutando, struct Nodo *suspendidos, TablaMarcos *tmm, char *RAM){
     struct Nodo *aux_l = listos->siguiente;
     struct Nodo *aux_e = ejecutando->siguiente;

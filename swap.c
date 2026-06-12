@@ -1,12 +1,5 @@
 #include <stdio.h>
-//#include <unistd.h>
-//#include <string.h>
-//#include <stdbool.h>
-//#include <stdlib.h>
-//#include <curses.h>
 #include <math.h>
-//#include <time.h>
-//#include <sys/select.h>
 #include "nodo.h"
 
 #define TAMANO_IR 64 
@@ -15,6 +8,8 @@
 #define TOTAL_MARCOS_RAM 16
 #define TOTAL_MARCOS_DISCO 32768
 
+//Copia las instrucciones de un achivo de texto a un archivo binario, solo se hace caundo se crea un proceso y hay disco libre
+//Devuelve el numero de marcos/paginas necesarias para el proceso
 int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid, int gid, TablaMarcos *tms) {
     FILE *txt = fopen(archivoTexto, "r");
 
@@ -26,7 +21,7 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid, int gid, 
     char linea[64];
     char bufferFijo[TAMANO_IR];
 
-  // Leer el archivo de texto línea por línea
+  //Leer el archivo de texto línea por línea
     int num_instrucciones = 0;
     int num_pagina = 0;
 
@@ -37,9 +32,6 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid, int gid, 
             int contador_lineas = 0;
             while(contador_lineas<INSTRUCCIONES_POR_MARCO && fgets(linea, sizeof(linea), txt)){
                 linea[strcspn(linea, "\r\n")] = 0;
-                //Saltar líneas vacías
-                //if (strlen(linea) == 0) continue;
-                //Llenamos el marco inicialmente con 0's
                 memset(bufferFijo, 0, TAMANO_IR);
                 //Copiamos el texto de la instrucción al buffer seguro
                 strncpy(bufferFijo, linea, TAMANO_IR - 1);
@@ -54,12 +46,10 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid, int gid, 
                 tms[i].grupo = gid;
                 tms[i].num_pagina = num_pagina;
                 num_pagina++;
-                //tms[i].valida=1 averiguar para que es esto
                 if (feof(txt)){
                     break;
                 }
             }
-            //tms[i].propietario = pid;
         } else {
             continue;
         }
@@ -69,6 +59,7 @@ int guardarTextoABinario(const char *archivoTexto, FILE *bin, int pid, int gid, 
     return num_instrucciones; 
 }
 
+//Determina el numero de marcos/paginas que requiere un proceso, sirve para los procesos "nuevos"
 int cuentaMarcosNecesarios(const char *nombre_archivo){
     FILE *txt = fopen(nombre_archivo, "r");
     if (txt == NULL) {
@@ -88,6 +79,7 @@ int cuentaMarcosNecesarios(const char *nombre_archivo){
     return marcos_necesarios;
 }
 
+//Dertermina si hay espacio sufiente en el disco para copiar las instrucciones
 bool verificarEspacioEnSwap(const char *nombre_archivo, TablaMarcos *tms) {
    FILE *txt = fopen(nombre_archivo, "r");
     if (txt == NULL) {
@@ -124,11 +116,14 @@ bool verificarEspacioEnSwap(const char *nombre_archivo, TablaMarcos *tms) {
     return true;
 }
 
+//Inicializamos el archivo con el tamaño maximo
+//Ponemos 0's y -1's en la TMM y TMS
+//Hacemos lista circular la TMM
 void iniciarDiscoYTablas(TablaMarcos *tms, TablaMarcos *tmm, FILE *bin){
-    // Mover el cursor del archivo a la posición deseada menos 1 byte
+    //Mover el cursor del archivo a la posición deseada menos 1 byte
     fseek(bin, 8388608 - 1, SEEK_SET);
 
-    // Escribir un byte nulo para definir el tamaño en el disco
+    //Escribir un byte nulo para definir el tamaño en el disco
     fputc('\0', bin);
 
     for (int i=0; i<TOTAL_MARCOS_RAM; i++) {
