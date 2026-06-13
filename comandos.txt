@@ -1,32 +1,19 @@
 ejecuta file7
-ejecuta file7
+ejecuta file8
 ejecuta file3
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
+ejecuta file9
+ejecuta file2
+ejecuta file
+ejecuta file4
+ejecuta file6
 ejecuta file5
 ejecuta file7
-ejecuta file2
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file8
-ejecuta file7
-ejecuta file7
-ejecuta file4
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file7
-ejecuta file3
-ejecuta file7
-ejecuta file7
-ejecuta file7
+
+fork 1 0
+fork 1 0
+fork 1 0
+fork 1 0
+fork 1 0
+fork 1 0
+fork 1 0
+fork 1 0

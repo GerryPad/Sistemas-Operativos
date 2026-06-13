@@ -115,7 +115,10 @@ int main(){
                         mvprintw(40, 2, ">");
                         echo();
                         memset(comando, 0, sizeof(comando));
-                        mvscanw(40,3,"%255[^\n]",comando);
+                        //mvscanw(40,3,"%255[^\n]",comando);
+                        
+                        //Usar la lectura nativa y segura de ncurses para que no haya fallos aleatorios connn comandos validos
+                        mvgetnstr(40, 3, comando, 255);
                         noecho();
                         limpieza = true;
                         com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst);
@@ -269,7 +272,7 @@ int main(){
                     mvprintw(40,2, ">");
                     echo();
                     memset(comando, 0, sizeof(comando));
-                    mvscanw(40,3,"%255[^\n]",comando);
+                    mvgetnstr(40, 3, comando, 255);
                     noecho();
                     mvprintw(40, 2, "%-28s", ""); 
                     refresh();
@@ -339,7 +342,7 @@ int main(){
             fin_quantum = false; 
             contarGrupos(listos, ejecutando, suspendidos, gid);
             interrumpido=false; 
-            strcpy(linea_original, "---");
+            strcpy(linea_original, proceso_actual->IR);
             sacarSuspendidos(suspendidos, listos);
             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
             //En vez de while(fgets), iteramos el tiempo de quantum
@@ -584,7 +587,8 @@ int main(){
                         mvprintw(40, 2, ">");
                         echo();
                         memset(comando, 0, sizeof(comando));
-                        mvscanw(40,3,"%255[^\n]",comando);
+                        //mvscanw(40,3,"%255[^\n]",comando)
+                        mvgetnstr(40, 3, comando, 255);
                         noecho();
                         limpieza = true;
                         com = interpretar_comando(comando, archivo, ptr_pid, ptr_inst);
