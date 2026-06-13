@@ -536,7 +536,7 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_ins
             mvprintw(36, 10,"Demasiados argumentos.");
             return 0;
         }else {
-            *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos
+            *ptr_pid = atoi(arg); 
             return 3;
         }
 
@@ -574,7 +574,7 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_ins
             mvprintw(36, 10,"Demasiados argumentos.");
             return 0;
         }else {
-            *ptr_pid = atoi(arg); //OJO: la solución puede no servir para otros comandos
+            *ptr_pid = atoi(arg); 
             *ptr_inst = atoi(arg2);
             return 5;
         }

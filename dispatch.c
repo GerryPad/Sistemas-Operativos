@@ -108,12 +108,9 @@ struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
 //Planificador a mediano plazo, comprueba si un suspendido ya ha pasado su tiempo o mas de espera
 struct TablaMarcos *sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *listos, struct TablaMarcos *manecilla_reloj, struct Nodo *ejecutando, struct TablaMarcos *tmm, struct TablaMarcos *tms, char *RAM, FILE *bin){
     struct Nodo *aux_s = suspendidos->siguiente;
-    //struct Nodo *aux_s2 = NULL;
     struct Nodo *proceso_a_mover = NULL;
     struct Nodo *siguiente_nodo = NULL;
-    //struct Nodo *proceso_a_mover2 = NULL;
     int pag_actual;
-    //int pag_proceso;
     int marco_ram_nuevo;
 
     while(aux_s != NULL){
@@ -121,7 +118,6 @@ struct TablaMarcos *sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *list
         if(difftime(time(NULL), aux_s->hora_entrada) >= aux_s->tiempo_espera) {
             pag_actual = aux_s->PC/INSTRUCCIONES_POR_MARCO;
            if(aux_s->tmp[pag_actual].num_marco_ram != -1){
-                // Ya estaba cargada por algún motivo
                 proceso_a_mover = extraerPID(suspendidos, aux_s->PID);
                 if (proceso_a_mover != NULL) {
                     insertarFinal(listos, proceso_a_mover);
@@ -136,19 +132,19 @@ struct TablaMarcos *sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *list
                     tmm[marco_ram_nuevo].usado_recien = 1;
                     tmm[marco_ram_nuevo].puntero = false;
                 }
-                
-                manecilla_reloj->puntero = true;
+
                 manecilla_reloj = manecilla_reloj->siguiente;
-                
+                for(int i = 0; i<TOTAL_MARCOS_RAM; i++){
+                    tmm[i].puntero = false;
+                }
+                manecilla_reloj->puntero = true;
                 proceso_a_mover = extraerPID(suspendidos, aux_s->PID);
                 if (proceso_a_mover != NULL) {
                     insertarFinal(listos, proceso_a_mover);
                 }
             }
-            //recorrer la lista de suspendidos y calcular el numero de pagina que sea on el mismo grupo con la misma pagina, evitar cargar 2 veces la misma pagina
         }
         aux_s = siguiente_nodo;
-        //imprimirTmm(tmm);
     }
     return manecilla_reloj;
 }
