@@ -108,16 +108,20 @@ struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
 //Planificador a mediano plazo, comprueba si un suspendido ya ha pasado su tiempo o mas de espera
 struct TablaMarcos *sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *listos, struct TablaMarcos *manecilla_reloj, struct Nodo *ejecutando, struct TablaMarcos *tmm, struct TablaMarcos *tms, char *RAM, FILE *bin){
     struct Nodo *aux_s = suspendidos->siguiente;
+    struct Nodo *aux_s2 = NULL;
     struct Nodo *proceso_a_mover = NULL;
+    struct Nodo *proceso_a_mover2 = NULL;
     int pag_actual;
+    int pag_proceso;
     int marco_ram_nuevo;
 
     while(aux_s != NULL){
         if(difftime(time(NULL), aux_s->hora_entrada) >= aux_s->tiempo_espera) {
-            proceso_a_mover = extraerPID(suspendidos, aux_s->PID);
+            
             manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos, tmm, RAM);
 
             pag_actual = aux_s->PC/TOTAL_INSTRUCCIONES_POR_MARCO;
+            
             marco_ram_nuevo = cargarARAM(aux_s->PID, aux_s->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos, tms, tmm, RAM);
             actualizaTMP(aux_s, tms);
             manecilla_reloj->puntero = true;
@@ -127,9 +131,21 @@ struct TablaMarcos *sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *list
                 aux_s->tmp[pag_actual].num_marco_ram = marco_ram_nuevo;
                 tmm[marco_ram_nuevo].usado_recien = 1;
             }
-
-            tmm[marco_ram_nuevo].puntero=false;
             
+            tmm[marco_ram_nuevo].puntero=false;
+            //recorrer la lista de suspendidos y calcular el numero de pagina que sea on el mismo grupo con la misma pagina, evitar cargar 2 veces la misma pagina
+            aux_s2= aux_s->siguiente;
+            while(aux_s2 != NULL){
+                pag_proceso = aux_s2->PC /TOTAL_INSTRUCCIONES_POR_MARCO;
+
+                if(pag_proceso == pag_actual && aux_s2->GID == aux_s->GID){
+                    proceso_a_mover2 = extraerPID(suspendidos, aux_s2->PID);
+                    insertarFinal(listos, proceso_a_mover2);
+                }
+                aux_s2 = aux_s2->siguiente;
+            }
+
+            proceso_a_mover = extraerPID(suspendidos, aux_s->PID);
             insertarFinal(listos, proceso_a_mover);
         }
         aux_s = aux_s->siguiente;
