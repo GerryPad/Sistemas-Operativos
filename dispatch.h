@@ -8,6 +8,7 @@
 #define TOTAL_MARCOS_RAM 16
 #define TOTAL_MARCOS_DISCO 32768
 #define TOTAL_INSTRUCCIONES_POR_MARCO 4
+
 void guardaPCB(struct Nodo *PCB, int pc, char *linea);
 int restauraPCB(struct Nodo *proceso_actual, char *archivo);
 void aumentaGCPU(struct Nodo *listos, int gid);

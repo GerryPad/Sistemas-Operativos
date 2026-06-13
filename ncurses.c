@@ -43,8 +43,8 @@ void imprimirTms(TablaMarcos *tms){
 
 //Muestra lo que hay en cada marco de la RAM
 void imprimirTmm(TablaMarcos *tmm){
-    mvprintw(6, 168, "TMM");
-    mvprintw(8, 168,"%-8s %-8s %-8s %-8s %-8s", "Marco", "PID", "GID", "#Pagina", "Usado?" );
+    mvprintw(6, 163, "TMM");
+    mvprintw(8, 163,"%-8s %-8s %-8s %-8s %-8s", "Marco", "PID", "GID", "#Pagina", "Usado?" );
     char *estado_puntero;
 
     int marco=0;
@@ -54,7 +54,7 @@ void imprimirTmm(TablaMarcos *tmm){
         } else {
             estado_puntero = " ";
         }
-        mvprintw(i,168, "%-8d %-8d %-8d %-8d %-8d %-3s", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].grupo, tmm[marco].num_pagina, tmm[marco].usado_recien, estado_puntero);
+        mvprintw(i,163, "%-8d %-8d %-8d %-8d %-8d %-3s", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].grupo, tmm[marco].num_pagina, tmm[marco].usado_recien, estado_puntero);
     marco++;
     }
 }
@@ -243,7 +243,10 @@ void porcentajeDiscoRAM(TablaMarcos *tmm, TablaMarcos *tms){
             ocupado_disco++;
         }
     }
-    mvprintw(28, 173, "Uso RAM: %d /16", ocupado_ram);
-    mvprintw(29, 173, "Uso DISCO: %d /32768", ocupado_disco);
 
+    mvprintw(28, 180, "-%25s", " ");
+    mvprintw(29, 180, "-%25s", " ");
+
+    mvprintw(28, 173, "Uso RAM: %d / 16", ocupado_ram);
+    mvprintw(29, 173, "Uso DISCO: %d / 32768", ocupado_disco);
 }
