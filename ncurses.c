@@ -25,7 +25,7 @@ void imprimir_registros(int renglon, char *instruccion){
 //Limpieza de avisos de errores
 void limpia_lineas() {
     for(int j = 34; j<=40; j++){
-        mvprintw(j, 2, "%-100s", "");
+        mvprintw(j, 2, "%-120s", "");
     } 
     refresh();
 }

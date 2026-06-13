@@ -29,13 +29,18 @@ bool validarToken(char *arr[], char *tok){
 
 //Funcion para comprobar si hemos leido un numero entero
 bool esInt(char *s) {
+    //Implementar conteo de bytes para 
+    long num;
     if (s == NULL || *s == '\0') return false;
     for (int i = 0; s[i] != '\0'; i++) {
         if(s[i] == '-' && i == 0) {
             continue;
         }
         if (s[i] < '0' || s[i] > '9') return false;
+        if(i > 11) return false;
     }
+    num = strtol(s, NULL, 10);
+    if(num > 2147483647 || num < -2147483647) return false;
     return true;
 }
 
