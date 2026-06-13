@@ -194,8 +194,19 @@ int main(){
                                         insertarFinal(terminados,proceso_a_matar);
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                     } else {
-                                        mvprintw(37,2, "El PID asociado al proceso no existe.");
-                                        mvprintw(27,2, "Ese proceso no existe o ya termino");
+                                        proceso_a_matar = extraerPID(nuevos, pid_kill);
+                                        if(proceso_a_matar != NULL){
+                                            proceso_a_matar->estadoTermino = 2;
+                                            eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
+                                            imprimirTmm(tmm);
+                                            imprimirTms(tms);
+                                            imprimirTmp(proceso_a_matar);
+                                            porcentajeDiscoRAM(tmm, tms);
+                                            insertarFinal(terminados, proceso_a_matar);
+                                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                        } else{
+                                            mvprintw(37,2, "El PID asociado al proceso no existe o ya termino.");
+                                        }
                                     }
                                     
                                 }
@@ -662,11 +673,22 @@ int main(){
                                         imprimirTms(tms);
                                         imprimirTmp(proceso_a_matar);
                                         porcentajeDiscoRAM(tmm, tms);
-                                        insertarFinal(terminados,proceso_a_matar);
+                                        insertarFinal(terminados, proceso_a_matar);
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                     } else {
-                                        mvprintw(37,2, "El PID asociado al proceso no existe.");
-                                        mvprintw(27,2, "Ese proceso no existe o ya termino");
+                                        proceso_a_matar = extraerPID(nuevos, pid_kill);
+                                        if(proceso_a_matar != NULL){
+                                            proceso_a_matar->estadoTermino = 2;
+                                            eliminarPaginas(proceso_a_matar, tms, tmm, listos, ejecutando, suspendidos, bin, RAM);
+                                            imprimirTmm(tmm);
+                                            imprimirTms(tms);
+                                            imprimirTmp(proceso_a_matar);
+                                            porcentajeDiscoRAM(tmm, tms);
+                                            insertarFinal(terminados, proceso_a_matar);
+                                            imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                        } else{
+                                            mvprintw(37,2, "El PID asociado al proceso no existe o ya termino.");
+                                        }
                                     }
                                 }
                             } 
