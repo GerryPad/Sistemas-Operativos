@@ -8,6 +8,7 @@
 typedef struct TablaMarcos{
     int num_marco;
     int propietario; // 0 = libre, != 0 es el PID asignado
+    int grupo;
     int num_pagina;
     int usado_recien;
     bool puntero;
@@ -23,7 +24,6 @@ typedef struct {
 struct Nodo{
     int PID;
     int GID;
-    //char estado[16];
     int estadoTermino;
     int PC;
     char archivo[64]; 
@@ -33,7 +33,7 @@ struct Nodo{
     int GCPU;
     int prioridad;
     struct Nodo *siguiente;
-    TMP *tmp; //Ver si esto no genera conflicto
+    TMP *tmp; 
     int num_paginas;
     time_t hora_entrada;
     int tiempo_espera;

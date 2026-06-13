@@ -29,13 +29,18 @@ bool validarToken(char *arr[], char *tok){
 
 //Funcion para comprobar si hemos leido un numero entero
 bool esInt(char *s) {
+    //Implementar conteo de bytes para 
+    long num;
     if (s == NULL || *s == '\0') return false;
     for (int i = 0; s[i] != '\0'; i++) {
         if(s[i] == '-' && i == 0) {
             continue;
         }
         if (s[i] < '0' || s[i] > '9') return false;
+        if(i > 11) return false;
     }
+    num = strtol(s, NULL, 10);
+    if(num > 2147483647 || num < -2147483647) return false;
     return true;
 }
 
@@ -446,7 +451,7 @@ bool instEND(){
 }
 
 //Función "switch" para elegir la instruccion correspondiente. 
-bool ejecOperacion(char *instruccion, char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid){
+bool ejecOperacion(char *instruccion, char *args, struct Nodo *nodo, int *ptr_pid){
     if (strcmp(instruccion, "MOV") == 0){
         return instMOV(args);
     } else if (strcmp(instruccion, "ADD") == 0){
@@ -461,9 +466,7 @@ bool ejecOperacion(char *instruccion, char *args, struct Nodo *nodo, int *ptr_pc
         return instINC(args);          
     } else if (strcmp(instruccion, "DEC") == 0) {
         return instDEC(args);
-    } /*else if(strcmp(instruccion, "JNZ") == 0){
-        return instJNZ(args, nodo, ptr_pc, ptr_pid);
-    }*/else {
+    } else {
         return false;
     }
 }
@@ -540,13 +543,14 @@ int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_ins
         
     }
 
-    if (strcmp(cmd, "prueba") == 0) {
+    if (strcmp(cmd, "speed") == 0) {
             if(arg != NULL){
                 move(36,10);
                 clrtoeol();
                 mvprintw(36, 10,"Demasiados argumentos.");
                 return 0;
             }
+        mvprintw(38, 2, "Velocidad de programa alterada");
         return 4; 
     }
 

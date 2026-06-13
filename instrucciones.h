@@ -11,7 +11,7 @@ typedef struct {
 //Prototipos de funciones que llama directamente el main.
 Registro* buscaRegistro(char *nombre);
 bool validarToken(char *arr[], char *tok);
-bool ejecOperacion(char *instruccion, char *args, struct Nodo *nodo, int *ptr_pc, int *ptr_pid);
+bool ejecOperacion(char *instruccion, char *args, struct Nodo *nodo, int *ptr_pid);
 bool instEND();
 int instJNZ(char *args, struct Nodo *nodo, int pc);
 int interpretar_comando(char *comando, char *archivo, int *ptr_pid, int *ptr_inst);
