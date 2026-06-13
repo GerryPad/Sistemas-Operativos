@@ -3,6 +3,7 @@
 #include "nodo.h"
 #include "instrucciones.h"
 #include "ram.h"
+#include "ncurses.h"
 
 #define TOTAL_MARCOS_RAM 16
 #define TOTAL_MARCOS_DISCO 32768
