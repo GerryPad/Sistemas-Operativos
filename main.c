@@ -54,7 +54,7 @@ int main(){
     int pc, com, pid=1, gid=1, pid_kill=0, num_inst = 0, quantum = 0; //num_inst actualiza el PC de un proceso hecho con fork
     int *ptr_pid = &pid_kill, *ptr_inst = &num_inst; //para modificar variables para comandos de 1 argumento o mas
     int total_instrucciones, total_marcos_necesarios, aux;
-    int pag_actual, desplazamiento, marco_ram, pos_fisica, marco_ram_nuevo;
+    int pag_actual, desplazamiento, marco_ram, pos_fisica;
     char *token, *ptr, *argumentos; //token almacena el nemonico, ptr quita los espacios y tabulaciones al inicio 
     bool tokEND, com_valido, interrumpido;
     bool fin_quantum, limpieza = false; 
@@ -73,7 +73,7 @@ int main(){
     initscr();
     do{
         tokEND = false;
-        sacarSuspendidos(suspendidos, listos);
+        manecilla_reloj = sacarSuspendidos(suspendidos, listos, manecilla_reloj, ejecutando, tmm, tms, RAM, bin);
         sacarNuevos(nuevos,listos, tms, bin);
         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
         
@@ -97,11 +97,11 @@ int main(){
                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                  
                 if (proceso_actual != NULL) {
-                    sacarSuspendidos(suspendidos, listos);
+                    manecilla_reloj = sacarSuspendidos(suspendidos, listos, manecilla_reloj, ejecutando, tmm, tms, RAM, bin);
                     sacarNuevos(nuevos,listos, tms, bin);
                     pc = restauraPCB(proceso_actual, archivo); //Cargar contexto solo si se logro planificar
                 } else { //Si todos los procesos estan suspendidos, hay que revisarlos constantemente
-                    sacarSuspendidos(suspendidos, listos);
+                    manecilla_reloj = sacarSuspendidos(suspendidos, listos, manecilla_reloj, ejecutando, tmm, tms, RAM, bin);
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                     usleep(50000);
                     if(kbhit()){ 
@@ -354,7 +354,7 @@ int main(){
             contarGrupos(listos, ejecutando, suspendidos, gid);
             interrumpido=false; 
             strcpy(linea_original, proceso_actual->IR);
-            sacarSuspendidos(suspendidos, listos);
+            manecilla_reloj = sacarSuspendidos(suspendidos, listos, manecilla_reloj, ejecutando, tmm, tms, RAM, bin);
             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
             //En vez de while(fgets), iteramos el tiempo de quantum
             while (quantum < 3) {
@@ -373,7 +373,7 @@ int main(){
                 
                 //Fallo de pagina
                 if (marco_ram == -1) {
-                    manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos, tmm, RAM);
+                    //manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos, tmm, RAM);
                     page_fault = true;
                     proceso_a_suspender = desencolar(ejecutando);
                    
@@ -382,23 +382,23 @@ int main(){
 
                         //Asignacion de tiempo de espera aleatorio
                         proceso_a_suspender->hora_entrada = time(NULL);
-                        proceso_a_suspender->tiempo_espera = rand() % (9) + 2; //%(9)+2
+                        proceso_a_suspender->tiempo_espera = 1; //rand() % (9) + 2; //%(9)+2
 
-                        marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, proceso_a_suspender->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos, tms, tmm, RAM);
-                        actualizaTMP(proceso_a_suspender, tms);
+                        /*marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, proceso_a_suspender->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos, tms, tmm, RAM);
+                        actualizaTMP(proceso_a_suspender, tms);*/
                         guardaPCB(proceso_a_suspender,pc,linea_original);
-                    
-                        manecilla_reloj->puntero = true;
-                        manecilla_reloj = manecilla_reloj->siguiente; //Nos movemos al siguiente marco del que acabamos de desalojar
+                        
+                        //manecilla_reloj->puntero = true;
+                        //manecilla_reloj = manecilla_reloj->siguiente; //Nos movemos al siguiente marco del que acabamos de desalojar
                         //Actualizamos TMP del proceso para indicar que su pagina ya esta cargada en el marco n
-                        if (marco_ram_nuevo != -1) {
-                            proceso_a_suspender->tmp[pag_actual].num_marco_ram = marco_ram_nuevo;
-                            tmm[marco_ram_nuevo].usado_recien = 1;
-                        }
+                        //if (marco_ram_nuevo != -1) {
+                        //    proceso_a_suspender->tmp[pag_actual].num_marco_ram = marco_ram_nuevo;
+                        //    tmm[marco_ram_nuevo].usado_recien = 1;
+                        //}
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                         imprimirTmm(tmm);
                         porcentajeDiscoRAM(tmm, tms);
-                        tmm[marco_ram_nuevo].puntero=false;
+                        //tmm[marco_ram_nuevo].puntero=false;
                         refresh();
                     }
                     proceso_actual = NULL;
@@ -776,7 +776,7 @@ int main(){
                 }               
             }
 
-            sacarSuspendidos(suspendidos, listos);
+            manecilla_reloj = sacarSuspendidos(suspendidos, listos, manecilla_reloj, ejecutando, tmm, tms, RAM, bin);
             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
             if(page_fault){
                 page_fault = false;
@@ -839,7 +839,7 @@ int main(){
                 proceso_actual = NULL;
             }
         } else {
-            sacarSuspendidos(suspendidos, listos);
+            manecilla_reloj = sacarSuspendidos(suspendidos, listos, manecilla_reloj, ejecutando, tmm, tms, RAM, bin);
             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
             limpieza = true;   
         }

@@ -32,19 +32,19 @@ void limpia_lineas() {
 
 //En teoria esta no tiene que verse en pantalla, se usa solo para debug
 void imprimirTms(TablaMarcos *tms){
-    mvprintw(27, 140, "TMS");
-    mvprintw(28,140,"%-6s %-6s %-6s", "Marco", "PID", "#Pagina" );
+    mvprintw(27, 135, "TMS");
+    mvprintw(28,135,"%-6s %-6s %-6s", "Marco", "PID", "#Pagina" );
     int marco=0;
     for(int i=29; i<45; i++){
-        mvprintw(i,140, "%-6d %-6d %-6d", tms[marco].num_marco, tms[marco].propietario, tms[marco].num_pagina);
+        mvprintw(i,135, "%-6d %-6d %-6d", tms[marco].num_marco, tms[marco].propietario, tms[marco].num_pagina);
     marco++;
     }
 }
 
 //Muestra lo que hay en cada marco de la RAM
 void imprimirTmm(TablaMarcos *tmm){
-    mvprintw(6, 173, "TMM");
-    mvprintw(8, 173,"%-8s %-8s %-8s %-8s", "Marco", "PID", "#Pagina", "Usado?" );
+    mvprintw(6, 163, "TMM");
+    mvprintw(8, 163,"%-8s %-8s %-8s %-8s %-8s", "Marco", "PID", "GID", "#Pagina", "Usado?" );
     char *estado_puntero;
 
     int marco=0;
@@ -54,7 +54,7 @@ void imprimirTmm(TablaMarcos *tmm){
         } else {
             estado_puntero = " ";
         }
-        mvprintw(i,173, "%-8d %-8d %-8d %-8d %-3s", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].num_pagina, tmm[marco].usado_recien, estado_puntero);
+        mvprintw(i,163, "%-8d %-8d %-8d %-8d %-8d %-3s", tmm[marco].num_marco, tmm[marco].propietario, tmm[marco].grupo, tmm[marco].num_pagina, tmm[marco].usado_recien, estado_puntero);
     marco++;
     }
 }
@@ -62,15 +62,15 @@ void imprimirTmm(TablaMarcos *tmm){
 //Muestra la TMP del proceso actual
 void imprimirTmp(struct Nodo *proceso){
     for(int j=6; j<25; j++){
-        mvprintw(j, 140, "%-28s", ""); 
+        mvprintw(j, 135, "%-28s", ""); 
     }
-    mvprintw(6, 140, "TMP");
-    mvprintw(8, 140,"%-8s %-8s %-8s", "Pagina", "MarcoRAM", "#MarcoD" );
+    mvprintw(6, 135, "TMP");
+    mvprintw(8, 135,"%-8s %-8s %-8s", "Pagina", "MarcoRAM", "#MarcoD" );
     int marco=0;
     int aux = 9 + proceso->num_paginas;
     if (aux >= 25) aux=25;
     for(int i=9; i<aux; i++){
-        mvprintw(i,140, "%-8d %-8d %-8d", proceso->tmp[marco].num_pagina, proceso->tmp[marco].num_marco_ram, proceso->tmp[marco].num_marco_disco);
+        mvprintw(i,135, "%-8d %-8d %-8d", proceso->tmp[marco].num_pagina, proceso->tmp[marco].num_marco_ram, proceso->tmp[marco].num_marco_disco);
         marco++;
     }
 }
@@ -244,12 +244,9 @@ void porcentajeDiscoRAM(TablaMarcos *tmm, TablaMarcos *tms){
         }
     }
 
-    float porcentajeRAM = 0;
-    float porcentajeDISCO = 0;
+    mvprintw(28, 180, "-%25s", " ");
+    mvprintw(29, 180, "-%25s", " ");
 
-    porcentajeRAM = (ocupado_ram * 100.0) * (0.0625);
-    porcentajeDISCO = (ocupado_disco * 100) * (0.0000305176);
-    mvprintw(28, 173, "Uso RAM: %-8.4f%%", porcentajeRAM);
-    mvprintw(29, 173, "Uso DISCO: %-8.4f%%", porcentajeDISCO);
-
+    mvprintw(28, 173, "Uso RAM: %d / 16", ocupado_ram);
+    mvprintw(29, 173, "Uso DISCO: %d / 32768", ocupado_disco);
 }

@@ -106,23 +106,58 @@ struct Nodo *planificador(struct Nodo *listos, struct Nodo *ejecutando) {
 }
 
 //Planificador a mediano plazo, comprueba si un suspendido ya ha pasado su tiempo o mas de espera
-void sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *listos){
+struct TablaMarcos *sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *listos, struct TablaMarcos *manecilla_reloj, struct Nodo *ejecutando, struct TablaMarcos *tmm, struct TablaMarcos *tms, char *RAM, FILE *bin){
     struct Nodo *aux_s = suspendidos->siguiente;
+    //struct Nodo *aux_s2 = NULL;
     struct Nodo *proceso_a_mover = NULL;
+    struct Nodo *siguiente_nodo = NULL;
+    //struct Nodo *proceso_a_mover2 = NULL;
+    int pag_actual;
+    //int pag_proceso;
+    int marco_ram_nuevo;
 
     while(aux_s != NULL){
+        siguiente_nodo = aux_s->siguiente;
         if(difftime(time(NULL), aux_s->hora_entrada) >= aux_s->tiempo_espera) {
-            proceso_a_mover = extraerPID(suspendidos, aux_s->PID);
-            insertarFinal(listos, proceso_a_mover);
+            pag_actual = aux_s->PC/INSTRUCCIONES_POR_MARCO;
+           if(aux_s->tmp[pag_actual].num_marco_ram != -1){
+                // Ya estaba cargada por algún motivo
+                proceso_a_mover = extraerPID(suspendidos, aux_s->PID);
+                if (proceso_a_mover != NULL) {
+                    insertarFinal(listos, proceso_a_mover);
+                }
+            } else {
+                manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos, tmm, RAM);
+                marco_ram_nuevo = cargarARAM(aux_s->PID, aux_s->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos, tms, tmm, RAM);
+                
+                actualizaTMP(aux_s, tms); 
+                if (marco_ram_nuevo != -1) {
+                    aux_s->tmp[pag_actual].num_marco_ram = marco_ram_nuevo;
+                    tmm[marco_ram_nuevo].usado_recien = 1;
+                    tmm[marco_ram_nuevo].puntero = false;
+                }
+                
+                manecilla_reloj->puntero = true;
+                manecilla_reloj = manecilla_reloj->siguiente;
+                
+                proceso_a_mover = extraerPID(suspendidos, aux_s->PID);
+                if (proceso_a_mover != NULL) {
+                    insertarFinal(listos, proceso_a_mover);
+                }
+            }
+            //recorrer la lista de suspendidos y calcular el numero de pagina que sea on el mismo grupo con la misma pagina, evitar cargar 2 veces la misma pagina
         }
-        aux_s = aux_s->siguiente;
+        aux_s = siguiente_nodo;
+        //imprimirTmm(tmm);
     }
+    return manecilla_reloj;
 }
 
 //Planificador a largo plazo, comprueba si hay espacio en disco para cargarlo
 void sacarNuevos(struct Nodo *nuevos, struct Nodo *listos, TablaMarcos *tms, FILE *bin){
     struct Nodo *aux_n=nuevos->siguiente;
     struct Nodo *proceso_a_mover=NULL;
+    struct Nodo *siguiente_nodo = NULL;
     int libre=0;
 
     for(int i=0; i<TOTAL_MARCOS_DISCO; i++){
@@ -131,13 +166,17 @@ void sacarNuevos(struct Nodo *nuevos, struct Nodo *listos, TablaMarcos *tms, FIL
         }
     }
     while(aux_n !=NULL){
+        siguiente_nodo = aux_n->siguiente;
         if(aux_n->num_paginas<=libre){
             proceso_a_mover=extraerPID(nuevos,aux_n->PID);
-            insertarFinal(listos,proceso_a_mover);
-            guardarTextoABinario(proceso_a_mover->archivo, bin, proceso_a_mover->PID, proceso_a_mover->GID, tms);
-            libre = libre - proceso_a_mover->num_paginas;
+            if(proceso_a_mover != NULL){
+                insertarFinal(listos,proceso_a_mover);
+                guardarTextoABinario(proceso_a_mover->archivo, bin, proceso_a_mover->PID, proceso_a_mover->GID, tms);     
+                libre = libre - proceso_a_mover->num_paginas;
+            }
+            
         }
-        aux_n=aux_n->siguiente;
+        aux_n = siguiente_nodo;
     }
 
 }
