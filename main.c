@@ -379,7 +379,7 @@ int main(){
 
                         //Asignacion de tiempo de espera aleatorio
                         proceso_a_suspender->hora_entrada = time(NULL);
-                        proceso_a_suspender->tiempo_espera = rand() % (9) + 2; //%(9)+2
+                        proceso_a_suspender->tiempo_espera = rand() % 9 + 2; //%(9)+2
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                         imprimirTmm(tmm);
                         porcentajeDiscoRAM(tmm, tms);

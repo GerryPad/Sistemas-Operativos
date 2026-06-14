@@ -359,6 +359,10 @@ bool instINC(char *args){
     reg1 = buscaRegistro(op1);
    
     if (reg1 != NULL){
+        if(reg1->valor == 2147483647) {
+            mvprintw(36, 10, "ABORTADO: Overflow");
+            return false;
+        }
         reg1->valor = reg1->valor + 1;
     } else {
         move(36,10);
@@ -391,6 +395,10 @@ bool instDEC(char *args){
     reg1 = buscaRegistro(op1);
    
     if (reg1 != NULL){
+        if(reg1->valor == -2147483647) {
+            mvprintw(36, 10, "ABORTADO: Underflow");
+            return false;
+        }
         reg1->valor = reg1->valor - 1;
     } else {
         move(36,10);
