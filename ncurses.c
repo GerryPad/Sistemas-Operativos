@@ -228,7 +228,7 @@ void imprimir_listas(struct Nodo *cabecera_ejecutando, struct Nodo *cabecera_lis
 }
 
 //Imprime el porcentaje de uso en RAM y en disco
-void porcentajeDiscoRAM(TablaMarcos *tmm, TablaMarcos *tms){
+void usoDiscoRAM(TablaMarcos *tmm, TablaMarcos *tms){
     int ocupado_disco = 0;
     int ocupado_ram = 0;
 

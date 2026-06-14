@@ -125,7 +125,8 @@ struct TablaMarcos *sacarSuspendidos(struct Nodo *suspendidos, struct Nodo *list
             } else {
                 manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos, tmm, RAM);
                 marco_ram_nuevo = cargarARAM(aux_s->PID, aux_s->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos, tms, tmm, RAM);
-                porcentajeDiscoRAM(tmm, tms);
+                usoDiscoRAM(tmm, tms);
+                imprimirTmm(tmm);
                 imprimirTms(tms);
                 actualizaTMP(aux_s, tms); 
                 if (marco_ram_nuevo != -1) {

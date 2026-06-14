@@ -168,7 +168,7 @@ int main(){
                                 imprimirTmm(tmm);
                                 imprimirTms(tms);
                                 imprimirTmp(proceso_a_matar);
-                                porcentajeDiscoRAM(tmm, tms);
+                                usoDiscoRAM(tmm, tms);
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                             } else{
@@ -179,7 +179,7 @@ int main(){
                                     imprimirTmm(tmm);
                                     imprimirTms(tms);
                                     imprimirTmp(proceso_a_matar);
-                                    porcentajeDiscoRAM(tmm, tms);
+                                    usoDiscoRAM(tmm, tms);
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
@@ -190,7 +190,7 @@ int main(){
                                         imprimirTmm(tmm);
                                         imprimirTms(tms);
                                         imprimirTmp(proceso_a_matar);
-                                        porcentajeDiscoRAM(tmm, tms);
+                                        usoDiscoRAM(tmm, tms);
                                         insertarFinal(terminados,proceso_a_matar);
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                     } else {
@@ -201,7 +201,7 @@ int main(){
                                             imprimirTmm(tmm);
                                             imprimirTms(tms);
                                             imprimirTmp(proceso_a_matar);
-                                            porcentajeDiscoRAM(tmm, tms);
+                                            usoDiscoRAM(tmm, tms);
                                             insertarFinal(terminados, proceso_a_matar);
                                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                         } else{
@@ -397,7 +397,7 @@ int main(){
                         //}
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                         imprimirTmm(tmm);
-                        porcentajeDiscoRAM(tmm, tms);
+                        usoDiscoRAM(tmm, tms);
                         //tmm[marco_ram_nuevo].puntero=false;
                         refresh();
                     }
@@ -439,7 +439,7 @@ int main(){
                             imprimirTmm(tmm);
                             imprimirTms(tms);
                             imprimirTmp(proceso_a_terminar);
-                            porcentajeDiscoRAM(tmm, tms);
+                            usoDiscoRAM(tmm, tms);
                             insertarFinal(terminados, proceso_a_terminar);
                         }
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
@@ -517,7 +517,7 @@ int main(){
                                 imprimirTmm(tmm);
                                 imprimirTms(tms);
                                 imprimirTmp(proceso_a_terminar);
-                                porcentajeDiscoRAM(tmm, tms);
+                                usoDiscoRAM(tmm, tms);
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
@@ -538,7 +538,7 @@ int main(){
                                 imprimirTmm(tmm);
                                 imprimirTms(tms);
                                 imprimirTmp(proceso_a_terminar);
-                                porcentajeDiscoRAM(tmm, tms);
+                                usoDiscoRAM(tmm, tms);
                                 insertarFinal(terminados, proceso_a_terminar);
                             }
                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
@@ -649,7 +649,7 @@ int main(){
                                 imprimirTmm(tmm);
                                 imprimirTms(tms);
                                 imprimirTmp(proceso_a_matar);
-                                porcentajeDiscoRAM(tmm, tms);
+                                usoDiscoRAM(tmm, tms);
                                 insertarFinal(terminados,proceso_a_matar);
                                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 break; 
@@ -661,7 +661,7 @@ int main(){
                                     imprimirTmm(tmm);
                                     imprimirTms(tms);
                                     imprimirTmp(proceso_a_matar);
-                                    porcentajeDiscoRAM(tmm, tms);
+                                    usoDiscoRAM(tmm, tms);
                                     insertarFinal(terminados,proceso_a_matar);
                                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                 } else {
@@ -672,7 +672,7 @@ int main(){
                                         imprimirTmm(tmm);
                                         imprimirTms(tms);
                                         imprimirTmp(proceso_a_matar);
-                                        porcentajeDiscoRAM(tmm, tms);
+                                        usoDiscoRAM(tmm, tms);
                                         insertarFinal(terminados, proceso_a_matar);
                                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                     } else {
@@ -683,7 +683,7 @@ int main(){
                                             imprimirTmm(tmm);
                                             imprimirTms(tms);
                                             imprimirTmp(proceso_a_matar);
-                                            porcentajeDiscoRAM(tmm, tms);
+                                            usoDiscoRAM(tmm, tms);
                                             insertarFinal(terminados, proceso_a_matar);
                                             imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                                         } else{
@@ -768,7 +768,7 @@ int main(){
                         imprimirTmm(tmm);
                         imprimirTms(tms);
                         imprimirTmp(proceso_a_terminar);
-                        porcentajeDiscoRAM(tmm, tms);
+                        usoDiscoRAM(tmm, tms);
                         insertarFinal(terminados, proceso_a_terminar);
                     }
                     limpieza = true;
@@ -796,7 +796,7 @@ int main(){
                             imprimirTmm(tmm);
                             imprimirTms(tms);
                             imprimirTmp(proceso_a_terminar);
-                            porcentajeDiscoRAM(tmm, tms);
+                            usoDiscoRAM(tmm, tms);
                             insertarFinal(terminados, proceso_a_terminar);
                         }
                     }
@@ -813,7 +813,7 @@ int main(){
                             imprimirTmm(tmm);
                             imprimirTms(tms);
                             imprimirTmp(proceso_a_terminar);
-                            porcentajeDiscoRAM(tmm, tms);
+                            usoDiscoRAM(tmm, tms);
                             insertarFinal(terminados, proceso_a_terminar);
                         }
                     }
@@ -832,7 +832,7 @@ int main(){
                         imprimirTmm(tmm);
                         imprimirTms(tms);
                         imprimirTmp(proceso_a_terminar);
-                        porcentajeDiscoRAM(tmm, tms);
+                        usoDiscoRAM(tmm, tms);
                         insertarFinal(terminados, proceso_a_terminar);
                     }
                 }
