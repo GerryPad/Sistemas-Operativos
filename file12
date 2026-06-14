@@ -1,0 +1,3 @@
+MOV EAX,3
+INC ECX
+JNZ 0
