@@ -109,6 +109,7 @@ bool instMOV(char *args){
 bool instADD(char *args){
     char op1[32], op2[32], basura[32];
     int leidos = 0;
+    long long suma;
     Registro *reg1, *reg2;
 
     char *coma = strchr(args, ','); 
@@ -143,9 +144,19 @@ bool instADD(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            reg1->valor = reg1->valor + reg2->valor;
+            suma = (long long) reg1->valor + reg2->valor;
+            if(suma > 2147483647 || suma < -2147483647){
+                mvprintw(36, 10,"Desbordamiento");
+                return false;
+            }
+            reg1->valor = (int) suma;
         } else if (esInt(op2)) {
-            reg1->valor = reg1->valor + atoi(op2); 
+            suma = (long long) reg1->valor + atoi(op2);
+            if(suma > 2147483647 || suma < -2147483647){
+                mvprintw(36, 10,"Desbordamiento");
+                return false;
+            }
+            reg1->valor = (int) suma;
         } else {
             move(36,10);
             clrtoeol();
@@ -164,6 +175,7 @@ bool instADD(char *args){
 bool instSUB(char *args){
     char op1[32], op2[32], basura[32];
     int leidos = 0;
+    long long resta;
     Registro *reg1, *reg2;
 
     char *coma = strchr(args, ','); 
@@ -198,9 +210,19 @@ bool instSUB(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            reg1->valor = reg1->valor - reg2->valor;
+            resta = (long long) reg1->valor - reg2->valor;
+            if(resta > 2147483647 || resta < -2147483647){
+                mvprintw(36, 10,"Desbordamiento");
+                return false;
+            }
+            reg1->valor = (int) resta;
         } else if (esInt(op2)) {
-            reg1->valor = reg1->valor - atoi(op2); 
+            resta = (long long) reg1->valor - atoi(op2);
+            if(resta > 2147483647 || resta < -2147483647){
+                mvprintw(36, 10,"Desbordamiento");
+                return false;
+            }
+            reg1->valor = (int) resta;
         } else {
             move(36,10);
             clrtoeol();
