@@ -40,7 +40,7 @@ bool esInt(char *s) {
         if(i > 11) return false;
     }
     num = strtol(s, NULL, 10);
-    if(num > 2147483647 || num < -2147483647) return false;
+    if(num > 2147483647 || num < -2147483648) return false;
     return true;
 }
 
@@ -145,14 +145,14 @@ bool instADD(char *args){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
             suma = (long long) reg1->valor + reg2->valor;
-            if(suma > 2147483647 || suma < -2147483647){
+            if(suma > 2147483647 || suma < -2147483648){
                 mvprintw(36, 10,"Desbordamiento");
                 return false;
             }
             reg1->valor = (int) suma;
         } else if (esInt(op2)) {
             suma = (long long) reg1->valor + atoi(op2);
-            if(suma > 2147483647 || suma < -2147483647){
+            if(suma > 2147483647 || suma < -2147483648){
                 mvprintw(36, 10,"Desbordamiento");
                 return false;
             }
@@ -211,14 +211,14 @@ bool instSUB(char *args){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
             resta = (long long) reg1->valor - reg2->valor;
-            if(resta > 2147483647 || resta < -2147483647){
+            if(resta > 2147483647 || resta < -2147483648){
                 mvprintw(36, 10,"Desbordamiento");
                 return false;
             }
             reg1->valor = (int) resta;
         } else if (esInt(op2)) {
             resta = (long long) reg1->valor - atoi(op2);
-            if(resta > 2147483647 || resta < -2147483647){
+            if(resta > 2147483647 || resta < -2147483648){
                 mvprintw(36, 10,"Desbordamiento");
                 return false;
             }
@@ -275,14 +275,14 @@ bool instMUL(char *args){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
             producto = (long long) reg1->valor * reg2->valor;
-            if(producto > 2147483647 || producto < -2147483647){
+            if(producto > 2147483647 || producto < -2147483648){
                 mvprintw(36, 10,"Desbordamiento");
                 return false;
             }
             reg1->valor = (int) producto;
         } else if (esInt(op2)) {
             producto = (long long) reg1->valor * atoi(op2);
-            if(producto > 2147483647 || producto < -2147483647){
+            if(producto > 2147483647 || producto < -2147483648){
                 mvprintw(36, 10,"Desbordamiento");
                 return false;
             }
@@ -428,7 +428,7 @@ bool instDEC(char *args){
     reg1 = buscaRegistro(op1);
    
     if (reg1 != NULL){
-        if(reg1->valor == -2147483647) {
+        if(reg1->valor == -2147483648) {
             mvprintw(36, 10, "ABORTADO: Underflow");
             return false;
         }
