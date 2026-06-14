@@ -190,7 +190,6 @@ struct TablaMarcos *algoritmoReloj(TablaMarcos *manecilla, struct Nodo *listos, 
     tmm[manecilla->num_marco].propietario = 0;
     tmm[manecilla->num_marco].num_pagina = -1;
     tmm[manecilla->num_marco].grupo = 0;
-
     memset((RAM + TAMANO_MARCO * manecilla->num_marco) ,0,TAMANO_MARCO);
 
     return manecilla; //Este es el marco con la pagina a desalojar

@@ -1,5 +1,7 @@
 #ifndef SWAP_H
 #define SWAP_H
+//#include <stdbool.h>
+//#include "instrucciones.h"
 #include "nodo.h"
 
 //Prototipos de funcion

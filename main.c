@@ -85,9 +85,10 @@ int main(){
                 if(listos->siguiente !=NULL){
                     calculoPrioridades(listos, suspendidos, contarGrupos(listos, ejecutando, suspendidos, gid));
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                    //if(!speed) usleep(3000000);
                     if(!speed) {
                         for(int i = 0; i < 60; i++) {
-                            if(kbhit()) break; //Si tocas una tecla, rompe la pausa
+                            if(kbhit()) break; // Si tocas una tecla, rompe la pausa
                             usleep(50000);
                         }
                     }
@@ -114,6 +115,7 @@ int main(){
                         mvprintw(40, 2, ">");
                         echo();
                         memset(comando, 0, sizeof(comando));
+                        //mvscanw(40,3,"%255[^\n]",comando);
                         
                         //Usar la lectura nativa y segura de ncurses para que no haya fallos aleatorios connn comandos validos
                         mvgetnstr(40, 3, comando, 255);
@@ -349,7 +351,7 @@ int main(){
         if (proceso_actual != NULL) {
             quantum = 0;
             fin_quantum = false; 
-            contarGrupos(listos, ejecutando, suspendidos, gid);
+            
             interrumpido=false; 
             strcpy(linea_original, proceso_actual->IR);
             manecilla_reloj = sacarSuspendidos(suspendidos, listos, manecilla_reloj, ejecutando, tmm, tms, RAM, bin);
@@ -371,6 +373,7 @@ int main(){
                 
                 //Fallo de pagina
                 if (marco_ram == -1) {
+                    //manecilla_reloj = algoritmoReloj(manecilla_reloj, listos, ejecutando, suspendidos, tmm, RAM);
                     page_fault = true;
                     proceso_a_suspender = desencolar(ejecutando);
                    
@@ -379,10 +382,23 @@ int main(){
 
                         //Asignacion de tiempo de espera aleatorio
                         proceso_a_suspender->hora_entrada = time(NULL);
-                        proceso_a_suspender->tiempo_espera = rand() % 9 + 2; //%(9)+2
+                        proceso_a_suspender->tiempo_espera = 0;//rand() % (9) + 2; //%(9)+2
+
+                        /*marco_ram_nuevo = cargarARAM(proceso_a_suspender->PID, proceso_a_suspender->GID, pag_actual, bin, manecilla_reloj, listos, ejecutando, suspendidos, tms, tmm, RAM);
+                        actualizaTMP(proceso_a_suspender, tms);*/
+                        guardaPCB(proceso_a_suspender,pc,linea_original);
+                        
+                        //manecilla_reloj->puntero = true;
+                        //manecilla_reloj = manecilla_reloj->siguiente; //Nos movemos al siguiente marco del que acabamos de desalojar
+                        //Actualizamos TMP del proceso para indicar que su pagina ya esta cargada en el marco n
+                        //if (marco_ram_nuevo != -1) {
+                        //    proceso_a_suspender->tmp[pag_actual].num_marco_ram = marco_ram_nuevo;
+                        //    tmm[marco_ram_nuevo].usado_recien = 1;
+                        //}
                         imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                         imprimirTmm(tmm);
                         porcentajeDiscoRAM(tmm, tms);
+                        //tmm[marco_ram_nuevo].puntero=false;
                         refresh();
                     }
                     proceso_actual = NULL;
@@ -452,7 +468,7 @@ int main(){
                             mvprintw(36, 10, "Error: Contenido tras END en Renglon %d", pc);
                             tokEND = false; 
                             limpieza = true;
-                            break; // Salimos y el codigo de afuera lo manda a estadoTermino = 1
+                            break; // Salimos y el código de afuera lo manda a estadoTermino = 1
                         } else {
                             //CASO 2: Es un END limpio
                             if (instEND()) {
@@ -542,6 +558,10 @@ int main(){
                     aumentaGCPU(suspendidos,proceso_actual->GID);
                     imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
                    
+                    /*if(!speed){
+                        usleep(500000);
+                    }*/
+                   
                     if(!speed) {
                         for(int i = 0; i < 10; i++) {
                             if(kbhit()) break; // Si tocas una tecla, despierta
@@ -578,6 +598,7 @@ int main(){
                         mvprintw(40, 2, ">");
                         echo();
                         memset(comando, 0, sizeof(comando));
+                        //mvscanw(40,3,"%255[^\n]",comando)
                         mvgetnstr(40, 3, comando, 255);
                         noecho();
                         limpieza = true;
@@ -687,12 +708,14 @@ int main(){
                                 nuevo->GCPU = proceso_a_copiar->GCPU;
                                 insertarFinal(listos, nuevo);
                                 imprimir_listas(ejecutando, listos, terminados, suspendidos, nuevos);
+                                 //creo que aqui falta mandarlo a nuevos 
+                              
                             } else { 
                                 proceso_a_copiar = buscaPID(listos, pid_kill);
                                 if(proceso_a_copiar != NULL) {
                                     
                                         nuevo=crearNodo(pid,proceso_a_copiar->GID,proceso_a_copiar->archivo,proceso_a_copiar->num_paginas);
-                                        nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
+                                        //nuevo=crearNodo(pid, proceso_a_copiar->GID, proceso_a_copiar->archivo, total_marcos_necesarios);
                                         for(int i = 0; i < proceso_a_copiar->num_paginas; i++){
                                             nuevo->tmp[i].num_marco_disco = proceso_a_copiar->tmp[i].num_marco_disco;
                                             nuevo->tmp[i].num_marco_ram   = proceso_a_copiar->tmp[i].num_marco_ram;
