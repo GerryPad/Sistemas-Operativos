@@ -217,6 +217,7 @@ bool instSUB(char *args){
 bool instMUL(char *args){
     char op1[32], op2[32], basura[32];
     int leidos = 0;
+    long long producto;
     Registro *reg1, *reg2;
 
     char *coma = strchr(args, ','); 
@@ -251,9 +252,19 @@ bool instMUL(char *args){
     if (reg1 != NULL){
         reg2 = buscaRegistro(op2);
         if (reg2 != NULL){
-            reg1->valor = reg1->valor * reg2->valor;
+            producto = (long long) reg1->valor * reg2->valor;
+            if(producto > 2147483647 || producto < -2147483647){
+                mvprintw(36, 10,"Desbordamiento");
+                return false;
+            }
+            reg1->valor = (int) producto;
         } else if (esInt(op2)) {
-            reg1->valor = reg1->valor * atoi(op2);
+            producto = (long long) reg1->valor * atoi(op2);
+            if(producto > 2147483647 || producto < -2147483647){
+                mvprintw(36, 10,"Desbordamiento");
+                return false;
+            }
+            reg1->valor = (int) producto;
         } else {
             move(36,10);
             clrtoeol();
